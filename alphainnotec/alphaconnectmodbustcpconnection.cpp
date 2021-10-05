@@ -141,6 +141,26 @@ AlphaConnectModbusTcpConnection::SystemStatus AlphaConnectModbusTcpConnection::s
     return m_systemStatus;
 }
 
+float AlphaConnectModbusTcpConnection::outdoorTemperature() const
+{
+    return m_outdoorTemperature;
+}
+
+float AlphaConnectModbusTcpConnection::returnSetpointTemperature() const
+{
+    return m_returnSetpointTemperature;
+}
+
+float AlphaConnectModbusTcpConnection::hotWaterSetpointTemperature() const
+{
+    return m_hotWaterSetpointTemperature;
+}
+
+AlphaConnectModbusTcpConnection::SmartGridState AlphaConnectModbusTcpConnection::smartGrid() const
+{
+    return m_smartGrid;
+}
+
 void AlphaConnectModbusTcpConnection::initialize()
 {
     // No init registers defined. Nothing to be done and we are finished.
@@ -169,6 +189,10 @@ void AlphaConnectModbusTcpConnection::update()
     updateRbeRoomSetpointTemperature();
     updateHeatingPumpOperatingHours();
     updateSystemStatus();
+    updateOutdoorTemperature();
+    updateReturnSetpointTemperature();
+    updateHotWaterSetpointTemperature();
+    updateSmartGrid();
 }
 
 void AlphaConnectModbusTcpConnection::updateMeanTemperature()
@@ -771,6 +795,126 @@ void AlphaConnectModbusTcpConnection::updateSystemStatus()
     }
 }
 
+void AlphaConnectModbusTcpConnection::updateOutdoorTemperature()
+{
+    // Update registers from Outdoor temperature
+    QModbusReply *reply = readOutdoorTemperature();
+    if (reply) {
+        if (!reply->isFinished()) {
+            connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
+            connect(reply, &QModbusReply::finished, this, [this, reply](){
+                if (reply->error() == QModbusDevice::NoError) {
+                    const QModbusDataUnit unit = reply->result();
+                    float receivedOutdoorTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -10);
+                    if (m_outdoorTemperature != receivedOutdoorTemperature) {
+                        m_outdoorTemperature = receivedOutdoorTemperature;
+                        emit outdoorTemperatureChanged(m_outdoorTemperature);
+                    }
+                }
+            });
+
+            connect(reply, &QModbusReply::errorOccurred, this, [this, reply] (QModbusDevice::Error error){
+                qCWarning(dcAlphaConnectModbusTcpConnection()) << "Modbus reply error occurred while updating \"Outdoor temperature\" registers from" << hostAddress().toString() << error << reply->errorString();
+                emit reply->finished(); // To make sure it will be deleted
+            });
+        } else {
+            delete reply; // Broadcast reply returns immediatly
+        }
+    } else {
+        qCWarning(dcAlphaConnectModbusTcpConnection()) << "Error occurred while reading \"Outdoor temperature\" registers from" << hostAddress().toString() << errorString();
+    }
+}
+
+void AlphaConnectModbusTcpConnection::updateReturnSetpointTemperature()
+{
+    // Update registers from Return setpoint temperature
+    QModbusReply *reply = readReturnSetpointTemperature();
+    if (reply) {
+        if (!reply->isFinished()) {
+            connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
+            connect(reply, &QModbusReply::finished, this, [this, reply](){
+                if (reply->error() == QModbusDevice::NoError) {
+                    const QModbusDataUnit unit = reply->result();
+                    float receivedReturnSetpointTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -10);
+                    if (m_returnSetpointTemperature != receivedReturnSetpointTemperature) {
+                        m_returnSetpointTemperature = receivedReturnSetpointTemperature;
+                        emit returnSetpointTemperatureChanged(m_returnSetpointTemperature);
+                    }
+                }
+            });
+
+            connect(reply, &QModbusReply::errorOccurred, this, [this, reply] (QModbusDevice::Error error){
+                qCWarning(dcAlphaConnectModbusTcpConnection()) << "Modbus reply error occurred while updating \"Return setpoint temperature\" registers from" << hostAddress().toString() << error << reply->errorString();
+                emit reply->finished(); // To make sure it will be deleted
+            });
+        } else {
+            delete reply; // Broadcast reply returns immediatly
+        }
+    } else {
+        qCWarning(dcAlphaConnectModbusTcpConnection()) << "Error occurred while reading \"Return setpoint temperature\" registers from" << hostAddress().toString() << errorString();
+    }
+}
+
+void AlphaConnectModbusTcpConnection::updateHotWaterSetpointTemperature()
+{
+    // Update registers from Hot water setpoint temperature
+    QModbusReply *reply = readHotWaterSetpointTemperature();
+    if (reply) {
+        if (!reply->isFinished()) {
+            connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
+            connect(reply, &QModbusReply::finished, this, [this, reply](){
+                if (reply->error() == QModbusDevice::NoError) {
+                    const QModbusDataUnit unit = reply->result();
+                    float receivedHotWaterSetpointTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -10);
+                    if (m_hotWaterSetpointTemperature != receivedHotWaterSetpointTemperature) {
+                        m_hotWaterSetpointTemperature = receivedHotWaterSetpointTemperature;
+                        emit hotWaterSetpointTemperatureChanged(m_hotWaterSetpointTemperature);
+                    }
+                }
+            });
+
+            connect(reply, &QModbusReply::errorOccurred, this, [this, reply] (QModbusDevice::Error error){
+                qCWarning(dcAlphaConnectModbusTcpConnection()) << "Modbus reply error occurred while updating \"Hot water setpoint temperature\" registers from" << hostAddress().toString() << error << reply->errorString();
+                emit reply->finished(); // To make sure it will be deleted
+            });
+        } else {
+            delete reply; // Broadcast reply returns immediatly
+        }
+    } else {
+        qCWarning(dcAlphaConnectModbusTcpConnection()) << "Error occurred while reading \"Hot water setpoint temperature\" registers from" << hostAddress().toString() << errorString();
+    }
+}
+
+void AlphaConnectModbusTcpConnection::updateSmartGrid()
+{
+    // Update registers from Smart grid control
+    QModbusReply *reply = readSmartGrid();
+    if (reply) {
+        if (!reply->isFinished()) {
+            connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
+            connect(reply, &QModbusReply::finished, this, [this, reply](){
+                if (reply->error() == QModbusDevice::NoError) {
+                    const QModbusDataUnit unit = reply->result();
+                    SmartGridState receivedSmartGrid = static_cast<SmartGridState>(ModbusDataUtils::convertToUInt16(unit.values()));
+                    if (m_smartGrid != receivedSmartGrid) {
+                        m_smartGrid = receivedSmartGrid;
+                        emit smartGridChanged(m_smartGrid);
+                    }
+                }
+            });
+
+            connect(reply, &QModbusReply::errorOccurred, this, [this, reply] (QModbusDevice::Error error){
+                qCWarning(dcAlphaConnectModbusTcpConnection()) << "Modbus reply error occurred while updating \"Smart grid control\" registers from" << hostAddress().toString() << error << reply->errorString();
+                emit reply->finished(); // To make sure it will be deleted
+            });
+        } else {
+            delete reply; // Broadcast reply returns immediatly
+        }
+    } else {
+        qCWarning(dcAlphaConnectModbusTcpConnection()) << "Error occurred while reading \"Smart grid control\" registers from" << hostAddress().toString() << errorString();
+    }
+}
+
 QModbusReply *AlphaConnectModbusTcpConnection::readMeanTemperature()
 {
     QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::InputRegisters, 0, 1);
@@ -891,6 +1035,30 @@ QModbusReply *AlphaConnectModbusTcpConnection::readSystemStatus()
     return sendReadRequest(request, m_slaveId);
 }
 
+QModbusReply *AlphaConnectModbusTcpConnection::readOutdoorTemperature()
+{
+    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 0, 1);
+    return sendReadRequest(request, m_slaveId);
+}
+
+QModbusReply *AlphaConnectModbusTcpConnection::readReturnSetpointTemperature()
+{
+    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 1, 1);
+    return sendReadRequest(request, m_slaveId);
+}
+
+QModbusReply *AlphaConnectModbusTcpConnection::readHotWaterSetpointTemperature()
+{
+    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 5, 1);
+    return sendReadRequest(request, m_slaveId);
+}
+
+QModbusReply *AlphaConnectModbusTcpConnection::readSmartGrid()
+{
+    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 14, 1);
+    return sendReadRequest(request, m_slaveId);
+}
+
 void AlphaConnectModbusTcpConnection::verifyInitFinished()
 {
     if (m_pendingInitReplies.isEmpty()) {
@@ -922,6 +1090,10 @@ QDebug operator<<(QDebug debug, AlphaConnectModbusTcpConnection *alphaConnectMod
     debug.nospace().noquote() << "    - RBE room temperature setpoint:" << alphaConnectModbusTcpConnection->rbeRoomSetpointTemperature() << " [°C]" << "\n";
     debug.nospace().noquote() << "    - Heating pump operating hours:" << alphaConnectModbusTcpConnection->heatingPumpOperatingHours() << " [h]" << "\n";
     debug.nospace().noquote() << "    - System status:" << alphaConnectModbusTcpConnection->systemStatus() << "\n";
+    debug.nospace().noquote() << "    - Outdoor temperature:" << alphaConnectModbusTcpConnection->outdoorTemperature() << " [°C]" << "\n";
+    debug.nospace().noquote() << "    - Return setpoint temperature:" << alphaConnectModbusTcpConnection->returnSetpointTemperature() << " [°C]" << "\n";
+    debug.nospace().noquote() << "    - Hot water setpoint temperature:" << alphaConnectModbusTcpConnection->hotWaterSetpointTemperature() << " [°C]" << "\n";
+    debug.nospace().noquote() << "    - Smart grid control:" << alphaConnectModbusTcpConnection->smartGrid() << "\n";
     return debug.quote().space();
 }
 

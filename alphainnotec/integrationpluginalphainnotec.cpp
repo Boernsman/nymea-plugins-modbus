@@ -117,6 +117,8 @@ void IntegrationPluginAlphaInnotec::setupThing(ThingSetupInfo *info)
             thing->setStateValue(alphaConnectConnectedStateTypeId, status);
         });
 
+
+        // Input registers
         connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::meanTemperatureChanged, this, [thing](float meanTemperature){
             qCDebug(dcAlphaInnotec()) << thing << "mean temperature changed" << meanTemperature << "°C";
             thing->setStateValue(alphaConnectMeanTemperatureStateTypeId, meanTemperature);
@@ -234,6 +236,40 @@ void IntegrationPluginAlphaInnotec::setupThing(ThingSetupInfo *info)
         connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::heatingPumpOperatingHoursChanged, this, [thing](quint16 heatingPumpOperatingHours){
             qCDebug(dcAlphaInnotec()) << thing << "heating pump operating hours changed" << heatingPumpOperatingHours;
             thing->setStateValue(alphaConnectHeatingPumpOperatingHoursStateTypeId, heatingPumpOperatingHours);
+        });
+
+        // Holding registers
+        connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::outdoorTemperatureChanged, this, [thing](float outdoorTemperature){
+            qCDebug(dcAlphaInnotec()) << thing << "outdoor temperature changed" << outdoorTemperature << "°C";
+            thing->setStateValue(alphaConnectOutdoorTemperatureStateTypeId, outdoorTemperature);
+        });
+
+        connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::returnSetpointTemperatureChanged, this, [thing](float returnSetpointTemperature){
+            qCDebug(dcAlphaInnotec()) << thing << "return setpoint temperature changed" << returnSetpointTemperature << "°C";
+            thing->setStateValue(alphaConnectReturnSetpointTemperatureStateTypeId, returnSetpointTemperature);
+        });
+
+        connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::hotWaterSetpointTemperatureChanged, this, [thing](float hotWaterSetpointTemperature){
+            qCDebug(dcAlphaInnotec()) << thing << "hot water setpoint temperature changed" << hotWaterSetpointTemperature << "°C";
+            thing->setStateValue(alphaConnectHotWaterSetpointTemperatureStateTypeId, hotWaterSetpointTemperature);
+        });
+
+        connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::smartGridChanged, this, [thing](AlphaConnectModbusTcpConnection::SmartGridState smartGridState){
+            qCDebug(dcAlphaInnotec()) << thing << "smart grid state changed" << smartGridState;
+            switch (smartGridState) {
+            case AlphaConnectModbusTcpConnection::SmartGridStateOff:
+                thing->setStateValue(alphaConnectSmartGridStateTypeId, "Off");
+                break;
+            case AlphaConnectModbusTcpConnection::SmartGridStateLow:
+                thing->setStateValue(alphaConnectSmartGridStateTypeId, "Low");
+                break;
+            case AlphaConnectModbusTcpConnection::SmartGridStateStandard:
+                thing->setStateValue(alphaConnectSmartGridStateTypeId, "Standard");
+                break;
+            case AlphaConnectModbusTcpConnection::SmartGridStateHigh:
+                thing->setStateValue(alphaConnectSmartGridStateTypeId, "High");
+                break;
+            }
         });
 
         // FIXME: make async and check if this is really an alpha connect

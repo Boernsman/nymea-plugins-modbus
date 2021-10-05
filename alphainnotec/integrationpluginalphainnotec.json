@@ -99,16 +99,6 @@
                             "suggestLogging": true
                         },
                         {
-                            "id": "d0c8f168-49b5-47ca-9988-c9922be38dd5",
-                            "name": "outdoorTemperature",
-                            "displayName": "Outdoor temperature",
-                            "displayNameEvent": "Outdoor temperature changed",
-                            "unit": "DegreeCelsius",
-                            "type": "double",
-                            "defaultValue": 0,
-                            "suggestLogging": true
-                        },
-                        {
                             "id": "956051a6-8677-4b25-b899-71aa3590d4e5",
                             "name": "meanTemperature",
                             "displayName": "Mean temperature",
@@ -295,6 +285,51 @@
                             "unit": "Hours",
                             "type": "uint",
                             "defaultValue": 0
+                        },
+                        {
+                            "id": "d0c8f168-49b5-47ca-9988-c9922be38dd5",
+                            "name": "outdoorTemperature",
+                            "displayName": "Outdoor temperature",
+                            "displayNameEvent": "Outdoor temperature changed",
+                            "unit": "DegreeCelsius",
+                            "type": "double",
+                            "defaultValue": 0,
+                            "suggestLogging": true
+                        },
+                        {
+                            "id": "1ee6b189-ceff-4912-a577-2e3320307c3f",
+                            "name": "returnSetpointTemperature",
+                            "displayName": "Return setpoint temperature",
+                            "displayNameEvent": "Return setpoint temperature changed",
+                            "unit": "DegreeCelsius",
+                            "type": "double",
+                            "defaultValue": 0,
+                            "suggestLogging": true
+                        },
+                        {
+                            "id": "a7f1a688-51d3-4f9e-a323-86117c5542a8",
+                            "name": "hotWaterSetpointTemperature",
+                            "displayName": "Hot water setpoint temperature",
+                            "displayNameEvent": "Hot water setpoint temperature changed",
+                            "unit": "DegreeCelsius",
+                            "type": "double",
+                            "defaultValue": 0,
+                            "suggestLogging": true
+                        },
+                        {
+                            "id": "8cc9761f-b30e-4f54-aee7-b64190df57e1",
+                            "name": "smartGrid",
+                            "displayName": "Smart grid state",
+                            "displayNameEvent": "Smart grid state changed",
+                            "type": "QString",
+                            "possibleValues": [
+                                "Off",
+                                "Low",
+                                "Standard",
+                                "High"
+                            ],
+                            "defaultValue": "Standard",
+                            "suggestLogging": true
                         }
                     ],
                     "actionTypes": [ ]

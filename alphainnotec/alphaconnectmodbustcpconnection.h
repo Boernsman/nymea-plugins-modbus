@@ -56,7 +56,7 @@ public:
         SmartGridStateOff = 0,
         SmartGridStateLow = 1,
         SmartGridStateStandard = 2,
-        SmartGridStateHight = 3
+        SmartGridStateHigh = 3
     };
     Q_ENUM(SmartGridState)
 
@@ -123,6 +123,18 @@ public:
     /* System status - Address: 37, Size: 1 */
     SystemStatus systemStatus() const;
 
+    /* Outdoor temperature [°C] - Address: 0, Size: 1 */
+    float outdoorTemperature() const;
+
+    /* Return setpoint temperature [°C] - Address: 1, Size: 1 */
+    float returnSetpointTemperature() const;
+
+    /* Hot water setpoint temperature [°C] - Address: 5, Size: 1 */
+    float hotWaterSetpointTemperature() const;
+
+    /* Smart grid control - Address: 14, Size: 1 */
+    SmartGridState smartGrid() const;
+
     virtual void initialize();
     virtual void update();
 
@@ -146,6 +158,10 @@ public:
     void updateRbeRoomSetpointTemperature();
     void updateHeatingPumpOperatingHours();
     void updateSystemStatus();
+    void updateOutdoorTemperature();
+    void updateReturnSetpointTemperature();
+    void updateHotWaterSetpointTemperature();
+    void updateSmartGrid();
 
 signals:
     void initializationFinished();
@@ -170,6 +186,10 @@ signals:
     void rbeRoomSetpointTemperatureChanged(float rbeRoomSetpointTemperature);
     void heatingPumpOperatingHoursChanged(quint16 heatingPumpOperatingHours);
     void systemStatusChanged(SystemStatus systemStatus);
+    void outdoorTemperatureChanged(float outdoorTemperature);
+    void returnSetpointTemperatureChanged(float returnSetpointTemperature);
+    void hotWaterSetpointTemperatureChanged(float hotWaterSetpointTemperature);
+    void smartGridChanged(SmartGridState smartGrid);
 
 private:
     quint16 m_slaveId = 1;
@@ -195,6 +215,10 @@ private:
     float m_rbeRoomSetpointTemperature = 0;
     quint16 m_heatingPumpOperatingHours = 0;
     SystemStatus m_systemStatus = SystemStatusHeatingMode;
+    float m_outdoorTemperature = 0;
+    float m_returnSetpointTemperature = 0;
+    float m_hotWaterSetpointTemperature = 0;
+    SmartGridState m_smartGrid = SmartGridStateStandard;
 
     void verifyInitFinished();
 
@@ -218,6 +242,10 @@ private:
     QModbusReply *readRbeRoomSetpointTemperature();
     QModbusReply *readHeatingPumpOperatingHours();
     QModbusReply *readSystemStatus();
+    QModbusReply *readOutdoorTemperature();
+    QModbusReply *readReturnSetpointTemperature();
+    QModbusReply *readHotWaterSetpointTemperature();
+    QModbusReply *readSmartGrid();
 
 
 };
