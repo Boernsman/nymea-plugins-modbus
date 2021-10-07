@@ -137,15 +137,19 @@ public:
 
     /* Outdoor temperature [°C] - Address: 0, Size: 1 */
     float outdoorTemperature() const;
+    QModbusReply *setOutdoorTemperature(float outdoorTemperature);
 
     /* Return setpoint temperature [°C] - Address: 1, Size: 1 */
     float returnSetpointTemperature() const;
+    QModbusReply *setReturnSetpointTemperature(float returnSetpointTemperature);
 
     /* Hot water setpoint temperature [°C] - Address: 5, Size: 1 */
     float hotWaterSetpointTemperature() const;
+    QModbusReply *setHotWaterSetpointTemperature(float hotWaterSetpointTemperature);
 
     /* Smart grid control - Address: 14, Size: 1 */
     SmartGridState smartGrid() const;
+    QModbusReply *setSmartGrid(SmartGridState smartGrid);
 
     virtual void initialize();
     virtual void update();

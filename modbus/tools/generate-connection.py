@@ -129,12 +129,13 @@ def writeEnumDefinition(fileDescriptor, enumDefinition):
     writeLine(fileDescriptor)
 
 
-def getCppDataType(registerDefinition):
-    if 'enum' in registerDefinition:
-        return registerDefinition['enum']
+def getCppDataType(registerDefinition, rawType = False):
+    if not rawType:
+        if 'enum' in registerDefinition:
+            return registerDefinition['enum']
 
-    if 'scaleFactor' in registerDefinition or 'staticScaleFactor' in registerDefinition:
-        return 'float'
+        if 'scaleFactor' in registerDefinition or 'staticScaleFactor' in registerDefinition:
+            return 'float'
 
     if registerDefinition['type'] == 'uint16':
         return 'quint16'
@@ -162,6 +163,65 @@ def getCppDataType(registerDefinition):
 
     if registerDefinition['type'] == 'string':
         return 'QString'
+
+
+def getConversionToValueMethod(registerDefinition):
+    # Handle enums
+    propertyName = registerDefinition['id']
+    propertyTyp = getCppDataType(registerDefinition, True)
+    if 'enum' in registerDefinition:
+        enumName = registerDefinition['enum']
+        if registerDefinition['type'] == 'uint16':
+            return ('ModbusDataUtils::convertFromUInt16(static_cast<%s>(%s))' % (propertyTyp, propertyName))
+        elif registerDefinition['type'] == 'int16':
+            return ('ModbusDataUtils::convertFromInt16(static_cast<%s>(%s))' % (propertyTyp, propertyName))
+        elif registerDefinition['type'] == 'uint32':
+            return ('ModbusDataUtils::convertFromUInt32(static_cast<%s>(%s))' % (propertyTyp, propertyName))
+        elif registerDefinition['type'] == 'int32':
+            return ('ModbusDataUtils::convertFromInt32(static_cast<%s>(%s))' % (propertyTyp, propertyName))
+
+    # Handle scale factors
+    if 'scaleFactor' in registerDefinition:
+        scaleFactorProperty = 'm_%s' % registerDefinition['scaleFactor']
+        if registerDefinition['type'] == 'uint16':
+            return ('ModbusDataUtils::convertFromUInt16(static_cast<%s>(%s  * 1.0 / pow(10, %s)))' % (propertyTyp, propertyName, scaleFactorProperty))
+        elif registerDefinition['type'] == 'int16':
+            return ('ModbusDataUtils::convertFromInt16(static_cast<%s>(%s  * 1.0 / pow(10, %s)))' % (propertyTyp, propertyName, scaleFactorProperty))
+        elif registerDefinition['type'] == 'uint32':
+            return ('ModbusDataUtils::convertFromUInt32(static_cast<%s>(%s  * 1.0 / pow(10, %s)))' % (propertyTyp, propertyName, scaleFactorProperty))
+        elif registerDefinition['type'] == 'int32':
+            return ('ModbusDataUtils::convertFromInt32(static_cast<%s>(%s  * 1.0 / pow(10, %s)))' % (propertyTyp, propertyName, scaleFactorProperty))
+
+    elif 'staticScaleFactor' in registerDefinition:
+        scaleFactor = registerDefinition['staticScaleFactor']
+        if registerDefinition['type'] == 'uint16':
+            return ('ModbusDataUtils::convertFromUInt16(static_cast<%s>(%s  * 1.0 / pow(10, %s)))' % (propertyTyp, propertyName, scaleFactor))
+        elif registerDefinition['type'] == 'int16':
+            return ('ModbusDataUtils::convertFromInt16(static_cast<%s>(%s  * 1.0 / pow(10, %s)))' % (propertyTyp, propertyName, scaleFactor))
+        elif registerDefinition['type'] == 'uint32':
+            return ('ModbusDataUtils::convertFromUInt32(static_cast<%s>(%s  * 1.0 / pow(10, %s)))' % (propertyTyp, propertyName, scaleFactor))
+        elif registerDefinition['type'] == 'int32':
+            return ('ModbusDataUtils::convertFromInt32(static_cast<%s>(%s  * 1.0 / pow(10, %s)))' % (propertyTyp, propertyName, scaleFactor))
+
+    # Handle default types
+    elif registerDefinition['type'] == 'uint16':
+        return ('ModbusDataUtils::convertFromUInt16(%s)' % propertyName)
+    elif registerDefinition['type'] == 'int16':
+        return ('ModbusDataUtils::convertFromInt16(%s)' % propertyName)
+    elif registerDefinition['type'] == 'uint32':
+        return ('ModbusDataUtils::convertFromUInt32(%s)' % propertyName)
+    elif registerDefinition['type'] == 'int32':
+        return ('ModbusDataUtils::convertFromInt32(%s)' % propertyName)
+    elif registerDefinition['type'] == 'uint64':
+        return ('ModbusDataUtils::convertFromUInt64(%s)' % propertyName)
+    elif registerDefinition['type'] == 'int64':
+        return ('ModbusDataUtils::convertFromInt64(%s)' % propertyName)
+    elif registerDefinition['type'] == 'float':
+        return ('ModbusDataUtils::convertFromFloat32(%s)' % propertyName)
+    elif registerDefinition['type'] == 'float64':
+        return ('ModbusDataUtils::convertFromFloat64(%s)' % propertyName)
+    elif registerDefinition['type'] == 'string':
+        return ('ModbusDataUtils::convertFromString(%s)' % propertyName)    
 
 
 def getValueConversionMethod(registerDefinition):
@@ -221,7 +281,7 @@ def getValueConversionMethod(registerDefinition):
         return ('ModbusDataUtils::convertToString(unit.values())')
 
 
-def writePropertyGetMethodDeclarations(fileDescriptor, registerDefinitions):
+def writePropertyGetSetMethodDeclarations(fileDescriptor, registerDefinitions):
     for registerDefinition in registerDefinitions:
         propertyName = registerDefinition['id']
         propertyTyp = getCppDataType(registerDefinition)
@@ -231,13 +291,19 @@ def writePropertyGetMethodDeclarations(fileDescriptor, registerDefinitions):
             writeLine(fileDescriptor, '    /* %s - Address: %s, Size: %s */' % (registerDefinition['description'], registerDefinition['address'], registerDefinition['size']))
 
         writeLine(fileDescriptor, '    %s %s() const;' % (propertyTyp, propertyName))
+
+        # Check if we require a set method
+        if registerDefinition['access'] == 'RW' or registerDefinition['access'] == 'WO':
+            writeLine(fileDescriptor, '    QModbusReply *set%s(%s %s);' % (propertyName[0].upper() + propertyName[1:], propertyTyp, propertyName))
+
         writeLine(fileDescriptor)
 
 
-def writePropertyGetMethodImplementations(fileDescriptor, className, registerDefinitions):
+def writePropertyGetSetMethodImplementations(fileDescriptor, className, registerDefinitions):
     for registerDefinition in registerDefinitions:
         propertyName = registerDefinition['id']
         propertyTyp = getCppDataType(registerDefinition)
+        # Get
         if 'enum' in registerDefinition:
             writeLine(fileDescriptor, '%s::%s %s::%s() const' % (className, propertyTyp, className, propertyName))
         else:
@@ -247,6 +313,23 @@ def writePropertyGetMethodImplementations(fileDescriptor, className, registerDef
         writeLine(fileDescriptor, '    return m_%s;' % propertyName)
         writeLine(fileDescriptor, '}')
         writeLine(fileDescriptor)
+
+        # Check if we require a set method
+        if registerDefinition['access'] == 'RW' or registerDefinition['access'] == 'WO':
+            writeLine(fileDescriptor, 'QModbusReply *%s::set%s(%s %s)' % (className, propertyName[0].upper() + propertyName[1:], propertyTyp, propertyName))
+            writeLine(fileDescriptor, '{')
+
+            writeLine(fileDescriptor, '    QVector<quint16> values = %s;' % getConversionToValueMethod(registerDefinition))
+
+            if registerDefinition['registerType'] == 'holdingRegister':
+                writeLine(fileDescriptor, '    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, %s, values.count());' % (registerDefinition['address']))
+
+            # TODO: other write methods
+
+            writeLine(fileDescriptor, '    return sendWriteRequest(request, m_slaveId);')
+            writeLine(fileDescriptor, '}')
+            writeLine(fileDescriptor)
+
 
 
 def writePropertyUpdateMethodDeclarations(fileDescriptor, registerDefinitions):
@@ -488,7 +571,7 @@ writeLine(headerFile, '    ~%s() = default;' % className)
 writeLine(headerFile)
 
 # Write registers get method declarations
-writePropertyGetMethodDeclarations(headerFile, registerJson['registers'])
+writePropertyGetSetMethodDeclarations(headerFile, registerJson['registers'])
 
 # Write init and update method declarations
 writeLine(headerFile, '    virtual void initialize();')
@@ -552,7 +635,7 @@ writeLine(sourceFile, '}')
 writeLine(sourceFile)
 
 # Property get methods
-writePropertyGetMethodImplementations(sourceFile, className, registerJson['registers'])
+writePropertyGetSetMethodImplementations(sourceFile, className, registerJson['registers'])
 
 # Write init and update method implementation
 writeInitializeMethod(sourceFile, className, registerJson['registers'])

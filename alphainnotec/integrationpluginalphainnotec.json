@@ -13,7 +13,7 @@
                     "displayName": "alpha connect",
                     "id": "c5437b68-cfd2-4ec8-bad6-006fb5e8a8da",
                     "createMethods": ["discovery", "user"],
-                    "interfaces": ["thermostat", "connectable"],
+                    "interfaces": ["thermostat", "smartmeterconsumer", "connectable"],
                     "paramTypes": [
                         {
                             "id": "64a18910-9111-4eaf-986d-f7b64b03b99a",
@@ -338,6 +338,16 @@
                             "displayNameEvent": "Total energy changed",
                             "type": "double",
                             "unit": "KiloWattHour",
+                            "defaultValue": 0,
+                            "suggestLogging": true
+                        },
+                        {
+                            "id": "6daa10ad-24f8-4f26-a0f8-2d86ef614f60",
+                            "name": "currentPower",
+                            "displayName": "Current power",
+                            "displayNameEvent": "Current power changed",
+                            "type": "double",
+                            "unit": "Watt",
                             "defaultValue": 0,
                             "suggestLogging": true
                         },

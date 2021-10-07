@@ -166,9 +166,23 @@ float AlphaConnectModbusTcpConnection::outdoorTemperature() const
     return m_outdoorTemperature;
 }
 
+QModbusReply *AlphaConnectModbusTcpConnection::setOutdoorTemperature(float outdoorTemperature)
+{
+    QVector<quint16> values = ModbusDataUtils::convertFromUInt16(static_cast<quint16>(outdoorTemperature  * 1.0 / pow(10, -10)));
+    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 0, values.count());
+    return sendWriteRequest(request, m_slaveId);
+}
+
 float AlphaConnectModbusTcpConnection::returnSetpointTemperature() const
 {
     return m_returnSetpointTemperature;
+}
+
+QModbusReply *AlphaConnectModbusTcpConnection::setReturnSetpointTemperature(float returnSetpointTemperature)
+{
+    QVector<quint16> values = ModbusDataUtils::convertFromUInt16(static_cast<quint16>(returnSetpointTemperature  * 1.0 / pow(10, -10)));
+    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 1, values.count());
+    return sendWriteRequest(request, m_slaveId);
 }
 
 float AlphaConnectModbusTcpConnection::hotWaterSetpointTemperature() const
@@ -176,9 +190,23 @@ float AlphaConnectModbusTcpConnection::hotWaterSetpointTemperature() const
     return m_hotWaterSetpointTemperature;
 }
 
+QModbusReply *AlphaConnectModbusTcpConnection::setHotWaterSetpointTemperature(float hotWaterSetpointTemperature)
+{
+    QVector<quint16> values = ModbusDataUtils::convertFromUInt16(static_cast<quint16>(hotWaterSetpointTemperature  * 1.0 / pow(10, -10)));
+    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 5, values.count());
+    return sendWriteRequest(request, m_slaveId);
+}
+
 AlphaConnectModbusTcpConnection::SmartGridState AlphaConnectModbusTcpConnection::smartGrid() const
 {
     return m_smartGrid;
+}
+
+QModbusReply *AlphaConnectModbusTcpConnection::setSmartGrid(SmartGridState smartGrid)
+{
+    QVector<quint16> values = ModbusDataUtils::convertFromUInt16(static_cast<quint16>(smartGrid));
+    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 14, values.count());
+    return sendWriteRequest(request, m_slaveId);
 }
 
 void AlphaConnectModbusTcpConnection::initialize()
