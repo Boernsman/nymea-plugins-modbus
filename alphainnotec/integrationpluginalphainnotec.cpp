@@ -199,6 +199,11 @@ void IntegrationPluginAlphaInnotec::setupThing(ThingSetupInfo *info)
             thing->setStateValue(alphaConnectExternalAirTemperatureStateTypeId, externalAirTemperature);
         });
 
+        connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::heatingPumpOperatingHoursChanged, this, [thing](quint16 heatingPumpOperatingHours){
+            qCDebug(dcAlphaInnotec()) << thing << "heating pump operating hours changed" << heatingPumpOperatingHours;
+            thing->setStateValue(alphaConnectHeatingPumpOperatingHoursStateTypeId, heatingPumpOperatingHours);
+        });
+
         connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::systemStatusChanged, this, [thing](AlphaConnectModbusTcpConnection::SystemStatus systemStatus){
             qCDebug(dcAlphaInnotec()) << thing << "system status changed" << systemStatus;
             switch (systemStatus) {
@@ -233,9 +238,25 @@ void IntegrationPluginAlphaInnotec::setupThing(ThingSetupInfo *info)
             thing->setStateValue(alphaConnectCoolingOnStateTypeId, systemStatus == AlphaConnectModbusTcpConnection::SystemStatusCoolingMode);
         });
 
-        connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::heatingPumpOperatingHoursChanged, this, [thing](quint16 heatingPumpOperatingHours){
-            qCDebug(dcAlphaInnotec()) << thing << "heating pump operating hours changed" << heatingPumpOperatingHours;
-            thing->setStateValue(alphaConnectHeatingPumpOperatingHoursStateTypeId, heatingPumpOperatingHours);
+        // Energy
+        connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::totalHeatEnergyChanged, this, [thing](float totalHeatEnergy){
+            qCDebug(dcAlphaInnotec()) << thing << "total heating energy changed" << totalHeatEnergy << "kWh";
+            thing->setStateValue(alphaConnectTotalEnergyConsumedStateTypeId, totalHeatEnergy);
+        });
+
+        connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::heatingEnergyChanged, this, [thing](float heatingEnergy){
+            qCDebug(dcAlphaInnotec()) << thing << "heating energy changed" << heatingEnergy << "kWh";
+            thing->setStateValue(alphaConnectHeatingEnergyStateTypeId, heatingEnergy);
+        });
+
+        connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::waterHeatEnergyChanged, this, [thing](float waterHeatEnergy){
+            qCDebug(dcAlphaInnotec()) << thing << "water heat energy changed" << waterHeatEnergy << "kWh";
+            thing->setStateValue(alphaConnectHotWaterEnergyStateTypeId, waterHeatEnergy);
+        });
+
+        connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::swimmingPoolHeatEnergyChanged, this, [thing](float swimmingPoolHeatEnergy){
+            qCDebug(dcAlphaInnotec()) << thing << "swimming pool heat energy changed" << swimmingPoolHeatEnergy << "kWh";
+            thing->setStateValue(alphaConnectSwimmingPoolEnergyStateTypeId, swimmingPoolHeatEnergy);
         });
 
         // Holding registers

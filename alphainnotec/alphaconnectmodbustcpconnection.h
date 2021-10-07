@@ -123,6 +123,18 @@ public:
     /* System status - Address: 37, Size: 1 */
     SystemStatus systemStatus() const;
 
+    /* Heating energy [kWh] - Address: 38, Size: 2 */
+    float heatingEnergy() const;
+
+    /* Water heat energy [kWh] - Address: 40, Size: 2 */
+    float waterHeatEnergy() const;
+
+    /* Swimming pool heat energy [kWh] - Address: 42, Size: 2 */
+    float swimmingPoolHeatEnergy() const;
+
+    /* Total energy [kWh] - Address: 44, Size: 2 */
+    float totalHeatEnergy() const;
+
     /* Outdoor temperature [°C] - Address: 0, Size: 1 */
     float outdoorTemperature() const;
 
@@ -158,6 +170,10 @@ public:
     void updateRbeRoomSetpointTemperature();
     void updateHeatingPumpOperatingHours();
     void updateSystemStatus();
+    void updateHeatingEnergy();
+    void updateWaterHeatEnergy();
+    void updateSwimmingPoolHeatEnergy();
+    void updateTotalHeatEnergy();
     void updateOutdoorTemperature();
     void updateReturnSetpointTemperature();
     void updateHotWaterSetpointTemperature();
@@ -186,6 +202,10 @@ signals:
     void rbeRoomSetpointTemperatureChanged(float rbeRoomSetpointTemperature);
     void heatingPumpOperatingHoursChanged(quint16 heatingPumpOperatingHours);
     void systemStatusChanged(SystemStatus systemStatus);
+    void heatingEnergyChanged(float heatingEnergy);
+    void waterHeatEnergyChanged(float waterHeatEnergy);
+    void swimmingPoolHeatEnergyChanged(float swimmingPoolHeatEnergy);
+    void totalHeatEnergyChanged(float totalHeatEnergy);
     void outdoorTemperatureChanged(float outdoorTemperature);
     void returnSetpointTemperatureChanged(float returnSetpointTemperature);
     void hotWaterSetpointTemperatureChanged(float hotWaterSetpointTemperature);
@@ -215,6 +235,10 @@ private:
     float m_rbeRoomSetpointTemperature = 0;
     quint16 m_heatingPumpOperatingHours = 0;
     SystemStatus m_systemStatus = SystemStatusHeatingMode;
+    float m_heatingEnergy = 0;
+    float m_waterHeatEnergy = 0;
+    float m_swimmingPoolHeatEnergy = 0;
+    float m_totalHeatEnergy = 0;
     float m_outdoorTemperature = 0;
     float m_returnSetpointTemperature = 0;
     float m_hotWaterSetpointTemperature = 0;
@@ -242,6 +266,10 @@ private:
     QModbusReply *readRbeRoomSetpointTemperature();
     QModbusReply *readHeatingPumpOperatingHours();
     QModbusReply *readSystemStatus();
+    QModbusReply *readHeatingEnergy();
+    QModbusReply *readWaterHeatEnergy();
+    QModbusReply *readSwimmingPoolHeatEnergy();
+    QModbusReply *readTotalHeatEnergy();
     QModbusReply *readOutdoorTemperature();
     QModbusReply *readReturnSetpointTemperature();
     QModbusReply *readHotWaterSetpointTemperature();

@@ -141,6 +141,26 @@ AlphaConnectModbusTcpConnection::SystemStatus AlphaConnectModbusTcpConnection::s
     return m_systemStatus;
 }
 
+float AlphaConnectModbusTcpConnection::heatingEnergy() const
+{
+    return m_heatingEnergy;
+}
+
+float AlphaConnectModbusTcpConnection::waterHeatEnergy() const
+{
+    return m_waterHeatEnergy;
+}
+
+float AlphaConnectModbusTcpConnection::swimmingPoolHeatEnergy() const
+{
+    return m_swimmingPoolHeatEnergy;
+}
+
+float AlphaConnectModbusTcpConnection::totalHeatEnergy() const
+{
+    return m_totalHeatEnergy;
+}
+
 float AlphaConnectModbusTcpConnection::outdoorTemperature() const
 {
     return m_outdoorTemperature;
@@ -189,6 +209,10 @@ void AlphaConnectModbusTcpConnection::update()
     updateRbeRoomSetpointTemperature();
     updateHeatingPumpOperatingHours();
     updateSystemStatus();
+    updateHeatingEnergy();
+    updateWaterHeatEnergy();
+    updateSwimmingPoolHeatEnergy();
+    updateTotalHeatEnergy();
     updateOutdoorTemperature();
     updateReturnSetpointTemperature();
     updateHotWaterSetpointTemperature();
@@ -795,6 +819,126 @@ void AlphaConnectModbusTcpConnection::updateSystemStatus()
     }
 }
 
+void AlphaConnectModbusTcpConnection::updateHeatingEnergy()
+{
+    // Update registers from Heating energy
+    QModbusReply *reply = readHeatingEnergy();
+    if (reply) {
+        if (!reply->isFinished()) {
+            connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
+            connect(reply, &QModbusReply::finished, this, [this, reply](){
+                if (reply->error() == QModbusDevice::NoError) {
+                    const QModbusDataUnit unit = reply->result();
+                    float receivedHeatingEnergy = ModbusDataUtils::convertToUInt32(unit.values()) * 1.0 * pow(10, -10);
+                    if (m_heatingEnergy != receivedHeatingEnergy) {
+                        m_heatingEnergy = receivedHeatingEnergy;
+                        emit heatingEnergyChanged(m_heatingEnergy);
+                    }
+                }
+            });
+
+            connect(reply, &QModbusReply::errorOccurred, this, [this, reply] (QModbusDevice::Error error){
+                qCWarning(dcAlphaConnectModbusTcpConnection()) << "Modbus reply error occurred while updating \"Heating energy\" registers from" << hostAddress().toString() << error << reply->errorString();
+                emit reply->finished(); // To make sure it will be deleted
+            });
+        } else {
+            delete reply; // Broadcast reply returns immediatly
+        }
+    } else {
+        qCWarning(dcAlphaConnectModbusTcpConnection()) << "Error occurred while reading \"Heating energy\" registers from" << hostAddress().toString() << errorString();
+    }
+}
+
+void AlphaConnectModbusTcpConnection::updateWaterHeatEnergy()
+{
+    // Update registers from Water heat energy
+    QModbusReply *reply = readWaterHeatEnergy();
+    if (reply) {
+        if (!reply->isFinished()) {
+            connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
+            connect(reply, &QModbusReply::finished, this, [this, reply](){
+                if (reply->error() == QModbusDevice::NoError) {
+                    const QModbusDataUnit unit = reply->result();
+                    float receivedWaterHeatEnergy = ModbusDataUtils::convertToUInt32(unit.values()) * 1.0 * pow(10, -10);
+                    if (m_waterHeatEnergy != receivedWaterHeatEnergy) {
+                        m_waterHeatEnergy = receivedWaterHeatEnergy;
+                        emit waterHeatEnergyChanged(m_waterHeatEnergy);
+                    }
+                }
+            });
+
+            connect(reply, &QModbusReply::errorOccurred, this, [this, reply] (QModbusDevice::Error error){
+                qCWarning(dcAlphaConnectModbusTcpConnection()) << "Modbus reply error occurred while updating \"Water heat energy\" registers from" << hostAddress().toString() << error << reply->errorString();
+                emit reply->finished(); // To make sure it will be deleted
+            });
+        } else {
+            delete reply; // Broadcast reply returns immediatly
+        }
+    } else {
+        qCWarning(dcAlphaConnectModbusTcpConnection()) << "Error occurred while reading \"Water heat energy\" registers from" << hostAddress().toString() << errorString();
+    }
+}
+
+void AlphaConnectModbusTcpConnection::updateSwimmingPoolHeatEnergy()
+{
+    // Update registers from Swimming pool heat energy
+    QModbusReply *reply = readSwimmingPoolHeatEnergy();
+    if (reply) {
+        if (!reply->isFinished()) {
+            connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
+            connect(reply, &QModbusReply::finished, this, [this, reply](){
+                if (reply->error() == QModbusDevice::NoError) {
+                    const QModbusDataUnit unit = reply->result();
+                    float receivedSwimmingPoolHeatEnergy = ModbusDataUtils::convertToUInt32(unit.values()) * 1.0 * pow(10, -10);
+                    if (m_swimmingPoolHeatEnergy != receivedSwimmingPoolHeatEnergy) {
+                        m_swimmingPoolHeatEnergy = receivedSwimmingPoolHeatEnergy;
+                        emit swimmingPoolHeatEnergyChanged(m_swimmingPoolHeatEnergy);
+                    }
+                }
+            });
+
+            connect(reply, &QModbusReply::errorOccurred, this, [this, reply] (QModbusDevice::Error error){
+                qCWarning(dcAlphaConnectModbusTcpConnection()) << "Modbus reply error occurred while updating \"Swimming pool heat energy\" registers from" << hostAddress().toString() << error << reply->errorString();
+                emit reply->finished(); // To make sure it will be deleted
+            });
+        } else {
+            delete reply; // Broadcast reply returns immediatly
+        }
+    } else {
+        qCWarning(dcAlphaConnectModbusTcpConnection()) << "Error occurred while reading \"Swimming pool heat energy\" registers from" << hostAddress().toString() << errorString();
+    }
+}
+
+void AlphaConnectModbusTcpConnection::updateTotalHeatEnergy()
+{
+    // Update registers from Total energy
+    QModbusReply *reply = readTotalHeatEnergy();
+    if (reply) {
+        if (!reply->isFinished()) {
+            connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
+            connect(reply, &QModbusReply::finished, this, [this, reply](){
+                if (reply->error() == QModbusDevice::NoError) {
+                    const QModbusDataUnit unit = reply->result();
+                    float receivedTotalHeatEnergy = ModbusDataUtils::convertToUInt32(unit.values()) * 1.0 * pow(10, -10);
+                    if (m_totalHeatEnergy != receivedTotalHeatEnergy) {
+                        m_totalHeatEnergy = receivedTotalHeatEnergy;
+                        emit totalHeatEnergyChanged(m_totalHeatEnergy);
+                    }
+                }
+            });
+
+            connect(reply, &QModbusReply::errorOccurred, this, [this, reply] (QModbusDevice::Error error){
+                qCWarning(dcAlphaConnectModbusTcpConnection()) << "Modbus reply error occurred while updating \"Total energy\" registers from" << hostAddress().toString() << error << reply->errorString();
+                emit reply->finished(); // To make sure it will be deleted
+            });
+        } else {
+            delete reply; // Broadcast reply returns immediatly
+        }
+    } else {
+        qCWarning(dcAlphaConnectModbusTcpConnection()) << "Error occurred while reading \"Total energy\" registers from" << hostAddress().toString() << errorString();
+    }
+}
+
 void AlphaConnectModbusTcpConnection::updateOutdoorTemperature()
 {
     // Update registers from Outdoor temperature
@@ -1035,6 +1179,30 @@ QModbusReply *AlphaConnectModbusTcpConnection::readSystemStatus()
     return sendReadRequest(request, m_slaveId);
 }
 
+QModbusReply *AlphaConnectModbusTcpConnection::readHeatingEnergy()
+{
+    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::InputRegisters, 38, 2);
+    return sendReadRequest(request, m_slaveId);
+}
+
+QModbusReply *AlphaConnectModbusTcpConnection::readWaterHeatEnergy()
+{
+    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::InputRegisters, 40, 2);
+    return sendReadRequest(request, m_slaveId);
+}
+
+QModbusReply *AlphaConnectModbusTcpConnection::readSwimmingPoolHeatEnergy()
+{
+    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::InputRegisters, 42, 2);
+    return sendReadRequest(request, m_slaveId);
+}
+
+QModbusReply *AlphaConnectModbusTcpConnection::readTotalHeatEnergy()
+{
+    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::InputRegisters, 44, 2);
+    return sendReadRequest(request, m_slaveId);
+}
+
 QModbusReply *AlphaConnectModbusTcpConnection::readOutdoorTemperature()
 {
     QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 0, 1);
@@ -1090,6 +1258,10 @@ QDebug operator<<(QDebug debug, AlphaConnectModbusTcpConnection *alphaConnectMod
     debug.nospace().noquote() << "    - RBE room temperature setpoint:" << alphaConnectModbusTcpConnection->rbeRoomSetpointTemperature() << " [°C]" << "\n";
     debug.nospace().noquote() << "    - Heating pump operating hours:" << alphaConnectModbusTcpConnection->heatingPumpOperatingHours() << " [h]" << "\n";
     debug.nospace().noquote() << "    - System status:" << alphaConnectModbusTcpConnection->systemStatus() << "\n";
+    debug.nospace().noquote() << "    - Heating energy:" << alphaConnectModbusTcpConnection->heatingEnergy() << " [kWh]" << "\n";
+    debug.nospace().noquote() << "    - Water heat energy:" << alphaConnectModbusTcpConnection->waterHeatEnergy() << " [kWh]" << "\n";
+    debug.nospace().noquote() << "    - Swimming pool heat energy:" << alphaConnectModbusTcpConnection->swimmingPoolHeatEnergy() << " [kWh]" << "\n";
+    debug.nospace().noquote() << "    - Total energy:" << alphaConnectModbusTcpConnection->totalHeatEnergy() << " [kWh]" << "\n";
     debug.nospace().noquote() << "    - Outdoor temperature:" << alphaConnectModbusTcpConnection->outdoorTemperature() << " [°C]" << "\n";
     debug.nospace().noquote() << "    - Return setpoint temperature:" << alphaConnectModbusTcpConnection->returnSetpointTemperature() << " [°C]" << "\n";
     debug.nospace().noquote() << "    - Hot water setpoint temperature:" << alphaConnectModbusTcpConnection->hotWaterSetpointTemperature() << " [°C]" << "\n";

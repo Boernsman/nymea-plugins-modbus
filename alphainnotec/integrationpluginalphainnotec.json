@@ -330,6 +330,46 @@
                             ],
                             "defaultValue": "Standard",
                             "suggestLogging": true
+                        },
+                        {
+                            "id": "c7948cf6-fd1a-44fa-a91b-98f2474ecc62",
+                            "name": "totalEnergyConsumed",
+                            "displayName": "Total energy",
+                            "displayNameEvent": "Total energy changed",
+                            "type": "double",
+                            "unit": "KiloWattHour",
+                            "defaultValue": 0,
+                            "suggestLogging": true
+                        },
+                        {
+                            "id": "24367fba-2883-40da-9b92-5d4db3c71c2f",
+                            "name": "heatingEnergy",
+                            "displayName": "Heating energy",
+                            "displayNameEvent": "Heating energy changed",
+                            "type": "double",
+                            "unit": "KiloWattHour",
+                            "defaultValue": 0,
+                            "suggestLogging": true
+                        },
+                        {
+                            "id": "be2430c3-54ef-441e-b684-9aabc1d984d6",
+                            "name": "hotWaterEnergy",
+                            "displayName": "Hot water energy",
+                            "displayNameEvent": "Hot water energy changed",
+                            "type": "double",
+                            "unit": "KiloWattHour",
+                            "defaultValue": 0,
+                            "suggestLogging": true
+                        },
+                        {
+                            "id": "de0403cf-ae11-4b2c-b930-b81b3e5d8aa5",
+                            "name": "swimmingPoolEnergy",
+                            "displayName": "Swimming pool energy",
+                            "displayNameEvent": "Swimming pool energy changed",
+                            "type": "double",
+                            "unit": "KiloWattHour",
+                            "defaultValue": 0,
+                            "suggestLogging": true
                         }
                     ],
                     "actionTypes": [ ]

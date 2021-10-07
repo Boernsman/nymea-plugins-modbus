@@ -318,7 +318,58 @@
             "defaultValue": "SystemStatusHeatingMode",
             "access": "RO"
         },
-
+        {
+            "id": "heatingEnergy",
+            "address": 38,
+            "size": 2,
+            "type": "uint32",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "staticScaleFactor": -10,
+            "defaultValue": "0",
+            "unit": "kWh",
+            "description": "Heating energy",
+            "access": "RO"
+        },
+        {
+            "id": "waterHeatEnergy",
+            "address": 40,
+            "size": 2,
+            "type": "uint32",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "staticScaleFactor": -10,
+            "defaultValue": "0",
+            "unit": "kWh",
+            "description": "Water heat energy",
+            "access": "RO"
+        },
+        {
+            "id": "swimmingPoolHeatEnergy",
+            "address": 42,
+            "size": 2,
+            "type": "uint32",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "staticScaleFactor": -10,
+            "defaultValue": "0",
+            "unit": "kWh",
+            "description": "Swimming pool heat energy",
+            "access": "RO"
+        },
+        {
+            "id": "totalHeatEnergy",
+            "address": 44,
+            "size": 2,
+            "type": "uint32",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "staticScaleFactor": -10,
+            "defaultValue": "0",
+            "unit": "kWh",
+            "description": "Total energy",
+            "access": "RO"
+        },
 
 
         {
