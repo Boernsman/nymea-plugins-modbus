@@ -293,6 +293,8 @@ void IntegrationPluginAlphaInnotec::setupThing(ThingSetupInfo *info)
             }
         });
 
+        alphaConnectTcpConnection->connectDevice();
+
         // FIXME: make async and check if this is really an alpha connect
         info->finish(Thing::ThingErrorNoError);
     }
