@@ -68,7 +68,7 @@
             "registerType": "inputRegister",
             "readSchedule": "update",
             "description": "Mean temperature",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RO"
@@ -81,7 +81,7 @@
             "registerType": "inputRegister",
             "readSchedule": "update",
             "description": "Flow",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RO"
@@ -94,7 +94,7 @@
             "registerType": "inputRegister",
             "readSchedule": "update",
             "description": "Return",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RO"
@@ -107,7 +107,7 @@
             "registerType": "inputRegister",
             "readSchedule": "update",
             "description": "External return",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RO"
@@ -120,7 +120,7 @@
             "registerType": "inputRegister",
             "readSchedule": "update",
             "description": "Hot water temperature",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RO"
@@ -133,7 +133,7 @@
             "registerType": "inputRegister",
             "readSchedule": "update",
             "description": "Hot gas temperature",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RO"
@@ -146,7 +146,7 @@
             "registerType": "inputRegister",
             "readSchedule": "update",
             "description": "Heat source inlet temperature",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RO"
@@ -159,7 +159,7 @@
             "registerType": "inputRegister",
             "readSchedule": "update",
             "description": "Heat source outlet temperature",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RO"
@@ -172,7 +172,7 @@
             "registerType": "inputRegister",
             "readSchedule": "update",
             "description": "Room remote adjuster 1 temperature",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RO"
@@ -185,7 +185,7 @@
             "registerType": "inputRegister",
             "readSchedule": "update",
             "description": "Room remote adjuster 2 temperature",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RO"
@@ -198,7 +198,7 @@
             "registerType": "inputRegister",
             "readSchedule": "update",
             "description": "Room remote adjuster 3 temperature",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RO"
@@ -211,7 +211,7 @@
             "registerType": "inputRegister",
             "readSchedule": "update",
             "description": "Solar collector temperature",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RO"
@@ -224,7 +224,7 @@
             "registerType": "inputRegister",
             "readSchedule": "update",
             "description": "Solar storage tank temperature",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RO"
@@ -237,7 +237,7 @@
             "registerType": "inputRegister",
             "readSchedule": "update",
             "description": "External energy source temperature",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RO"
@@ -250,7 +250,7 @@
             "registerType": "inputRegister",
             "readSchedule": "update",
             "description": "Supply air temperature",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RO"
@@ -263,7 +263,7 @@
             "registerType": "inputRegister",
             "readSchedule": "update",
             "description": "External air temperature",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RO"
@@ -276,7 +276,7 @@
             "registerType": "inputRegister",
             "readSchedule": "update",
             "description": "RBE actual room temperature",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RO"
@@ -289,7 +289,7 @@
             "registerType": "inputRegister",
             "readSchedule": "update",
             "description": "RBE room temperature setpoint",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RO"
@@ -325,7 +325,7 @@
             "type": "uint32",
             "registerType": "inputRegister",
             "readSchedule": "update",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "kWh",
             "description": "Heating energy",
@@ -338,7 +338,7 @@
             "type": "uint32",
             "registerType": "inputRegister",
             "readSchedule": "update",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "kWh",
             "description": "Water heat energy",
@@ -351,7 +351,7 @@
             "type": "uint32",
             "registerType": "inputRegister",
             "readSchedule": "update",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "kWh",
             "description": "Swimming pool heat energy",
@@ -364,7 +364,7 @@
             "type": "uint32",
             "registerType": "inputRegister",
             "readSchedule": "update",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "kWh",
             "description": "Total energy",
@@ -380,7 +380,7 @@
             "registerType": "holdingRegister",
             "readSchedule": "update",
             "description": "Outdoor temperature",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RW"
@@ -393,7 +393,7 @@
             "registerType": "holdingRegister",
             "readSchedule": "update",
             "description": "Return setpoint temperature",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RW"
@@ -406,7 +406,7 @@
             "registerType": "holdingRegister",
             "readSchedule": "update",
             "description": "Hot water setpoint temperature",
-            "staticScaleFactor": -10,
+            "staticScaleFactor": -1,
             "defaultValue": "0",
             "unit": "°C",
             "access": "RW"
