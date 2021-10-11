@@ -352,6 +352,7 @@ def writePropertyUpdateMethodImplementations(fileDescriptor, className, register
         writeLine(fileDescriptor, 'void %s::update%s()' % (className, propertyName[0].upper() + propertyName[1:]))
         writeLine(fileDescriptor, '{')
         writeLine(fileDescriptor, '    // Update registers from %s' % registerDefinition['description'])
+        writeLine(fileDescriptor, '    qCDebug(dc%s()) << "--> Read \\"%s\\" register:" << %s << "size:" << %s;' % (className, registerDefinition['description'], registerDefinition['address'], registerDefinition['size']))
         writeLine(fileDescriptor, '    QModbusReply *reply = read%s();' % (propertyName[0].upper() + propertyName[1:]))
         writeLine(fileDescriptor, '    if (reply) {')
         writeLine(fileDescriptor, '        if (!reply->isFinished()) {')
@@ -359,6 +360,8 @@ def writePropertyUpdateMethodImplementations(fileDescriptor, className, register
         writeLine(fileDescriptor, '            connect(reply, &QModbusReply::finished, this, [this, reply](){')
         writeLine(fileDescriptor, '                if (reply->error() == QModbusDevice::NoError) {')
         writeLine(fileDescriptor, '                    const QModbusDataUnit unit = reply->result();')
+        writeLine(fileDescriptor, '                    qCDebug(dc%s()) << "<-- Response from \\"%s\\" register" << %s << "size:" << %s << unit.values();' % (className, registerDefinition['description'], registerDefinition['address'], registerDefinition['size']))
+
         # FIXME: introduce bool and check register type for parsing
         writeLine(fileDescriptor, '                    %s received%s = %s;' % (propertyTyp, propertyName[0].upper() + propertyName[1:], getValueConversionMethod(registerDefinition)))
         writeLine(fileDescriptor, '                    if (m_%s != received%s) {' % (propertyName, propertyName[0].upper() + propertyName[1:]))

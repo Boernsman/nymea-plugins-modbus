@@ -250,6 +250,7 @@ void AlphaConnectModbusTcpConnection::update()
 void AlphaConnectModbusTcpConnection::updateMeanTemperature()
 {
     // Update registers from Mean temperature
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Mean temperature\" register:" << 0 << "size:" << 1;
     QModbusReply *reply = readMeanTemperature();
     if (reply) {
         if (!reply->isFinished()) {
@@ -257,6 +258,7 @@ void AlphaConnectModbusTcpConnection::updateMeanTemperature()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Mean temperature\" register" << 0 << "size:" << 1 << unit.values();
                     float receivedMeanTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_meanTemperature != receivedMeanTemperature) {
                         m_meanTemperature = receivedMeanTemperature;
@@ -280,6 +282,7 @@ void AlphaConnectModbusTcpConnection::updateMeanTemperature()
 void AlphaConnectModbusTcpConnection::updateFlowTemperature()
 {
     // Update registers from Flow
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Flow\" register:" << 1 << "size:" << 1;
     QModbusReply *reply = readFlowTemperature();
     if (reply) {
         if (!reply->isFinished()) {
@@ -287,6 +290,7 @@ void AlphaConnectModbusTcpConnection::updateFlowTemperature()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Flow\" register" << 1 << "size:" << 1 << unit.values();
                     float receivedFlowTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_flowTemperature != receivedFlowTemperature) {
                         m_flowTemperature = receivedFlowTemperature;
@@ -310,6 +314,7 @@ void AlphaConnectModbusTcpConnection::updateFlowTemperature()
 void AlphaConnectModbusTcpConnection::updateReturnTemperature()
 {
     // Update registers from Return
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Return\" register:" << 2 << "size:" << 1;
     QModbusReply *reply = readReturnTemperature();
     if (reply) {
         if (!reply->isFinished()) {
@@ -317,6 +322,7 @@ void AlphaConnectModbusTcpConnection::updateReturnTemperature()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Return\" register" << 2 << "size:" << 1 << unit.values();
                     float receivedReturnTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_returnTemperature != receivedReturnTemperature) {
                         m_returnTemperature = receivedReturnTemperature;
@@ -340,6 +346,7 @@ void AlphaConnectModbusTcpConnection::updateReturnTemperature()
 void AlphaConnectModbusTcpConnection::updateExternalReturnTemperature()
 {
     // Update registers from External return
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"External return\" register:" << 3 << "size:" << 1;
     QModbusReply *reply = readExternalReturnTemperature();
     if (reply) {
         if (!reply->isFinished()) {
@@ -347,6 +354,7 @@ void AlphaConnectModbusTcpConnection::updateExternalReturnTemperature()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"External return\" register" << 3 << "size:" << 1 << unit.values();
                     float receivedExternalReturnTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_externalReturnTemperature != receivedExternalReturnTemperature) {
                         m_externalReturnTemperature = receivedExternalReturnTemperature;
@@ -370,6 +378,7 @@ void AlphaConnectModbusTcpConnection::updateExternalReturnTemperature()
 void AlphaConnectModbusTcpConnection::updateHotWaterTemperature()
 {
     // Update registers from Hot water temperature
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Hot water temperature\" register:" << 4 << "size:" << 1;
     QModbusReply *reply = readHotWaterTemperature();
     if (reply) {
         if (!reply->isFinished()) {
@@ -377,6 +386,7 @@ void AlphaConnectModbusTcpConnection::updateHotWaterTemperature()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Hot water temperature\" register" << 4 << "size:" << 1 << unit.values();
                     float receivedHotWaterTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_hotWaterTemperature != receivedHotWaterTemperature) {
                         m_hotWaterTemperature = receivedHotWaterTemperature;
@@ -400,6 +410,7 @@ void AlphaConnectModbusTcpConnection::updateHotWaterTemperature()
 void AlphaConnectModbusTcpConnection::updateHotGasTemperature()
 {
     // Update registers from Hot gas temperature
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Hot gas temperature\" register:" << 8 << "size:" << 1;
     QModbusReply *reply = readHotGasTemperature();
     if (reply) {
         if (!reply->isFinished()) {
@@ -407,6 +418,7 @@ void AlphaConnectModbusTcpConnection::updateHotGasTemperature()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Hot gas temperature\" register" << 8 << "size:" << 1 << unit.values();
                     float receivedHotGasTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_hotGasTemperature != receivedHotGasTemperature) {
                         m_hotGasTemperature = receivedHotGasTemperature;
@@ -430,6 +442,7 @@ void AlphaConnectModbusTcpConnection::updateHotGasTemperature()
 void AlphaConnectModbusTcpConnection::updateHeatSourceInletTemperature()
 {
     // Update registers from Heat source inlet temperature
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Heat source inlet temperature\" register:" << 9 << "size:" << 1;
     QModbusReply *reply = readHeatSourceInletTemperature();
     if (reply) {
         if (!reply->isFinished()) {
@@ -437,6 +450,7 @@ void AlphaConnectModbusTcpConnection::updateHeatSourceInletTemperature()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Heat source inlet temperature\" register" << 9 << "size:" << 1 << unit.values();
                     float receivedHeatSourceInletTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_heatSourceInletTemperature != receivedHeatSourceInletTemperature) {
                         m_heatSourceInletTemperature = receivedHeatSourceInletTemperature;
@@ -460,6 +474,7 @@ void AlphaConnectModbusTcpConnection::updateHeatSourceInletTemperature()
 void AlphaConnectModbusTcpConnection::updateHeatSourceOutletTemperature()
 {
     // Update registers from Heat source outlet temperature
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Heat source outlet temperature\" register:" << 10 << "size:" << 1;
     QModbusReply *reply = readHeatSourceOutletTemperature();
     if (reply) {
         if (!reply->isFinished()) {
@@ -467,6 +482,7 @@ void AlphaConnectModbusTcpConnection::updateHeatSourceOutletTemperature()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Heat source outlet temperature\" register" << 10 << "size:" << 1 << unit.values();
                     float receivedHeatSourceOutletTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_heatSourceOutletTemperature != receivedHeatSourceOutletTemperature) {
                         m_heatSourceOutletTemperature = receivedHeatSourceOutletTemperature;
@@ -490,6 +506,7 @@ void AlphaConnectModbusTcpConnection::updateHeatSourceOutletTemperature()
 void AlphaConnectModbusTcpConnection::updateRoomTemperature1()
 {
     // Update registers from Room remote adjuster 1 temperature
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Room remote adjuster 1 temperature\" register:" << 11 << "size:" << 1;
     QModbusReply *reply = readRoomTemperature1();
     if (reply) {
         if (!reply->isFinished()) {
@@ -497,6 +514,7 @@ void AlphaConnectModbusTcpConnection::updateRoomTemperature1()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Room remote adjuster 1 temperature\" register" << 11 << "size:" << 1 << unit.values();
                     float receivedRoomTemperature1 = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_roomTemperature1 != receivedRoomTemperature1) {
                         m_roomTemperature1 = receivedRoomTemperature1;
@@ -520,6 +538,7 @@ void AlphaConnectModbusTcpConnection::updateRoomTemperature1()
 void AlphaConnectModbusTcpConnection::updateRoomTemperature2()
 {
     // Update registers from Room remote adjuster 2 temperature
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Room remote adjuster 2 temperature\" register:" << 12 << "size:" << 1;
     QModbusReply *reply = readRoomTemperature2();
     if (reply) {
         if (!reply->isFinished()) {
@@ -527,6 +546,7 @@ void AlphaConnectModbusTcpConnection::updateRoomTemperature2()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Room remote adjuster 2 temperature\" register" << 12 << "size:" << 1 << unit.values();
                     float receivedRoomTemperature2 = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_roomTemperature2 != receivedRoomTemperature2) {
                         m_roomTemperature2 = receivedRoomTemperature2;
@@ -550,6 +570,7 @@ void AlphaConnectModbusTcpConnection::updateRoomTemperature2()
 void AlphaConnectModbusTcpConnection::updateRoomTemperature3()
 {
     // Update registers from Room remote adjuster 3 temperature
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Room remote adjuster 3 temperature\" register:" << 13 << "size:" << 1;
     QModbusReply *reply = readRoomTemperature3();
     if (reply) {
         if (!reply->isFinished()) {
@@ -557,6 +578,7 @@ void AlphaConnectModbusTcpConnection::updateRoomTemperature3()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Room remote adjuster 3 temperature\" register" << 13 << "size:" << 1 << unit.values();
                     float receivedRoomTemperature3 = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_roomTemperature3 != receivedRoomTemperature3) {
                         m_roomTemperature3 = receivedRoomTemperature3;
@@ -580,6 +602,7 @@ void AlphaConnectModbusTcpConnection::updateRoomTemperature3()
 void AlphaConnectModbusTcpConnection::updateSolarCollectorTemperature()
 {
     // Update registers from Solar collector temperature
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Solar collector temperature\" register:" << 14 << "size:" << 1;
     QModbusReply *reply = readSolarCollectorTemperature();
     if (reply) {
         if (!reply->isFinished()) {
@@ -587,6 +610,7 @@ void AlphaConnectModbusTcpConnection::updateSolarCollectorTemperature()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Solar collector temperature\" register" << 14 << "size:" << 1 << unit.values();
                     float receivedSolarCollectorTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_solarCollectorTemperature != receivedSolarCollectorTemperature) {
                         m_solarCollectorTemperature = receivedSolarCollectorTemperature;
@@ -610,6 +634,7 @@ void AlphaConnectModbusTcpConnection::updateSolarCollectorTemperature()
 void AlphaConnectModbusTcpConnection::updateSolarStorageTankTemperature()
 {
     // Update registers from Solar storage tank temperature
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Solar storage tank temperature\" register:" << 15 << "size:" << 1;
     QModbusReply *reply = readSolarStorageTankTemperature();
     if (reply) {
         if (!reply->isFinished()) {
@@ -617,6 +642,7 @@ void AlphaConnectModbusTcpConnection::updateSolarStorageTankTemperature()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Solar storage tank temperature\" register" << 15 << "size:" << 1 << unit.values();
                     float receivedSolarStorageTankTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_solarStorageTankTemperature != receivedSolarStorageTankTemperature) {
                         m_solarStorageTankTemperature = receivedSolarStorageTankTemperature;
@@ -640,6 +666,7 @@ void AlphaConnectModbusTcpConnection::updateSolarStorageTankTemperature()
 void AlphaConnectModbusTcpConnection::updateExternalEnergySourceTemperature()
 {
     // Update registers from External energy source temperature
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"External energy source temperature\" register:" << 16 << "size:" << 1;
     QModbusReply *reply = readExternalEnergySourceTemperature();
     if (reply) {
         if (!reply->isFinished()) {
@@ -647,6 +674,7 @@ void AlphaConnectModbusTcpConnection::updateExternalEnergySourceTemperature()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"External energy source temperature\" register" << 16 << "size:" << 1 << unit.values();
                     float receivedExternalEnergySourceTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_externalEnergySourceTemperature != receivedExternalEnergySourceTemperature) {
                         m_externalEnergySourceTemperature = receivedExternalEnergySourceTemperature;
@@ -670,6 +698,7 @@ void AlphaConnectModbusTcpConnection::updateExternalEnergySourceTemperature()
 void AlphaConnectModbusTcpConnection::updateSupplyAirTemperature()
 {
     // Update registers from Supply air temperature
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Supply air temperature\" register:" << 17 << "size:" << 1;
     QModbusReply *reply = readSupplyAirTemperature();
     if (reply) {
         if (!reply->isFinished()) {
@@ -677,6 +706,7 @@ void AlphaConnectModbusTcpConnection::updateSupplyAirTemperature()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Supply air temperature\" register" << 17 << "size:" << 1 << unit.values();
                     float receivedSupplyAirTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_supplyAirTemperature != receivedSupplyAirTemperature) {
                         m_supplyAirTemperature = receivedSupplyAirTemperature;
@@ -700,6 +730,7 @@ void AlphaConnectModbusTcpConnection::updateSupplyAirTemperature()
 void AlphaConnectModbusTcpConnection::updateExternalAirTemperature()
 {
     // Update registers from External air temperature
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"External air temperature\" register:" << 18 << "size:" << 1;
     QModbusReply *reply = readExternalAirTemperature();
     if (reply) {
         if (!reply->isFinished()) {
@@ -707,6 +738,7 @@ void AlphaConnectModbusTcpConnection::updateExternalAirTemperature()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"External air temperature\" register" << 18 << "size:" << 1 << unit.values();
                     float receivedExternalAirTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_externalAirTemperature != receivedExternalAirTemperature) {
                         m_externalAirTemperature = receivedExternalAirTemperature;
@@ -730,6 +762,7 @@ void AlphaConnectModbusTcpConnection::updateExternalAirTemperature()
 void AlphaConnectModbusTcpConnection::updateRbeRoomActualTemperature()
 {
     // Update registers from RBE actual room temperature
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"RBE actual room temperature\" register:" << 24 << "size:" << 1;
     QModbusReply *reply = readRbeRoomActualTemperature();
     if (reply) {
         if (!reply->isFinished()) {
@@ -737,6 +770,7 @@ void AlphaConnectModbusTcpConnection::updateRbeRoomActualTemperature()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"RBE actual room temperature\" register" << 24 << "size:" << 1 << unit.values();
                     float receivedRbeRoomActualTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_rbeRoomActualTemperature != receivedRbeRoomActualTemperature) {
                         m_rbeRoomActualTemperature = receivedRbeRoomActualTemperature;
@@ -760,6 +794,7 @@ void AlphaConnectModbusTcpConnection::updateRbeRoomActualTemperature()
 void AlphaConnectModbusTcpConnection::updateRbeRoomSetpointTemperature()
 {
     // Update registers from RBE room temperature setpoint
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"RBE room temperature setpoint\" register:" << 24 << "size:" << 1;
     QModbusReply *reply = readRbeRoomSetpointTemperature();
     if (reply) {
         if (!reply->isFinished()) {
@@ -767,6 +802,7 @@ void AlphaConnectModbusTcpConnection::updateRbeRoomSetpointTemperature()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"RBE room temperature setpoint\" register" << 24 << "size:" << 1 << unit.values();
                     float receivedRbeRoomSetpointTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_rbeRoomSetpointTemperature != receivedRbeRoomSetpointTemperature) {
                         m_rbeRoomSetpointTemperature = receivedRbeRoomSetpointTemperature;
@@ -790,6 +826,7 @@ void AlphaConnectModbusTcpConnection::updateRbeRoomSetpointTemperature()
 void AlphaConnectModbusTcpConnection::updateHeatingPumpOperatingHours()
 {
     // Update registers from Heating pump operating hours
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Heating pump operating hours\" register:" << 33 << "size:" << 1;
     QModbusReply *reply = readHeatingPumpOperatingHours();
     if (reply) {
         if (!reply->isFinished()) {
@@ -797,6 +834,7 @@ void AlphaConnectModbusTcpConnection::updateHeatingPumpOperatingHours()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Heating pump operating hours\" register" << 33 << "size:" << 1 << unit.values();
                     quint16 receivedHeatingPumpOperatingHours = ModbusDataUtils::convertToUInt16(unit.values());
                     if (m_heatingPumpOperatingHours != receivedHeatingPumpOperatingHours) {
                         m_heatingPumpOperatingHours = receivedHeatingPumpOperatingHours;
@@ -820,6 +858,7 @@ void AlphaConnectModbusTcpConnection::updateHeatingPumpOperatingHours()
 void AlphaConnectModbusTcpConnection::updateSystemStatus()
 {
     // Update registers from System status
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"System status\" register:" << 37 << "size:" << 1;
     QModbusReply *reply = readSystemStatus();
     if (reply) {
         if (!reply->isFinished()) {
@@ -827,6 +866,7 @@ void AlphaConnectModbusTcpConnection::updateSystemStatus()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"System status\" register" << 37 << "size:" << 1 << unit.values();
                     SystemStatus receivedSystemStatus = static_cast<SystemStatus>(ModbusDataUtils::convertToUInt16(unit.values()));
                     if (m_systemStatus != receivedSystemStatus) {
                         m_systemStatus = receivedSystemStatus;
@@ -850,6 +890,7 @@ void AlphaConnectModbusTcpConnection::updateSystemStatus()
 void AlphaConnectModbusTcpConnection::updateHeatingEnergy()
 {
     // Update registers from Heating energy
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Heating energy\" register:" << 38 << "size:" << 2;
     QModbusReply *reply = readHeatingEnergy();
     if (reply) {
         if (!reply->isFinished()) {
@@ -857,6 +898,7 @@ void AlphaConnectModbusTcpConnection::updateHeatingEnergy()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Heating energy\" register" << 38 << "size:" << 2 << unit.values();
                     float receivedHeatingEnergy = ModbusDataUtils::convertToUInt32(unit.values()) * 1.0 * pow(10, -1);
                     if (m_heatingEnergy != receivedHeatingEnergy) {
                         m_heatingEnergy = receivedHeatingEnergy;
@@ -880,6 +922,7 @@ void AlphaConnectModbusTcpConnection::updateHeatingEnergy()
 void AlphaConnectModbusTcpConnection::updateWaterHeatEnergy()
 {
     // Update registers from Water heat energy
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Water heat energy\" register:" << 40 << "size:" << 2;
     QModbusReply *reply = readWaterHeatEnergy();
     if (reply) {
         if (!reply->isFinished()) {
@@ -887,6 +930,7 @@ void AlphaConnectModbusTcpConnection::updateWaterHeatEnergy()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Water heat energy\" register" << 40 << "size:" << 2 << unit.values();
                     float receivedWaterHeatEnergy = ModbusDataUtils::convertToUInt32(unit.values()) * 1.0 * pow(10, -1);
                     if (m_waterHeatEnergy != receivedWaterHeatEnergy) {
                         m_waterHeatEnergy = receivedWaterHeatEnergy;
@@ -910,6 +954,7 @@ void AlphaConnectModbusTcpConnection::updateWaterHeatEnergy()
 void AlphaConnectModbusTcpConnection::updateSwimmingPoolHeatEnergy()
 {
     // Update registers from Swimming pool heat energy
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Swimming pool heat energy\" register:" << 42 << "size:" << 2;
     QModbusReply *reply = readSwimmingPoolHeatEnergy();
     if (reply) {
         if (!reply->isFinished()) {
@@ -917,6 +962,7 @@ void AlphaConnectModbusTcpConnection::updateSwimmingPoolHeatEnergy()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Swimming pool heat energy\" register" << 42 << "size:" << 2 << unit.values();
                     float receivedSwimmingPoolHeatEnergy = ModbusDataUtils::convertToUInt32(unit.values()) * 1.0 * pow(10, -1);
                     if (m_swimmingPoolHeatEnergy != receivedSwimmingPoolHeatEnergy) {
                         m_swimmingPoolHeatEnergy = receivedSwimmingPoolHeatEnergy;
@@ -940,6 +986,7 @@ void AlphaConnectModbusTcpConnection::updateSwimmingPoolHeatEnergy()
 void AlphaConnectModbusTcpConnection::updateTotalHeatEnergy()
 {
     // Update registers from Total energy
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Total energy\" register:" << 44 << "size:" << 2;
     QModbusReply *reply = readTotalHeatEnergy();
     if (reply) {
         if (!reply->isFinished()) {
@@ -947,6 +994,7 @@ void AlphaConnectModbusTcpConnection::updateTotalHeatEnergy()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Total energy\" register" << 44 << "size:" << 2 << unit.values();
                     float receivedTotalHeatEnergy = ModbusDataUtils::convertToUInt32(unit.values()) * 1.0 * pow(10, -1);
                     if (m_totalHeatEnergy != receivedTotalHeatEnergy) {
                         m_totalHeatEnergy = receivedTotalHeatEnergy;
@@ -970,6 +1018,7 @@ void AlphaConnectModbusTcpConnection::updateTotalHeatEnergy()
 void AlphaConnectModbusTcpConnection::updateOutdoorTemperature()
 {
     // Update registers from Outdoor temperature
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Outdoor temperature\" register:" << 0 << "size:" << 1;
     QModbusReply *reply = readOutdoorTemperature();
     if (reply) {
         if (!reply->isFinished()) {
@@ -977,6 +1026,7 @@ void AlphaConnectModbusTcpConnection::updateOutdoorTemperature()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Outdoor temperature\" register" << 0 << "size:" << 1 << unit.values();
                     float receivedOutdoorTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_outdoorTemperature != receivedOutdoorTemperature) {
                         m_outdoorTemperature = receivedOutdoorTemperature;
@@ -1000,6 +1050,7 @@ void AlphaConnectModbusTcpConnection::updateOutdoorTemperature()
 void AlphaConnectModbusTcpConnection::updateReturnSetpointTemperature()
 {
     // Update registers from Return setpoint temperature
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Return setpoint temperature\" register:" << 1 << "size:" << 1;
     QModbusReply *reply = readReturnSetpointTemperature();
     if (reply) {
         if (!reply->isFinished()) {
@@ -1007,6 +1058,7 @@ void AlphaConnectModbusTcpConnection::updateReturnSetpointTemperature()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Return setpoint temperature\" register" << 1 << "size:" << 1 << unit.values();
                     float receivedReturnSetpointTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_returnSetpointTemperature != receivedReturnSetpointTemperature) {
                         m_returnSetpointTemperature = receivedReturnSetpointTemperature;
@@ -1030,6 +1082,7 @@ void AlphaConnectModbusTcpConnection::updateReturnSetpointTemperature()
 void AlphaConnectModbusTcpConnection::updateHotWaterSetpointTemperature()
 {
     // Update registers from Hot water setpoint temperature
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Hot water setpoint temperature\" register:" << 5 << "size:" << 1;
     QModbusReply *reply = readHotWaterSetpointTemperature();
     if (reply) {
         if (!reply->isFinished()) {
@@ -1037,6 +1090,7 @@ void AlphaConnectModbusTcpConnection::updateHotWaterSetpointTemperature()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Hot water setpoint temperature\" register" << 5 << "size:" << 1 << unit.values();
                     float receivedHotWaterSetpointTemperature = ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, -1);
                     if (m_hotWaterSetpointTemperature != receivedHotWaterSetpointTemperature) {
                         m_hotWaterSetpointTemperature = receivedHotWaterSetpointTemperature;
@@ -1060,6 +1114,7 @@ void AlphaConnectModbusTcpConnection::updateHotWaterSetpointTemperature()
 void AlphaConnectModbusTcpConnection::updateSmartGrid()
 {
     // Update registers from Smart grid control
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Read \"Smart grid control\" register:" << 14 << "size:" << 1;
     QModbusReply *reply = readSmartGrid();
     if (reply) {
         if (!reply->isFinished()) {
@@ -1067,6 +1122,7 @@ void AlphaConnectModbusTcpConnection::updateSmartGrid()
             connect(reply, &QModbusReply::finished, this, [this, reply](){
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
+                    qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Smart grid control\" register" << 14 << "size:" << 1 << unit.values();
                     SmartGridState receivedSmartGrid = static_cast<SmartGridState>(ModbusDataUtils::convertToUInt16(unit.values()));
                     if (m_smartGrid != receivedSmartGrid) {
                         m_smartGrid = receivedSmartGrid;
