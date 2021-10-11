@@ -169,6 +169,7 @@ def getConversionToValueMethod(registerDefinition):
     # Handle enums
     propertyName = registerDefinition['id']
     propertyTyp = getCppDataType(registerDefinition, True)
+
     if 'enum' in registerDefinition:
         enumName = registerDefinition['enum']
         if registerDefinition['type'] == 'uint16':
@@ -176,9 +177,9 @@ def getConversionToValueMethod(registerDefinition):
         elif registerDefinition['type'] == 'int16':
             return ('ModbusDataUtils::convertFromInt16(static_cast<%s>(%s))' % (propertyTyp, propertyName))
         elif registerDefinition['type'] == 'uint32':
-            return ('ModbusDataUtils::convertFromUInt32(static_cast<%s>(%s))' % (propertyTyp, propertyName))
+            return ('ModbusDataUtils::convertFromUInt32(static_cast<%s>(%s), ModbusDataUtils::ByteOrder%s)' % (propertyTyp, propertyName, endianness))
         elif registerDefinition['type'] == 'int32':
-            return ('ModbusDataUtils::convertFromInt32(static_cast<%s>(%s))' % (propertyTyp, propertyName))
+            return ('ModbusDataUtils::convertFromInt32(static_cast<%s>(%s), ModbusDataUtils::ByteOrder%s)' % (propertyTyp, propertyName, endianness))
 
     # Handle scale factors
     if 'scaleFactor' in registerDefinition:
@@ -188,9 +189,9 @@ def getConversionToValueMethod(registerDefinition):
         elif registerDefinition['type'] == 'int16':
             return ('ModbusDataUtils::convertFromInt16(static_cast<%s>(%s  * 1.0 / pow(10, %s)))' % (propertyTyp, propertyName, scaleFactorProperty))
         elif registerDefinition['type'] == 'uint32':
-            return ('ModbusDataUtils::convertFromUInt32(static_cast<%s>(%s  * 1.0 / pow(10, %s)))' % (propertyTyp, propertyName, scaleFactorProperty))
+            return ('ModbusDataUtils::convertFromUInt32(static_cast<%s>(%s  * 1.0 / pow(10, %s)), ModbusDataUtils::ByteOrder%s)' % (propertyTyp, propertyName, scaleFactorProperty, endianness))
         elif registerDefinition['type'] == 'int32':
-            return ('ModbusDataUtils::convertFromInt32(static_cast<%s>(%s  * 1.0 / pow(10, %s)))' % (propertyTyp, propertyName, scaleFactorProperty))
+            return ('ModbusDataUtils::convertFromInt32(static_cast<%s>(%s  * 1.0 / pow(10, %s)), ModbusDataUtils::ByteOrder%s)' % (propertyTyp, propertyName, scaleFactorProperty, endianness))
 
     elif 'staticScaleFactor' in registerDefinition:
         scaleFactor = registerDefinition['staticScaleFactor']
@@ -199,9 +200,9 @@ def getConversionToValueMethod(registerDefinition):
         elif registerDefinition['type'] == 'int16':
             return ('ModbusDataUtils::convertFromInt16(static_cast<%s>(%s  * 1.0 / pow(10, %s)))' % (propertyTyp, propertyName, scaleFactor))
         elif registerDefinition['type'] == 'uint32':
-            return ('ModbusDataUtils::convertFromUInt32(static_cast<%s>(%s  * 1.0 / pow(10, %s)))' % (propertyTyp, propertyName, scaleFactor))
+            return ('ModbusDataUtils::convertFromUInt32(static_cast<%s>(%s  * 1.0 / pow(10, %s)), ModbusDataUtils::ByteOrder%s)' % (propertyTyp, propertyName, scaleFactor, endianness))
         elif registerDefinition['type'] == 'int32':
-            return ('ModbusDataUtils::convertFromInt32(static_cast<%s>(%s  * 1.0 / pow(10, %s)))' % (propertyTyp, propertyName, scaleFactor))
+            return ('ModbusDataUtils::convertFromInt32(static_cast<%s>(%s  * 1.0 / pow(10, %s)), ModbusDataUtils::ByteOrder%s)' % (propertyTyp, propertyName, scaleFactor, endianness))
 
     # Handle default types
     elif registerDefinition['type'] == 'uint16':
@@ -209,17 +210,17 @@ def getConversionToValueMethod(registerDefinition):
     elif registerDefinition['type'] == 'int16':
         return ('ModbusDataUtils::convertFromInt16(%s)' % propertyName)
     elif registerDefinition['type'] == 'uint32':
-        return ('ModbusDataUtils::convertFromUInt32(%s)' % propertyName)
+        return ('ModbusDataUtils::convertFromUInt32(%s, ModbusDataUtils::ByteOrder%s)' % (propertyName, endianness))
     elif registerDefinition['type'] == 'int32':
-        return ('ModbusDataUtils::convertFromInt32(%s)' % propertyName)
+        return ('ModbusDataUtils::convertFromInt32(%s, ModbusDataUtils::ByteOrder%s)' % (propertyName, endianness))
     elif registerDefinition['type'] == 'uint64':
-        return ('ModbusDataUtils::convertFromUInt64(%s)' % propertyName)
+        return ('ModbusDataUtils::convertFromUInt64(%s, ModbusDataUtils::ByteOrder%s)' % (propertyName, endianness))
     elif registerDefinition['type'] == 'int64':
-        return ('ModbusDataUtils::convertFromInt64(%s)' % propertyName)
+        return ('ModbusDataUtils::convertFromInt64(%s, ModbusDataUtils::ByteOrder%s)' % (propertyName, endianness))
     elif registerDefinition['type'] == 'float':
-        return ('ModbusDataUtils::convertFromFloat32(%s)' % propertyName)
+        return ('ModbusDataUtils::convertFromFloat32(%s, ModbusDataUtils::ByteOrder%s)' % propertyName, endianness)
     elif registerDefinition['type'] == 'float64':
-        return ('ModbusDataUtils::convertFromFloat64(%s)' % propertyName)
+        return ('ModbusDataUtils::convertFromFloat64(%s, ModbusDataUtils::ByteOrder%s)' % propertyName, endianness)
     elif registerDefinition['type'] == 'string':
         return ('ModbusDataUtils::convertFromString(%s)' % propertyName)    
 
@@ -233,9 +234,9 @@ def getValueConversionMethod(registerDefinition):
         elif registerDefinition['type'] == 'int16':
             return ('static_cast<%s>(ModbusDataUtils::convertToInt16(unit.values()))' % (enumName))
         elif registerDefinition['type'] == 'uint32':
-            return ('static_cast<%s>(ModbusDataUtils::convertToUInt32(unit.values()))' % (enumName))
+            return ('static_cast<%s>(ModbusDataUtils::convertToUInt32(unit.values(), ModbusDataUtils::ByteOrder%s))' % (enumName, endianness))
         elif registerDefinition['type'] == 'int32':
-            return ('static_cast<%s>(ModbusDataUtils::convertToInt32(unit.values()))' % (enumName))
+            return ('static_cast<%s>(ModbusDataUtils::convertToInt32(unit.values(), ModbusDataUtils::ByteOrder%s))' % (enumName, endianness))
 
     # Handle scale factors
     if 'scaleFactor' in registerDefinition:
@@ -245,9 +246,9 @@ def getValueConversionMethod(registerDefinition):
         elif registerDefinition['type'] == 'int16':
             return ('ModbusDataUtils::convertToInt16(unit.values()) * 1.0 * pow(10, %s)' % (scaleFactorProperty))
         elif registerDefinition['type'] == 'uint32':
-            return ('ModbusDataUtils::convertToUInt32(unit.values()) * 1.0 * pow(10, %s)' % (scaleFactorProperty))
+            return ('ModbusDataUtils::convertToUInt32(unit.values(), ModbusDataUtils::ByteOrder%s) * 1.0 * pow(10, %s)' % (endianness, scaleFactorProperty))
         elif registerDefinition['type'] == 'int32':
-            return ('ModbusDataUtils::convertToInt32(unit.values()) * 1.0 * pow(10, %s)' % (scaleFactorProperty))
+            return ('ModbusDataUtils::convertToInt32(unit.values(), ModbusDataUtils::ByteOrder%s) * 1.0 * pow(10, %s)' % (endianness, scaleFactorProperty))
 
     elif 'staticScaleFactor' in registerDefinition:
         scaleFactor = registerDefinition['staticScaleFactor']
@@ -256,9 +257,9 @@ def getValueConversionMethod(registerDefinition):
         elif registerDefinition['type'] == 'int16':
             return ('ModbusDataUtils::convertToInt16(unit.values()) * 1.0 * pow(10, %s)' % (scaleFactor))
         elif registerDefinition['type'] == 'uint32':
-            return ('ModbusDataUtils::convertToUInt32(unit.values()) * 1.0 * pow(10, %s)' % (scaleFactor))
+            return ('ModbusDataUtils::convertToUInt32(unit.values(), ModbusDataUtils::ByteOrder%s) * 1.0 * pow(10, %s)' % (endianness, scaleFactor))
         elif registerDefinition['type'] == 'int32':
-            return ('ModbusDataUtils::convertToInt32(unit.values()) * 1.0 * pow(10, %s)' % (scaleFactor))
+            return ('ModbusDataUtils::convertToInt32(unit.values(), ModbusDataUtils::ByteOrder%s) * 1.0 * pow(10, %s)' % (endianness, scaleFactor))
 
     # Handle default types
     elif registerDefinition['type'] == 'uint16':
@@ -266,17 +267,17 @@ def getValueConversionMethod(registerDefinition):
     elif registerDefinition['type'] == 'int16':
         return ('ModbusDataUtils::convertToInt16(unit.values())')
     elif registerDefinition['type'] == 'uint32':
-        return ('ModbusDataUtils::convertToUInt32(unit.values())')
+        return ('ModbusDataUtils::convertToUInt32(unit.values(), ModbusDataUtils::ByteOrder%s)' % endianness)
     elif registerDefinition['type'] == 'int32':
-        return ('ModbusDataUtils::convertToInt32(unit.values())')
+        return ('ModbusDataUtils::convertToInt32(unit.values(), ModbusDataUtils::ByteOrder%s)' % endianness)
     elif registerDefinition['type'] == 'uint64':
-        return ('ModbusDataUtils::convertToUInt64(unit.values())')
+        return ('ModbusDataUtils::convertToUInt64(unit.values(), ModbusDataUtils::ByteOrder%s)' % endianness)
     elif registerDefinition['type'] == 'int64':
-        return ('ModbusDataUtils::convertToInt64(unit.values())')
+        return ('ModbusDataUtils::convertToInt64(unit.values(), ModbusDataUtils::ByteOrder%s)' % endianness)
     elif registerDefinition['type'] == 'float':
-        return ('ModbusDataUtils::convertToFloat32(unit.values())')
+        return ('ModbusDataUtils::convertToFloat32(unit.values(), ModbusDataUtils::ByteOrder%s)' % endianness)
     elif registerDefinition['type'] == 'float64':
-        return ('ModbusDataUtils::convertToFloat64(unit.values())')
+        return ('ModbusDataUtils::convertToFloat64(unit.values(), ModbusDataUtils::ByteOrder%s)' % endianness)
     elif registerDefinition['type'] == 'string':
         return ('ModbusDataUtils::convertToString(unit.values())')
 
@@ -538,6 +539,11 @@ print('Header file: %s' % headerFileName)
 print('Source file: %s' % sourceFileName)
 print('Header file path: %s' % headerFilePath)
 print('Source file path: %s' % sourceFilePath)
+
+endianness = 'BigEndian'
+if 'endianness' in registerJson:
+    endianness = registerJson['endianness']
+
 
 #############################################################################
 # Write header file

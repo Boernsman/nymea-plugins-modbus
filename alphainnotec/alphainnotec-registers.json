@@ -1,4 +1,5 @@
 {
+    "endianness": "BigEndian",
     "enums": [
         {
             "name": "SystemStatus",

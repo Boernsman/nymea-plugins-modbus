@@ -899,7 +899,7 @@ void AlphaConnectModbusTcpConnection::updateHeatingEnergy()
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
                     qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Heating energy\" register" << 38 << "size:" << 2 << unit.values();
-                    float receivedHeatingEnergy = ModbusDataUtils::convertToUInt32(unit.values()) * 1.0 * pow(10, -1);
+                    float receivedHeatingEnergy = ModbusDataUtils::convertToUInt32(unit.values(), ModbusDataUtils::ByteOrderBigEndian) * 1.0 * pow(10, -1);
                     if (m_heatingEnergy != receivedHeatingEnergy) {
                         m_heatingEnergy = receivedHeatingEnergy;
                         emit heatingEnergyChanged(m_heatingEnergy);
@@ -931,7 +931,7 @@ void AlphaConnectModbusTcpConnection::updateWaterHeatEnergy()
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
                     qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Water heat energy\" register" << 40 << "size:" << 2 << unit.values();
-                    float receivedWaterHeatEnergy = ModbusDataUtils::convertToUInt32(unit.values()) * 1.0 * pow(10, -1);
+                    float receivedWaterHeatEnergy = ModbusDataUtils::convertToUInt32(unit.values(), ModbusDataUtils::ByteOrderBigEndian) * 1.0 * pow(10, -1);
                     if (m_waterHeatEnergy != receivedWaterHeatEnergy) {
                         m_waterHeatEnergy = receivedWaterHeatEnergy;
                         emit waterHeatEnergyChanged(m_waterHeatEnergy);
@@ -963,7 +963,7 @@ void AlphaConnectModbusTcpConnection::updateSwimmingPoolHeatEnergy()
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
                     qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Swimming pool heat energy\" register" << 42 << "size:" << 2 << unit.values();
-                    float receivedSwimmingPoolHeatEnergy = ModbusDataUtils::convertToUInt32(unit.values()) * 1.0 * pow(10, -1);
+                    float receivedSwimmingPoolHeatEnergy = ModbusDataUtils::convertToUInt32(unit.values(), ModbusDataUtils::ByteOrderBigEndian) * 1.0 * pow(10, -1);
                     if (m_swimmingPoolHeatEnergy != receivedSwimmingPoolHeatEnergy) {
                         m_swimmingPoolHeatEnergy = receivedSwimmingPoolHeatEnergy;
                         emit swimmingPoolHeatEnergyChanged(m_swimmingPoolHeatEnergy);
@@ -995,7 +995,7 @@ void AlphaConnectModbusTcpConnection::updateTotalHeatEnergy()
                 if (reply->error() == QModbusDevice::NoError) {
                     const QModbusDataUnit unit = reply->result();
                     qCDebug(dcAlphaConnectModbusTcpConnection()) << "<-- Response from \"Total energy\" register" << 44 << "size:" << 2 << unit.values();
-                    float receivedTotalHeatEnergy = ModbusDataUtils::convertToUInt32(unit.values()) * 1.0 * pow(10, -1);
+                    float receivedTotalHeatEnergy = ModbusDataUtils::convertToUInt32(unit.values(), ModbusDataUtils::ByteOrderBigEndian) * 1.0 * pow(10, -1);
                     if (m_totalHeatEnergy != receivedTotalHeatEnergy) {
                         m_totalHeatEnergy = receivedTotalHeatEnergy;
                         emit totalHeatEnergyChanged(m_totalHeatEnergy);
