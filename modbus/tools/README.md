@@ -75,7 +75,7 @@ When converting multiple registers to one data type (i.e. 2 registers uint16 val
 
 There are 2 possibilities:
 
-* `BigEndian`: default: register bytes come in following order `[0, 1, 2, 3]`: `ABCD`
+* `BigEndian`: default if not specified: register bytes come in following order `[0, 1, 2, 3]`: `ABCD`
 * `LittleEndian`: register bytes come in following order `[0, 1, 2, 3]`: `CDAB`
 
 ## Enums

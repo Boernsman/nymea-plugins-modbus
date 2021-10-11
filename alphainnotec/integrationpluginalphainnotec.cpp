@@ -293,6 +293,7 @@ void IntegrationPluginAlphaInnotec::setupThing(ThingSetupInfo *info)
             }
         });
 
+        m_alpaConnectTcpThings.insert(thing, alphaConnectTcpConnection);
         alphaConnectTcpConnection->connectDevice();
 
         // FIXME: make async and check if this is really an alpha connect
@@ -307,7 +308,7 @@ void IntegrationPluginAlphaInnotec::postSetupThing(Thing *thing)
             qCDebug(dcAlphaInnotec()) << "Starting plugin timer...";
             m_pluginTimer = hardwareManager()->pluginTimerManager()->registerTimer(10);
             connect(m_pluginTimer, &PluginTimer::timeout, this, [this] {
-                foreach(AlphaConnectModbusTcpConnection *connection, m_alpaConnectTcpThings) {
+                foreach (AlphaConnectModbusTcpConnection *connection, m_alpaConnectTcpThings) {
                     if (connection->connected()) {
                         connection->update();
                     }

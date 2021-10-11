@@ -105,7 +105,7 @@
                             "displayNameEvent": "Mean temperature changed",
                             "unit": "DegreeCelsius",
                             "type": "double",
-                            "defaultValue": 20,
+                            "defaultValue": 0,
                             "suggestLogging": true
                         },
                         {
@@ -115,7 +115,7 @@
                             "displayNameEvent": "Flow temperature changed",
                             "unit": "DegreeCelsius",
                             "type": "double",
-                            "defaultValue": 20,
+                            "defaultValue": 0,
                             "suggestLogging": true
                         },
                         {
@@ -125,7 +125,7 @@
                             "displayNameEvent": "Return temperature changed",
                             "unit": "DegreeCelsius",
                             "type": "double",
-                            "defaultValue": 20,
+                            "defaultValue": 0,
                             "suggestLogging": true
                         },
                         {
@@ -135,7 +135,7 @@
                             "displayNameEvent": "External return temperature changed",
                             "unit": "DegreeCelsius",
                             "type": "double",
-                            "defaultValue": 20,
+                            "defaultValue": 0,
                             "suggestLogging": true
                         },
                         {
@@ -145,7 +145,7 @@
                             "displayNameEvent": "Hot water temperature changed",
                             "unit": "DegreeCelsius",
                             "type": "double",
-                            "defaultValue": 20,
+                            "defaultValue": 0,
                             "suggestLogging": true
                         },
                         {
@@ -155,7 +155,7 @@
                             "displayNameEvent": "Hot gas temperature changed",
                             "unit": "DegreeCelsius",
                             "type": "double",
-                            "defaultValue": 20,
+                            "defaultValue": 0,
                             "suggestLogging": true
                         },
                         {
@@ -165,7 +165,7 @@
                             "displayNameEvent": "Heat source inlet temperature changed",
                             "unit": "DegreeCelsius",
                             "type": "double",
-                            "defaultValue": 20,
+                            "defaultValue": 0,
                             "suggestLogging": true
                         },
                         {
@@ -175,7 +175,7 @@
                             "displayNameEvent": "Heat source outlet temperature changed",
                             "unit": "DegreeCelsius",
                             "type": "double",
-                            "defaultValue": 20,
+                            "defaultValue": 0,
                             "suggestLogging": true
                         },
                         {
@@ -185,7 +185,7 @@
                             "displayNameEvent": "Room remote adjuster 1 temperature changed",
                             "unit": "DegreeCelsius",
                             "type": "double",
-                            "defaultValue": 20,
+                            "defaultValue": 0,
                             "suggestLogging": true
                         },
                         {
@@ -195,7 +195,7 @@
                             "displayNameEvent": "Room remote adjuster 2 temperature changed",
                             "unit": "DegreeCelsius",
                             "type": "double",
-                            "defaultValue": 20,
+                            "defaultValue": 0,
                             "suggestLogging": true
                         },
                         {
@@ -205,7 +205,7 @@
                             "displayNameEvent": "Room remote adjuster 3 temperature changed",
                             "unit": "DegreeCelsius",
                             "type": "double",
-                            "defaultValue": 20,
+                            "defaultValue": 0,
                             "suggestLogging": true
                         },
                         {
@@ -215,7 +215,7 @@
                             "displayNameEvent": "Solar collector temperature changed",
                             "unit": "DegreeCelsius",
                             "type": "double",
-                            "defaultValue": 20,
+                            "defaultValue": 0,
                             "suggestLogging": true
                         },
                         {
@@ -225,7 +225,7 @@
                             "displayNameEvent": "Solar storage tank temperature changed",
                             "unit": "DegreeCelsius",
                             "type": "double",
-                            "defaultValue": 20,
+                            "defaultValue": 0,
                             "suggestLogging": true
                         },
                         {
@@ -235,7 +235,7 @@
                             "displayNameEvent": "External energy source temperature changed",
                             "unit": "DegreeCelsius",
                             "type": "double",
-                            "defaultValue": 20,
+                            "defaultValue": 0,
                             "suggestLogging": true
                         },
                         {
@@ -245,7 +245,7 @@
                             "displayNameEvent": "Supply air temperature changed",
                             "unit": "DegreeCelsius",
                             "type": "double",
-                            "defaultValue": 20,
+                            "defaultValue": 0,
                             "suggestLogging": true
                         },
                         {
@@ -255,7 +255,7 @@
                             "displayNameEvent": "External air temperature changed",
                             "unit": "DegreeCelsius",
                             "type": "double",
-                            "defaultValue": 20,
+                            "defaultValue": 0,
                             "suggestLogging": true
                         },
                         {
