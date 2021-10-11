@@ -313,6 +313,8 @@ void IntegrationPluginAlphaInnotec::postSetupThing(Thing *thing)
                     }
                 }
             });
+
+            m_pluginTimer->start();
         }
     }
 }
