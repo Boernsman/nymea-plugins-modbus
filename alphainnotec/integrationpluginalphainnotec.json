@@ -13,7 +13,7 @@
                     "displayName": "alpha connect",
                     "id": "c5437b68-cfd2-4ec8-bad6-006fb5e8a8da",
                     "createMethods": ["discovery", "user"],
-                    "interfaces": ["thermostat", "smartmeterconsumer", "connectable"],
+                    "interfaces": ["thermostat", "smartgridheatpump", "smartmeterconsumer", "connectable"],
                     "paramTypes": [
                         {
                             "id": "64a18910-9111-4eaf-986d-f7b64b03b99a",
@@ -291,36 +291,43 @@
                             "name": "outdoorTemperature",
                             "displayName": "Outdoor temperature",
                             "displayNameEvent": "Outdoor temperature changed",
+                            "displayNameAction": "Set outdoor temperature",
                             "unit": "DegreeCelsius",
                             "type": "double",
                             "defaultValue": 0,
+                            "writable": true,
                             "suggestLogging": true
                         },
                         {
                             "id": "1ee6b189-ceff-4912-a577-2e3320307c3f",
                             "name": "returnSetpointTemperature",
-                            "displayName": "Return setpoint temperature",
-                            "displayNameEvent": "Return setpoint temperature changed",
+                            "displayName": "Return temperature setpoint",
+                            "displayNameEvent": "Return temperature setpoint changed",
+                            "displayNameAction": "Set return temperature setpoint",
                             "unit": "DegreeCelsius",
                             "type": "double",
                             "defaultValue": 0,
+                            "writable": true,
                             "suggestLogging": true
                         },
                         {
                             "id": "a7f1a688-51d3-4f9e-a323-86117c5542a8",
                             "name": "hotWaterSetpointTemperature",
-                            "displayName": "Hot water setpoint temperature",
-                            "displayNameEvent": "Hot water setpoint temperature changed",
+                            "displayName": "Hot water temperature setpoint",
+                            "displayNameEvent": "Hot water temperature setpoint changed",
+                            "displayNameAction": "Set hot water temperature setpoint",
                             "unit": "DegreeCelsius",
                             "type": "double",
                             "defaultValue": 0,
+                            "writable": true,
                             "suggestLogging": true
                         },
                         {
                             "id": "8cc9761f-b30e-4f54-aee7-b64190df57e1",
-                            "name": "smartGrid",
-                            "displayName": "Smart grid state",
-                            "displayNameEvent": "Smart grid state changed",
+                            "name": "sgReadyMode",
+                            "displayName": "Smart grid mode",
+                            "displayNameEvent": "Smart grid mode changed",
+                            "displayNameAction": "Set smart grid mode",
                             "type": "QString",
                             "possibleValues": [
                                 "Off",
@@ -328,6 +335,7 @@
                                 "Standard",
                                 "High"
                             ],
+                            "writable": true,
                             "defaultValue": "Standard",
                             "suggestLogging": true
                         },

@@ -321,7 +321,7 @@ def writePropertyGetSetMethodImplementations(fileDescriptor, className, register
             writeLine(fileDescriptor, '{')
 
             writeLine(fileDescriptor, '    QVector<quint16> values = %s;' % getConversionToValueMethod(registerDefinition))
-
+            writeLine(fileDescriptor, '    qCDebug(dc%s()) << "--> Write \\"%s\\" register:" << %s << "size:" << %s << values;' % (className, registerDefinition['description'], registerDefinition['address'], registerDefinition['size']))
             if registerDefinition['registerType'] == 'holdingRegister':
                 writeLine(fileDescriptor, '    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, %s, values.count());' % (registerDefinition['address']))
 

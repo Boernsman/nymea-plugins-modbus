@@ -169,6 +169,7 @@ float AlphaConnectModbusTcpConnection::outdoorTemperature() const
 QModbusReply *AlphaConnectModbusTcpConnection::setOutdoorTemperature(float outdoorTemperature)
 {
     QVector<quint16> values = ModbusDataUtils::convertFromUInt16(static_cast<quint16>(outdoorTemperature  * 1.0 / pow(10, -1)));
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Write \"Outdoor temperature\" register:" << 0 << "size:" << 1 << values;
     QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 0, values.count());
     return sendWriteRequest(request, m_slaveId);
 }
@@ -181,6 +182,7 @@ float AlphaConnectModbusTcpConnection::returnSetpointTemperature() const
 QModbusReply *AlphaConnectModbusTcpConnection::setReturnSetpointTemperature(float returnSetpointTemperature)
 {
     QVector<quint16> values = ModbusDataUtils::convertFromUInt16(static_cast<quint16>(returnSetpointTemperature  * 1.0 / pow(10, -1)));
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Write \"Return setpoint temperature\" register:" << 1 << "size:" << 1 << values;
     QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 1, values.count());
     return sendWriteRequest(request, m_slaveId);
 }
@@ -193,6 +195,7 @@ float AlphaConnectModbusTcpConnection::hotWaterSetpointTemperature() const
 QModbusReply *AlphaConnectModbusTcpConnection::setHotWaterSetpointTemperature(float hotWaterSetpointTemperature)
 {
     QVector<quint16> values = ModbusDataUtils::convertFromUInt16(static_cast<quint16>(hotWaterSetpointTemperature  * 1.0 / pow(10, -1)));
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Write \"Hot water setpoint temperature\" register:" << 5 << "size:" << 1 << values;
     QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 5, values.count());
     return sendWriteRequest(request, m_slaveId);
 }
@@ -205,6 +208,7 @@ AlphaConnectModbusTcpConnection::SmartGridState AlphaConnectModbusTcpConnection:
 QModbusReply *AlphaConnectModbusTcpConnection::setSmartGrid(SmartGridState smartGrid)
 {
     QVector<quint16> values = ModbusDataUtils::convertFromUInt16(static_cast<quint16>(smartGrid));
+    qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Write \"Smart grid control\" register:" << 14 << "size:" << 1 << values;
     QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 14, values.count());
     return sendWriteRequest(request, m_slaveId);
 }

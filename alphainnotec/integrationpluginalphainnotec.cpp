@@ -279,16 +279,16 @@ void IntegrationPluginAlphaInnotec::setupThing(ThingSetupInfo *info)
             qCDebug(dcAlphaInnotec()) << thing << "smart grid state changed" << smartGridState;
             switch (smartGridState) {
             case AlphaConnectModbusTcpConnection::SmartGridStateOff:
-                thing->setStateValue(alphaConnectSmartGridStateTypeId, "Off");
+                thing->setStateValue(alphaConnectSgReadyModeStateTypeId, "Off");
                 break;
             case AlphaConnectModbusTcpConnection::SmartGridStateLow:
-                thing->setStateValue(alphaConnectSmartGridStateTypeId, "Low");
+                thing->setStateValue(alphaConnectSgReadyModeStateTypeId, "Low");
                 break;
             case AlphaConnectModbusTcpConnection::SmartGridStateStandard:
-                thing->setStateValue(alphaConnectSmartGridStateTypeId, "Standard");
+                thing->setStateValue(alphaConnectSgReadyModeStateTypeId, "Standard");
                 break;
             case AlphaConnectModbusTcpConnection::SmartGridStateHigh:
-                thing->setStateValue(alphaConnectSmartGridStateTypeId, "High");
+                thing->setStateValue(alphaConnectSgReadyModeStateTypeId, "High");
                 break;
             }
         });
@@ -335,6 +335,99 @@ void IntegrationPluginAlphaInnotec::thingRemoved(Thing *thing)
 
 void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
 {
+    Thing *thing = info->thing();
+    AlphaConnectModbusTcpConnection *connection = m_alpaConnectTcpThings.value(thing);
+
+    if (!connection->connected()) {
+        qCWarning(dcAlphaInnotec()) << "Could not execute action. The modbus connection is currently not available.";
+        info->finish(Thing::ThingErrorHardwareNotAvailable);
+        return;
+    }
+
+    if (thing->thingClassId() == alphaConnectThingClassId) {
+        if (info->action().actionTypeId() == alphaConnectOutdoorTemperatureActionTypeId) {
+            double outdoorTemperature = info->action().paramValue(alphaConnectOutdoorTemperatureActionOutdoorTemperatureParamTypeId).toDouble();
+            QModbusReply *reply = connection->setOutdoorTemperature(outdoorTemperature);
+            if (!reply) {
+                info->finish(Thing::ThingErrorHardwareFailure);
+                return;
+            }
+
+            connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
+            connect(reply, &QModbusReply::finished, info, [info, reply, outdoorTemperature]{
+                if (reply->error() != QModbusDevice::NoError) {
+                    info->finish(Thing::ThingErrorHardwareFailure);
+                    return;
+                }
+
+                info->thing()->setStateValue(alphaConnectOutdoorTemperatureStateTypeId, outdoorTemperature);
+                info->finish(Thing::ThingErrorNoError);
+            });
+        } else if (info->action().actionTypeId() == alphaConnectHotWaterSetpointTemperatureActionTypeId) {
+            double temperature = info->action().paramValue(alphaConnectHotWaterSetpointTemperatureActionHotWaterSetpointTemperatureParamTypeId).toDouble();
+            QModbusReply *reply = connection->setHotWaterSetpointTemperature(temperature);
+            if (!reply) {
+                info->finish(Thing::ThingErrorHardwareFailure);
+                return;
+            }
+
+            connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
+            connect(reply, &QModbusReply::finished, info, [info, reply, temperature]{
+                if (reply->error() != QModbusDevice::NoError) {
+                    info->finish(Thing::ThingErrorHardwareFailure);
+                    return;
+                }
+                info->thing()->setStateValue(alphaConnectHotWaterSetpointTemperatureStateTypeId, temperature);
+                info->finish(Thing::ThingErrorNoError);
+            });
+        } else if (info->action().actionTypeId() == alphaConnectReturnSetpointTemperatureActionTypeId) {
+            double temperature = info->action().paramValue(alphaConnectReturnSetpointTemperatureActionReturnSetpointTemperatureParamTypeId).toDouble();
+            QModbusReply *reply = connection->setReturnSetpointTemperature(temperature);
+            if (!reply) {
+                info->finish(Thing::ThingErrorHardwareFailure);
+                return;
+            }
+
+            connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
+            connect(reply, &QModbusReply::finished, info, [info, reply, temperature]{
+                if (reply->error() != QModbusDevice::NoError) {
+                    info->finish(Thing::ThingErrorHardwareFailure);
+                    return;
+                }
+                info->thing()->setStateValue(alphaConnectReturnSetpointTemperatureStateTypeId, temperature);
+                info->finish(Thing::ThingErrorNoError);
+            });
+        } else if (info->action().actionTypeId() == alphaConnectSgReadyModeActionTypeId) {
+            QString sgReadyModeString = info->action().paramValue(alphaConnectSgReadyModeActionSgReadyModeParamTypeId).toString();
+            AlphaConnectModbusTcpConnection::SmartGridState sgReadyState;
+            if (sgReadyModeString == "Off") {
+                sgReadyState = AlphaConnectModbusTcpConnection::SmartGridStateOff;
+            } else if (sgReadyModeString == "Low") {
+                sgReadyState = AlphaConnectModbusTcpConnection::SmartGridStateLow;
+            } else if (sgReadyModeString == "High") {
+                sgReadyState = AlphaConnectModbusTcpConnection::SmartGridStateHigh;
+            } else {
+                sgReadyState = AlphaConnectModbusTcpConnection::SmartGridStateStandard;
+            }
+
+            QModbusReply *reply = connection->setSmartGrid(sgReadyState);
+            if (!reply) {
+                info->finish(Thing::ThingErrorHardwareFailure);
+                return;
+            }
+
+            connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
+            connect(reply, &QModbusReply::finished, info, [info, reply, sgReadyModeString]{
+                if (reply->error() != QModbusDevice::NoError) {
+                    info->finish(Thing::ThingErrorHardwareFailure);
+                    return;
+                }
+                info->thing()->setStateValue(alphaConnectSgReadyModeStateTypeId, sgReadyModeString);
+                info->finish(Thing::ThingErrorNoError);
+            });
+        }
+    }
+
     info->finish(Thing::ThingErrorNoError);
 }
 
