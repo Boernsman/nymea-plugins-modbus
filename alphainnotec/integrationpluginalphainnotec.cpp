@@ -357,6 +357,7 @@ void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
             connect(reply, &QModbusReply::finished, info, [info, reply, outdoorTemperature]{
                 if (reply->error() != QModbusDevice::NoError) {
                     info->finish(Thing::ThingErrorHardwareFailure);
+                    qCWarning(dcAlphaInnotec()) << "Set outdoor temperature finished with error" << reply->errorString();
                     return;
                 }
 
@@ -374,6 +375,7 @@ void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
             connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
             connect(reply, &QModbusReply::finished, info, [info, reply, temperature]{
                 if (reply->error() != QModbusDevice::NoError) {
+                    qCWarning(dcAlphaInnotec()) << "Set hot water setpoint temperature finished with error" << reply->errorString();
                     info->finish(Thing::ThingErrorHardwareFailure);
                     return;
                 }
@@ -391,6 +393,7 @@ void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
             connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
             connect(reply, &QModbusReply::finished, info, [info, reply, temperature]{
                 if (reply->error() != QModbusDevice::NoError) {
+                    qCWarning(dcAlphaInnotec()) << "Set return setpoint temperature finished with error" << reply->errorString();
                     info->finish(Thing::ThingErrorHardwareFailure);
                     return;
                 }
@@ -419,6 +422,7 @@ void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
             connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
             connect(reply, &QModbusReply::finished, info, [info, reply, sgReadyModeString]{
                 if (reply->error() != QModbusDevice::NoError) {
+                    qCWarning(dcAlphaInnotec()) << "Set SG ready mode finished with error" << reply->errorString();
                     info->finish(Thing::ThingErrorHardwareFailure);
                     return;
                 }
