@@ -364,6 +364,11 @@ void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
                 info->thing()->setStateValue(alphaConnectOutdoorTemperatureStateTypeId, outdoorTemperature);
                 info->finish(Thing::ThingErrorNoError);
             });
+
+            connect(reply, &QModbusReply::errorOccurred, this, [reply] (QModbusDevice::Error error){
+                qCWarning(dcAlphaInnotec()) << "Modbus reply error occurred while execute action" << error << reply->errorString();
+                emit reply->finished(); // To make sure it will be deleted
+            });
         } else if (info->action().actionTypeId() == alphaConnectHotWaterSetpointTemperatureActionTypeId) {
             double temperature = info->action().paramValue(alphaConnectHotWaterSetpointTemperatureActionHotWaterSetpointTemperatureParamTypeId).toDouble();
             QModbusReply *reply = connection->setHotWaterSetpointTemperature(temperature);
@@ -382,6 +387,11 @@ void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
                 info->thing()->setStateValue(alphaConnectHotWaterSetpointTemperatureStateTypeId, temperature);
                 info->finish(Thing::ThingErrorNoError);
             });
+
+            connect(reply, &QModbusReply::errorOccurred, this, [reply] (QModbusDevice::Error error){
+                qCWarning(dcAlphaInnotec()) << "Modbus reply error occurred while execute action" << error << reply->errorString();
+                emit reply->finished(); // To make sure it will be deleted
+            });
         } else if (info->action().actionTypeId() == alphaConnectReturnSetpointTemperatureActionTypeId) {
             double temperature = info->action().paramValue(alphaConnectReturnSetpointTemperatureActionReturnSetpointTemperatureParamTypeId).toDouble();
             QModbusReply *reply = connection->setReturnSetpointTemperature(temperature);
@@ -399,6 +409,11 @@ void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
                 }
                 info->thing()->setStateValue(alphaConnectReturnSetpointTemperatureStateTypeId, temperature);
                 info->finish(Thing::ThingErrorNoError);
+            });
+
+            connect(reply, &QModbusReply::errorOccurred, this, [reply] (QModbusDevice::Error error){
+                qCWarning(dcAlphaInnotec()) << "Modbus reply error occurred while execute action" << error << reply->errorString();
+                emit reply->finished(); // To make sure it will be deleted
             });
         } else if (info->action().actionTypeId() == alphaConnectSgReadyModeActionTypeId) {
             QString sgReadyModeString = info->action().paramValue(alphaConnectSgReadyModeActionSgReadyModeParamTypeId).toString();
@@ -428,6 +443,11 @@ void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
                 }
                 info->thing()->setStateValue(alphaConnectSgReadyModeStateTypeId, sgReadyModeString);
                 info->finish(Thing::ThingErrorNoError);
+            });
+
+            connect(reply, &QModbusReply::errorOccurred, this, [reply] (QModbusDevice::Error error){
+                qCWarning(dcAlphaInnotec()) << "Modbus reply error occurred while execute action" << error << reply->errorString();
+                emit reply->finished(); // To make sure it will be deleted
             });
         }
     }
