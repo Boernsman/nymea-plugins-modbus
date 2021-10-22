@@ -327,6 +327,7 @@ def writePropertyGetSetMethodImplementations(fileDescriptor, className, register
 
             # TODO: other write methods
 
+            writeLine(fileDescriptor, '    request.setValues(values);')
             writeLine(fileDescriptor, '    return sendWriteRequest(request, m_slaveId);')
             writeLine(fileDescriptor, '}')
             writeLine(fileDescriptor)

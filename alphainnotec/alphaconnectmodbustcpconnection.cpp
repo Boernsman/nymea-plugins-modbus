@@ -171,6 +171,7 @@ QModbusReply *AlphaConnectModbusTcpConnection::setOutdoorTemperature(float outdo
     QVector<quint16> values = ModbusDataUtils::convertFromUInt16(static_cast<quint16>(outdoorTemperature  * 1.0 / pow(10, -1)));
     qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Write \"Outdoor temperature\" register:" << 0 << "size:" << 1 << values;
     QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 0, values.count());
+    request.setValues(values);
     return sendWriteRequest(request, m_slaveId);
 }
 
@@ -184,6 +185,7 @@ QModbusReply *AlphaConnectModbusTcpConnection::setReturnSetpointTemperature(floa
     QVector<quint16> values = ModbusDataUtils::convertFromUInt16(static_cast<quint16>(returnSetpointTemperature  * 1.0 / pow(10, -1)));
     qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Write \"Return setpoint temperature\" register:" << 1 << "size:" << 1 << values;
     QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 1, values.count());
+    request.setValues(values);
     return sendWriteRequest(request, m_slaveId);
 }
 
@@ -197,6 +199,7 @@ QModbusReply *AlphaConnectModbusTcpConnection::setHotWaterSetpointTemperature(fl
     QVector<quint16> values = ModbusDataUtils::convertFromUInt16(static_cast<quint16>(hotWaterSetpointTemperature  * 1.0 / pow(10, -1)));
     qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Write \"Hot water setpoint temperature\" register:" << 5 << "size:" << 1 << values;
     QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 5, values.count());
+    request.setValues(values);
     return sendWriteRequest(request, m_slaveId);
 }
 
@@ -210,6 +213,7 @@ QModbusReply *AlphaConnectModbusTcpConnection::setSmartGrid(SmartGridState smart
     QVector<quint16> values = ModbusDataUtils::convertFromUInt16(static_cast<quint16>(smartGrid));
     qCDebug(dcAlphaConnectModbusTcpConnection()) << "--> Write \"Smart grid control\" register:" << 14 << "size:" << 1 << values;
     QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 14, values.count());
+    request.setValues(values);
     return sendWriteRequest(request, m_slaveId);
 }
 

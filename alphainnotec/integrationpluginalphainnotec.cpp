@@ -347,8 +347,10 @@ void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
     if (thing->thingClassId() == alphaConnectThingClassId) {
         if (info->action().actionTypeId() == alphaConnectOutdoorTemperatureActionTypeId) {
             double outdoorTemperature = info->action().paramValue(alphaConnectOutdoorTemperatureActionOutdoorTemperatureParamTypeId).toDouble();
+            qCDebug(dcAlphaInnotec()) << "Execute action" << info->action().actionTypeId().toString() << info->action().params();
             QModbusReply *reply = connection->setOutdoorTemperature(outdoorTemperature);
             if (!reply) {
+                qCWarning(dcAlphaInnotec()) << "Execute action failed because the reply could not be created.";
                 info->finish(Thing::ThingErrorHardwareFailure);
                 return;
             }
@@ -361,6 +363,7 @@ void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
                     return;
                 }
 
+                qCDebug(dcAlphaInnotec()) << "Execute action finished successfully" << info->action().actionTypeId().toString() << info->action().params();
                 info->thing()->setStateValue(alphaConnectOutdoorTemperatureStateTypeId, outdoorTemperature);
                 info->finish(Thing::ThingErrorNoError);
             });
@@ -371,8 +374,10 @@ void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
             });
         } else if (info->action().actionTypeId() == alphaConnectHotWaterSetpointTemperatureActionTypeId) {
             double temperature = info->action().paramValue(alphaConnectHotWaterSetpointTemperatureActionHotWaterSetpointTemperatureParamTypeId).toDouble();
+            qCDebug(dcAlphaInnotec()) << "Execute action" << info->action().actionTypeId().toString() << info->action().params();
             QModbusReply *reply = connection->setHotWaterSetpointTemperature(temperature);
             if (!reply) {
+                qCWarning(dcAlphaInnotec()) << "Execute action failed because the reply could not be created.";
                 info->finish(Thing::ThingErrorHardwareFailure);
                 return;
             }
@@ -384,6 +389,8 @@ void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
                     info->finish(Thing::ThingErrorHardwareFailure);
                     return;
                 }
+
+                qCDebug(dcAlphaInnotec()) << "Execute action finished successfully" << info->action().actionTypeId().toString() << info->action().params();
                 info->thing()->setStateValue(alphaConnectHotWaterSetpointTemperatureStateTypeId, temperature);
                 info->finish(Thing::ThingErrorNoError);
             });
@@ -394,8 +401,10 @@ void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
             });
         } else if (info->action().actionTypeId() == alphaConnectReturnSetpointTemperatureActionTypeId) {
             double temperature = info->action().paramValue(alphaConnectReturnSetpointTemperatureActionReturnSetpointTemperatureParamTypeId).toDouble();
+            qCDebug(dcAlphaInnotec()) << "Execute action" << info->action().actionTypeId().toString() << info->action().params();
             QModbusReply *reply = connection->setReturnSetpointTemperature(temperature);
             if (!reply) {
+                qCWarning(dcAlphaInnotec()) << "Execute action failed because the reply could not be created.";
                 info->finish(Thing::ThingErrorHardwareFailure);
                 return;
             }
@@ -407,6 +416,8 @@ void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
                     info->finish(Thing::ThingErrorHardwareFailure);
                     return;
                 }
+
+                qCDebug(dcAlphaInnotec()) << "Execute action finished successfully" << info->action().actionTypeId().toString() << info->action().params();
                 info->thing()->setStateValue(alphaConnectReturnSetpointTemperatureStateTypeId, temperature);
                 info->finish(Thing::ThingErrorNoError);
             });
@@ -417,6 +428,7 @@ void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
             });
         } else if (info->action().actionTypeId() == alphaConnectSgReadyModeActionTypeId) {
             QString sgReadyModeString = info->action().paramValue(alphaConnectSgReadyModeActionSgReadyModeParamTypeId).toString();
+            qCDebug(dcAlphaInnotec()) << "Execute action" << info->action().actionTypeId().toString() << info->action().params();
             AlphaConnectModbusTcpConnection::SmartGridState sgReadyState;
             if (sgReadyModeString == "Off") {
                 sgReadyState = AlphaConnectModbusTcpConnection::SmartGridStateOff;
@@ -430,6 +442,7 @@ void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
 
             QModbusReply *reply = connection->setSmartGrid(sgReadyState);
             if (!reply) {
+                qCWarning(dcAlphaInnotec()) << "Execute action failed because the reply could not be created.";
                 info->finish(Thing::ThingErrorHardwareFailure);
                 return;
             }
@@ -441,6 +454,8 @@ void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
                     info->finish(Thing::ThingErrorHardwareFailure);
                     return;
                 }
+
+                qCDebug(dcAlphaInnotec()) << "Execute action finished successfully" << info->action().actionTypeId().toString() << info->action().params();
                 info->thing()->setStateValue(alphaConnectSgReadyModeStateTypeId, sgReadyModeString);
                 info->finish(Thing::ThingErrorNoError);
             });
