@@ -62,19 +62,6 @@
     ],
     "registers": [
         {
-            "id": "meanTemperature",
-            "address": 0,
-            "size": 1,
-            "type": "uint16",
-            "registerType": "inputRegister",
-            "readSchedule": "update",
-            "description": "Mean temperature",
-            "staticScaleFactor": -1,
-            "defaultValue": "0",
-            "unit": "°C",
-            "access": "RO"
-        },
-        {
             "id": "flowTemperature",
             "address": 1,
             "size": 1,
@@ -346,19 +333,6 @@
             "access": "RO"
         },
         {
-            "id": "swimmingPoolHeatEnergy",
-            "address": 42,
-            "size": 2,
-            "type": "uint32",
-            "registerType": "inputRegister",
-            "readSchedule": "update",
-            "staticScaleFactor": -1,
-            "defaultValue": "0",
-            "unit": "kWh",
-            "description": "Swimming pool heat energy",
-            "access": "RO"
-        },
-        {
             "id": "totalHeatEnergy",
             "address": 44,
             "size": 2,
@@ -371,7 +345,6 @@
             "description": "Total energy",
             "access": "RO"
         },
-
 
         {
             "id": "outdoorTemperature",

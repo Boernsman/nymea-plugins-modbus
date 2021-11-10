@@ -119,10 +119,10 @@ void IntegrationPluginAlphaInnotec::setupThing(ThingSetupInfo *info)
 
 
         // Input registers
-        connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::meanTemperatureChanged, this, [thing](float meanTemperature){
-            qCDebug(dcAlphaInnotec()) << thing << "mean temperature changed" << meanTemperature << "°C";
-            thing->setStateValue(alphaConnectMeanTemperatureStateTypeId, meanTemperature);
-        });
+//        connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::meanTemperatureChanged, this, [thing](float meanTemperature){
+//            qCDebug(dcAlphaInnotec()) << thing << "mean temperature changed" << meanTemperature << "°C";
+//            thing->setStateValue(alphaConnectMeanTemperatureStateTypeId, meanTemperature);
+//        });
 
         connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::flowTemperatureChanged, this, [thing](float flowTemperature){
             qCDebug(dcAlphaInnotec()) << thing << "flow temperature changed" << flowTemperature << "°C";
@@ -241,7 +241,7 @@ void IntegrationPluginAlphaInnotec::setupThing(ThingSetupInfo *info)
         // Energy
         connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::totalHeatEnergyChanged, this, [thing](float totalHeatEnergy){
             qCDebug(dcAlphaInnotec()) << thing << "total heating energy changed" << totalHeatEnergy << "kWh";
-            thing->setStateValue(alphaConnectTotalEnergyConsumedStateTypeId, totalHeatEnergy);
+            thing->setStateValue(alphaConnectTotalEnergyStateTypeId, totalHeatEnergy);
         });
 
         connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::heatingEnergyChanged, this, [thing](float heatingEnergy){
@@ -254,10 +254,10 @@ void IntegrationPluginAlphaInnotec::setupThing(ThingSetupInfo *info)
             thing->setStateValue(alphaConnectHotWaterEnergyStateTypeId, waterHeatEnergy);
         });
 
-        connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::swimmingPoolHeatEnergyChanged, this, [thing](float swimmingPoolHeatEnergy){
-            qCDebug(dcAlphaInnotec()) << thing << "swimming pool heat energy changed" << swimmingPoolHeatEnergy << "kWh";
-            thing->setStateValue(alphaConnectSwimmingPoolEnergyStateTypeId, swimmingPoolHeatEnergy);
-        });
+//        connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::swimmingPoolHeatEnergyChanged, this, [thing](float swimmingPoolHeatEnergy){
+//            qCDebug(dcAlphaInnotec()) << thing << "swimming pool heat energy changed" << swimmingPoolHeatEnergy << "kWh";
+//            thing->setStateValue(alphaConnectSwimmingPoolEnergyStateTypeId, swimmingPoolHeatEnergy);
+//        });
 
         // Holding registers
         connect(alphaConnectTcpConnection, &AlphaConnectModbusTcpConnection::outdoorTemperatureChanged, this, [thing](float outdoorTemperature){
@@ -345,7 +345,7 @@ void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
     }
 
     if (thing->thingClassId() == alphaConnectThingClassId) {
-        if (info->action().actionTypeId() == alphaConnectOutdoorTemperatureActionTypeId) {
+  /*      if (info->action().actionTypeId() == alphaConnectOutdoorTemperatureActionTypeId) {
             double outdoorTemperature = info->action().paramValue(alphaConnectOutdoorTemperatureActionOutdoorTemperatureParamTypeId).toDouble();
             qCDebug(dcAlphaInnotec()) << "Execute action" << info->action().actionTypeId().toString() << info->action().params();
             QModbusReply *reply = connection->setOutdoorTemperature(outdoorTemperature);
@@ -372,7 +372,8 @@ void IntegrationPluginAlphaInnotec::executeAction(ThingActionInfo *info)
                 qCWarning(dcAlphaInnotec()) << "Modbus reply error occurred while execute action" << error << reply->errorString();
                 emit reply->finished(); // To make sure it will be deleted
             });
-        } else if (info->action().actionTypeId() == alphaConnectHotWaterSetpointTemperatureActionTypeId) {
+        } else */
+        if (info->action().actionTypeId() == alphaConnectHotWaterSetpointTemperatureActionTypeId) {
             double temperature = info->action().paramValue(alphaConnectHotWaterSetpointTemperatureActionHotWaterSetpointTemperatureParamTypeId).toDouble();
             qCDebug(dcAlphaInnotec()) << "Execute action" << info->action().actionTypeId().toString() << info->action().params();
             QModbusReply *reply = connection->setHotWaterSetpointTemperature(temperature);

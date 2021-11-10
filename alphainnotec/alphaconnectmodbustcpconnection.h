@@ -63,9 +63,6 @@ public:
     explicit AlphaConnectModbusTcpConnection(const QHostAddress &hostAddress, uint port, quint16 slaveId, QObject *parent = nullptr);
     ~AlphaConnectModbusTcpConnection() = default;
 
-    /* Mean temperature [°C] - Address: 0, Size: 1 */
-    float meanTemperature() const;
-
     /* Flow [°C] - Address: 1, Size: 1 */
     float flowTemperature() const;
 
@@ -129,9 +126,6 @@ public:
     /* Water heat energy [kWh] - Address: 40, Size: 2 */
     float waterHeatEnergy() const;
 
-    /* Swimming pool heat energy [kWh] - Address: 42, Size: 2 */
-    float swimmingPoolHeatEnergy() const;
-
     /* Total energy [kWh] - Address: 44, Size: 2 */
     float totalHeatEnergy() const;
 
@@ -154,7 +148,6 @@ public:
     virtual void initialize();
     virtual void update();
 
-    void updateMeanTemperature();
     void updateFlowTemperature();
     void updateReturnTemperature();
     void updateExternalReturnTemperature();
@@ -176,7 +169,6 @@ public:
     void updateSystemStatus();
     void updateHeatingEnergy();
     void updateWaterHeatEnergy();
-    void updateSwimmingPoolHeatEnergy();
     void updateTotalHeatEnergy();
     void updateOutdoorTemperature();
     void updateReturnSetpointTemperature();
@@ -186,7 +178,6 @@ public:
 signals:
     void initializationFinished();
 
-    void meanTemperatureChanged(float meanTemperature);
     void flowTemperatureChanged(float flowTemperature);
     void returnTemperatureChanged(float returnTemperature);
     void externalReturnTemperatureChanged(float externalReturnTemperature);
@@ -208,7 +199,6 @@ signals:
     void systemStatusChanged(SystemStatus systemStatus);
     void heatingEnergyChanged(float heatingEnergy);
     void waterHeatEnergyChanged(float waterHeatEnergy);
-    void swimmingPoolHeatEnergyChanged(float swimmingPoolHeatEnergy);
     void totalHeatEnergyChanged(float totalHeatEnergy);
     void outdoorTemperatureChanged(float outdoorTemperature);
     void returnSetpointTemperatureChanged(float returnSetpointTemperature);
@@ -219,7 +209,6 @@ private:
     quint16 m_slaveId = 1;
     QVector<QModbusReply *> m_pendingInitReplies;
 
-    float m_meanTemperature = 0;
     float m_flowTemperature = 0;
     float m_returnTemperature = 0;
     float m_externalReturnTemperature = 0;
@@ -241,7 +230,6 @@ private:
     SystemStatus m_systemStatus = SystemStatusHeatingMode;
     float m_heatingEnergy = 0;
     float m_waterHeatEnergy = 0;
-    float m_swimmingPoolHeatEnergy = 0;
     float m_totalHeatEnergy = 0;
     float m_outdoorTemperature = 0;
     float m_returnSetpointTemperature = 0;
@@ -250,7 +238,6 @@ private:
 
     void verifyInitFinished();
 
-    QModbusReply *readMeanTemperature();
     QModbusReply *readFlowTemperature();
     QModbusReply *readReturnTemperature();
     QModbusReply *readExternalReturnTemperature();
@@ -272,7 +259,6 @@ private:
     QModbusReply *readSystemStatus();
     QModbusReply *readHeatingEnergy();
     QModbusReply *readWaterHeatEnergy();
-    QModbusReply *readSwimmingPoolHeatEnergy();
     QModbusReply *readTotalHeatEnergy();
     QModbusReply *readOutdoorTemperature();
     QModbusReply *readReturnSetpointTemperature();

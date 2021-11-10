@@ -13,7 +13,7 @@
                     "displayName": "alpha connect",
                     "id": "c5437b68-cfd2-4ec8-bad6-006fb5e8a8da",
                     "createMethods": ["discovery", "user"],
-                    "interfaces": ["thermostat", "smartgridheatpump", "smartmeterconsumer", "connectable"],
+                    "interfaces": ["smartgridheatpump", "connectable"],
                     "paramTypes": [
                         {
                             "id": "64a18910-9111-4eaf-986d-f7b64b03b99a",
@@ -57,30 +57,6 @@
                             "cached": false
                         },
                         {
-                            "id": "2e8f44c5-c4e3-4539-b85b-45898bbbf6c2",
-                            "name": "targetTemperature",
-                            "displayName": "Target room temperature",
-                            "displayNameEvent": "Target room temperature changed",
-                            "displayNameAction": "Set target room temperature",
-                            "unit": "DegreeCelsius",
-                            "type": "double",
-                            "writable": true,
-                            "minValue": -50,
-                            "maxValue": 50,
-                            "defaultValue": 20,
-                            "suggestLogging": true
-                        },
-                        {
-                            "id": "0b978a61-4340-443a-8ea6-69217a593508",
-                            "name": "temperature",
-                            "displayName": "Room temperature",
-                            "displayNameEvent": "Room temperature changed",
-                            "unit": "DegreeCelsius",
-                            "type": "double",
-                            "defaultValue": 20,
-                            "suggestLogging": true
-                        },
-                        {
                             "id": "07465fbb-6949-4bd1-90d5-acf2d80c161d",
                             "name": "heatingOn",
                             "displayName": "Heating on",
@@ -96,16 +72,6 @@
                             "displayNameEvent": "Cooling turned on/off",
                             "type": "bool",
                             "defaultValue": false,
-                            "suggestLogging": true
-                        },
-                        {
-                            "id": "956051a6-8677-4b25-b899-71aa3590d4e5",
-                            "name": "meanTemperature",
-                            "displayName": "Mean temperature",
-                            "displayNameEvent": "Mean temperature changed",
-                            "unit": "DegreeCelsius",
-                            "type": "double",
-                            "defaultValue": 0,
                             "suggestLogging": true
                         },
                         {
@@ -295,7 +261,6 @@
                             "unit": "DegreeCelsius",
                             "type": "double",
                             "defaultValue": 0,
-                            "writable": true,
                             "suggestLogging": true
                         },
                         {
@@ -341,21 +306,11 @@
                         },
                         {
                             "id": "c7948cf6-fd1a-44fa-a91b-98f2474ecc62",
-                            "name": "totalEnergyConsumed",
+                            "name": "totalEnergy",
                             "displayName": "Total energy",
                             "displayNameEvent": "Total energy changed",
                             "type": "double",
                             "unit": "KiloWattHour",
-                            "defaultValue": 0,
-                            "suggestLogging": true
-                        },
-                        {
-                            "id": "6daa10ad-24f8-4f26-a0f8-2d86ef614f60",
-                            "name": "currentPower",
-                            "displayName": "Current power",
-                            "displayNameEvent": "Current power changed",
-                            "type": "double",
-                            "unit": "Watt",
                             "defaultValue": 0,
                             "suggestLogging": true
                         },
@@ -374,16 +329,6 @@
                             "name": "hotWaterEnergy",
                             "displayName": "Hot water energy",
                             "displayNameEvent": "Hot water energy changed",
-                            "type": "double",
-                            "unit": "KiloWattHour",
-                            "defaultValue": 0,
-                            "suggestLogging": true
-                        },
-                        {
-                            "id": "de0403cf-ae11-4b2c-b930-b81b3e5d8aa5",
-                            "name": "swimmingPoolEnergy",
-                            "displayName": "Swimming pool energy",
-                            "displayNameEvent": "Swimming pool energy changed",
                             "type": "double",
                             "unit": "KiloWattHour",
                             "defaultValue": 0,
