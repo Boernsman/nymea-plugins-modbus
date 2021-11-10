@@ -4,7 +4,7 @@
     "registers": [
         {
             "id": "voltagePhaseA",
-            "address": 30001,
+            "address": 0,
             "size": 2,
             "type": "float",
             "registerType": "inputRegister",
@@ -16,7 +16,7 @@
         },
         {
             "id": "voltagePhaseB",
-            "address": 30003,
+            "address": 2,
             "size": 2,
             "type": "float",
             "registerType": "inputRegister",
@@ -28,7 +28,7 @@
         },
         {
             "id": "voltagePhaseC",
-            "address": 30005,
+            "address": 4,
             "size": 2,
             "type": "float",
             "registerType": "inputRegister",
@@ -40,7 +40,7 @@
         },
         {
             "id": "currentPhaseA",
-            "address": 30007,
+            "address": 6,
             "size": 2,
             "type": "float",
             "registerType": "inputRegister",
@@ -52,7 +52,7 @@
         },
         {
             "id": "currentPhaseB",
-            "address": 30009,
+            "address": 8,
             "size": 2,
             "type": "float",
             "registerType": "inputRegister",
@@ -64,7 +64,7 @@
         },
         {
             "id": "currentPhaseC",
-            "address": 30011,
+            "address": 10,
             "size": 2,
             "type": "float",
             "registerType": "inputRegister",
@@ -76,7 +76,7 @@
         },
         {
             "id": "powerPhaseA",
-            "address": 30013,
+            "address": 10,
             "size": 2,
             "type": "float",
             "registerType": "inputRegister",
@@ -88,7 +88,7 @@
         },
         {
             "id": "powerPhaseB",
-            "address": 30015,
+            "address": 14,
             "size": 2,
             "type": "float",
             "registerType": "inputRegister",
@@ -100,7 +100,7 @@
         },
         {
             "id": "powerPhaseC",
-            "address": 30017,
+            "address": 16,
             "size": 2,
             "type": "float",
             "registerType": "inputRegister",
@@ -112,9 +112,9 @@
         },
         {
             "id": "totalCurrentPower",
-            "address": 30053,
+            "address": 52,
             "size": 2,
-            "type": "uint16",
+            "type": "float",
             "registerType": "inputRegister",
             "readSchedule": "update",
             "description": "Total system power",
@@ -123,14 +123,110 @@
             "access": "RO"
         },
         {
-            "id": "phaseAImportet",
-            "address": 30053,
+            "id": "frequency",
+            "address": 70,
             "size": 2,
-            "type": "uint16",
+            "type": "float",
             "registerType": "inputRegister",
             "readSchedule": "update",
-            "description": "Total system power",
-            "unit": "W",
+            "description": "Frequency",
+            "unit": "Hz",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "totalEnergyConsumed",
+            "address": 72,
+            "size": 2,
+            "type": "float",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Total energy consumed",
+            "unit": "kWh",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "totalEnergyProduced",
+            "address": 74,
+            "size": 2,
+            "type": "float",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Total energy produced",
+            "unit": "kWh",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "energyProducedPhaseA",
+            "address": 346,
+            "size": 2,
+            "type": "float",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Energy produced phase A",
+            "unit": "kWh",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "energyProducedPhaseB",
+            "address": 348,
+            "size": 2,
+            "type": "float",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Energy produced phase B",
+            "unit": "kWh",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "energyProducedPhaseC",
+            "address": 350,
+            "size": 2,
+            "type": "float",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Energy produced phase C",
+            "unit": "kWh",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "energyConsumedPhaseA",
+            "address": 352,
+            "size": 2,
+            "type": "float",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Energy consumed phase A",
+            "unit": "kWh",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "energyConsumedPhaseB",
+            "address": 354,
+            "size": 2,
+            "type": "float",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Energy consumed phase B",
+            "unit": "kWh",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "energyConsumedPhaseC",
+            "address": 356,
+            "size": 2,
+            "type": "float",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Energy consumed phase C",
+            "unit": "kWh",
             "defaultValue": "0",
             "access": "RO"
         }

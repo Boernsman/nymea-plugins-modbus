@@ -56,7 +56,9 @@ public:
     void thingRemoved(Thing *thing) override;
 
 private:
-    PluginTimer *m_reconnectTimer = nullptr;
+    PluginTimer *m_refreshTimer = nullptr;
+
+    QHash<Thing *, Sdm630ModbusRtuConnection *> m_sdmConnections;
 
     QHash<ThingClassId, ParamTypeId> m_discoverySlaveAddressParamTypeIds;
     QHash<ThingClassId, ParamTypeId> m_slaveIdParamTypeIds;

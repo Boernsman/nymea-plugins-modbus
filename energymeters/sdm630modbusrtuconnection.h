@@ -46,38 +46,62 @@ public:
     ModbusRtuMaster *modbusRtuMaster() const;
     quint16 slaveId() const;
 
-    /* Voltage phase L1 [V] - Address: 30001, Size: 2 */
+    /* Voltage phase L1 [V] - Address: 0, Size: 2 */
     float voltagePhaseA() const;
 
-    /* Voltage phase L2 [V] - Address: 30003, Size: 2 */
+    /* Voltage phase L2 [V] - Address: 2, Size: 2 */
     float voltagePhaseB() const;
 
-    /* Voltage phase L3 [V] - Address: 30005, Size: 2 */
+    /* Voltage phase L3 [V] - Address: 4, Size: 2 */
     float voltagePhaseC() const;
 
-    /* Current phase L1 [A] - Address: 30007, Size: 2 */
+    /* Current phase L1 [A] - Address: 6, Size: 2 */
     float currentPhaseA() const;
 
-    /* Current phase L2 [A] - Address: 30009, Size: 2 */
+    /* Current phase L2 [A] - Address: 8, Size: 2 */
     float currentPhaseB() const;
 
-    /* Current phase L3 [A] - Address: 30011, Size: 2 */
+    /* Current phase L3 [A] - Address: 10, Size: 2 */
     float currentPhaseC() const;
 
-    /* Power phase L1 [W] - Address: 30013, Size: 2 */
+    /* Power phase L1 [W] - Address: 10, Size: 2 */
     float powerPhaseA() const;
 
-    /* Power phase L2 [W] - Address: 30015, Size: 2 */
+    /* Power phase L2 [W] - Address: 14, Size: 2 */
     float powerPhaseB() const;
 
-    /* Power phase L3 [W] - Address: 30017, Size: 2 */
+    /* Power phase L3 [W] - Address: 16, Size: 2 */
     float powerPhaseC() const;
 
-    /* Total system power [W] - Address: 30053, Size: 2 */
-    quint16 totalCurrentPower() const;
+    /* Total system power [W] - Address: 52, Size: 2 */
+    float totalCurrentPower() const;
 
-    /* Total system power [W] - Address: 30053, Size: 2 */
-    quint16 phaseAImportet() const;
+    /* Frequency [Hz] - Address: 70, Size: 2 */
+    float frequency() const;
+
+    /* Total energy consumed [kWh] - Address: 72, Size: 2 */
+    float totalEnergyConsumed() const;
+
+    /* Total energy produced [kWh] - Address: 74, Size: 2 */
+    float totalEnergyProduced() const;
+
+    /* Energy produced phase A [kWh] - Address: 346, Size: 2 */
+    float energyProducedPhaseA() const;
+
+    /* Energy produced phase B [kWh] - Address: 348, Size: 2 */
+    float energyProducedPhaseB() const;
+
+    /* Energy produced phase C [kWh] - Address: 350, Size: 2 */
+    float energyProducedPhaseC() const;
+
+    /* Energy consumed phase A [kWh] - Address: 352, Size: 2 */
+    float energyConsumedPhaseA() const;
+
+    /* Energy consumed phase B [kWh] - Address: 354, Size: 2 */
+    float energyConsumedPhaseB() const;
+
+    /* Energy consumed phase C [kWh] - Address: 356, Size: 2 */
+    float energyConsumedPhaseC() const;
 
     virtual void initialize();
     virtual void update();
@@ -92,7 +116,15 @@ public:
     void updatePowerPhaseB();
     void updatePowerPhaseC();
     void updateTotalCurrentPower();
-    void updatePhaseAImportet();
+    void updateFrequency();
+    void updateTotalEnergyConsumed();
+    void updateTotalEnergyProduced();
+    void updateEnergyProducedPhaseA();
+    void updateEnergyProducedPhaseB();
+    void updateEnergyProducedPhaseC();
+    void updateEnergyConsumedPhaseA();
+    void updateEnergyConsumedPhaseB();
+    void updateEnergyConsumedPhaseC();
 
 signals:
     void initializationFinished();
@@ -106,8 +138,16 @@ signals:
     void powerPhaseAChanged(float powerPhaseA);
     void powerPhaseBChanged(float powerPhaseB);
     void powerPhaseCChanged(float powerPhaseC);
-    void totalCurrentPowerChanged(quint16 totalCurrentPower);
-    void phaseAImportetChanged(quint16 phaseAImportet);
+    void totalCurrentPowerChanged(float totalCurrentPower);
+    void frequencyChanged(float frequency);
+    void totalEnergyConsumedChanged(float totalEnergyConsumed);
+    void totalEnergyProducedChanged(float totalEnergyProduced);
+    void energyProducedPhaseAChanged(float energyProducedPhaseA);
+    void energyProducedPhaseBChanged(float energyProducedPhaseB);
+    void energyProducedPhaseCChanged(float energyProducedPhaseC);
+    void energyConsumedPhaseAChanged(float energyConsumedPhaseA);
+    void energyConsumedPhaseBChanged(float energyConsumedPhaseB);
+    void energyConsumedPhaseCChanged(float energyConsumedPhaseC);
 
 private:
     ModbusRtuMaster *m_modbusRtuMaster = nullptr;
@@ -123,8 +163,16 @@ private:
     float m_powerPhaseA = 0;
     float m_powerPhaseB = 0;
     float m_powerPhaseC = 0;
-    quint16 m_totalCurrentPower = 0;
-    quint16 m_phaseAImportet = 0;
+    float m_totalCurrentPower = 0;
+    float m_frequency = 0;
+    float m_totalEnergyConsumed = 0;
+    float m_totalEnergyProduced = 0;
+    float m_energyProducedPhaseA = 0;
+    float m_energyProducedPhaseB = 0;
+    float m_energyProducedPhaseC = 0;
+    float m_energyConsumedPhaseA = 0;
+    float m_energyConsumedPhaseB = 0;
+    float m_energyConsumedPhaseC = 0;
 
     void verifyInitFinished();
 
@@ -138,7 +186,15 @@ private:
     ModbusRtuReply *readPowerPhaseB();
     ModbusRtuReply *readPowerPhaseC();
     ModbusRtuReply *readTotalCurrentPower();
-    ModbusRtuReply *readPhaseAImportet();
+    ModbusRtuReply *readFrequency();
+    ModbusRtuReply *readTotalEnergyConsumed();
+    ModbusRtuReply *readTotalEnergyProduced();
+    ModbusRtuReply *readEnergyProducedPhaseA();
+    ModbusRtuReply *readEnergyProducedPhaseB();
+    ModbusRtuReply *readEnergyProducedPhaseC();
+    ModbusRtuReply *readEnergyConsumedPhaseA();
+    ModbusRtuReply *readEnergyConsumedPhaseB();
+    ModbusRtuReply *readEnergyConsumedPhaseC();
 
 
 };
