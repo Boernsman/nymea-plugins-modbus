@@ -78,6 +78,15 @@ There are 2 possibilities:
 * `BigEndian`: default if not specified: register bytes come in following order `[0, 1, 2, 3]`: `ABCD`
 * `LittleEndian`: register bytes come in following order `[0, 1, 2, 3]`: `CDAB`
 
+## Protocol
+
+Depending on the communication protocol, a different base class will be used for the resulting output class.
+
+There are 2 possibilities:
+
+* `RTU`: a communication based on the RS485 serial RTU transport protocol
+* `TCP`: a communication based on the TCP transport protocol
+
 ## Enums
 
 Many modbus devices provide inforation using `Enums`, indicating a special state trough a defined list of values. If a register implements an enum, you can define it in the `enums` section. The `name` property defines the name of the enum, and the script will generate a c++ enum definition from this section. Each enum value will then be generated using `<EnumName><EnumValueName> = <value>`.

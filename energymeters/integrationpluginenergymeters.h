@@ -31,11 +31,11 @@
 #ifndef INTEGRATIONPLUGINENERGYMETERS_H
 #define INTEGRATIONPLUGINENERGYMETERS_H
 
-#include "integrations/integrationplugin.h"
-#include "hardware/modbus/modbusrtuhardwareresource.h"
-#include "plugintimer.h"
+#include <integrations/integrationplugin.h>
+#include <hardware/modbus/modbusrtuhardwareresource.h>
+#include <plugintimer.h>
 
-#include "energymeter.h"
+#include "sdm630modbusrtuconnection.h"
 
 #include <QObject>
 #include <QTimer>
@@ -57,44 +57,14 @@ public:
 
 private:
     PluginTimer *m_reconnectTimer = nullptr;
-    QHash<ThingClassId, StateTypeId> m_connectionStateTypeIds;
-    QHash<ThingClassId, StateTypeId> m_voltageL1StateTypeIds;
-    QHash<ThingClassId, StateTypeId> m_voltageL2StateTypeIds;
-    QHash<ThingClassId, StateTypeId> m_voltageL3StateTypeIds;
-    QHash<ThingClassId, StateTypeId> m_currentL1StateTypeIds;
-    QHash<ThingClassId, StateTypeId> m_currentL2StateTypeIds;
-    QHash<ThingClassId, StateTypeId> m_currentL3StateTypeIds;
-    QHash<ThingClassId, StateTypeId> m_activePowerStateTypeIds;
-    QHash<ThingClassId, StateTypeId> m_frequencyStateTypeIds;
-    QHash<ThingClassId, StateTypeId> m_powerFactorStateTypeIds;
-    QHash<ThingClassId, StateTypeId> m_totalEnergyConsumedStateTypeIds;
-    QHash<ThingClassId, StateTypeId> m_totalEnergyProducedStateTypeIds;
 
     QHash<ThingClassId, ParamTypeId> m_discoverySlaveAddressParamTypeIds;
     QHash<ThingClassId, ParamTypeId> m_slaveIdParamTypeIds;
     QHash<ThingClassId, ParamTypeId> m_modbusUuidParamTypeIds;
-
-    QHash<ThingClassId, QHash<ModbusRegisterType, ModbusRegisterDescriptor>> m_registerMaps;
-
-    QHash<Thing *, EnergyMeter *> m_energyMeters;
-
-    QHash<EnergyMeter *, bool> m_updateCycleInProgress;
-    void startUpdateCycle(EnergyMeter *meter);
-    void updateCycleFinished(EnergyMeter *meter);
+    QHash<ThingClassId, StateTypeId> m_connectionStateTypeIds;
 
 private slots:
-    void onConnectionStateChanged(bool status);
-    void onVoltageL1Received(double voltage);
-    void onVoltageL2Received(double voltage);
-    void onVoltageL3Received(double voltage);
-    void onCurrentL1Received(double current);
-    void onCurrentL2Received(double current);
-    void onCurrentL3Received(double current);
-    void onActivePowerReceived(double power);
-    void onFrequencyReceived(double frequency);
-    void onPowerFactorReceived(double powerFactor);
-    void onProducedEnergyReceived(double energy);
-    void onConsumedEnergyReceived(double energy);
+
 };
 
 #endif // INTEGRATIONPLUGINENERGYMETERS_H

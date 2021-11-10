@@ -1,0 +1,138 @@
+{
+    "protocol": "RTU",
+    "endianness": "BigEndian",
+    "registers": [
+        {
+            "id": "voltagePhaseA",
+            "address": 30001,
+            "size": 2,
+            "type": "float",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Voltage phase L1",
+            "unit": "V",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "voltagePhaseB",
+            "address": 30003,
+            "size": 2,
+            "type": "float",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Voltage phase L2",
+            "unit": "V",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "voltagePhaseC",
+            "address": 30005,
+            "size": 2,
+            "type": "float",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Voltage phase L3",
+            "unit": "V",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "currentPhaseA",
+            "address": 30007,
+            "size": 2,
+            "type": "float",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Current phase L1",
+            "unit": "A",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "currentPhaseB",
+            "address": 30009,
+            "size": 2,
+            "type": "float",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Current phase L2",
+            "unit": "A",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "currentPhaseC",
+            "address": 30011,
+            "size": 2,
+            "type": "float",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Current phase L3",
+            "unit": "A",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "powerPhaseA",
+            "address": 30013,
+            "size": 2,
+            "type": "float",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Power phase L1",
+            "unit": "W",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "powerPhaseB",
+            "address": 30015,
+            "size": 2,
+            "type": "float",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Power phase L2",
+            "unit": "W",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "powerPhaseC",
+            "address": 30017,
+            "size": 2,
+            "type": "float",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Power phase L3",
+            "unit": "W",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "totalCurrentPower",
+            "address": 30053,
+            "size": 2,
+            "type": "uint16",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Total system power",
+            "unit": "W",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "phaseAImportet",
+            "address": 30053,
+            "size": 2,
+            "type": "uint16",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Total system power",
+            "unit": "W",
+            "defaultValue": "0",
+            "access": "RO"
+        }
+    ]
+}

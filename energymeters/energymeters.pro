@@ -1,16 +1,14 @@
 include(../plugins.pri)
 
-QT += \ 
-    serialport \
-    serialbus \
-
-SOURCES += \
-    energymeter.cpp \
-    integrationpluginenergymeters.cpp
+QT += serialport serialbus
 
 HEADERS += \
-    energymeter.h \
     integrationpluginenergymeters.h \
-    inepromodbusregister.h \
-    bg-etechmodbusregister.h \
-    registerdescriptor.h
+    sdm630modbusrtuconnection.h \
+    ../modbus/modbusdatautils.h
+
+SOURCES += \
+    integrationpluginenergymeters.cpp \
+    sdm630modbusrtuconnection.cpp \
+    ../modbus/modbusdatautils.cpp
+

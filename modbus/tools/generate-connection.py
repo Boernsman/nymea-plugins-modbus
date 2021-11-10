@@ -230,56 +230,56 @@ def getValueConversionMethod(registerDefinition):
     if 'enum' in registerDefinition:
         enumName = registerDefinition['enum']
         if registerDefinition['type'] == 'uint16':
-            return ('static_cast<%s>(ModbusDataUtils::convertToUInt16(unit.values()))' % (enumName))
+            return ('static_cast<%s>(ModbusDataUtils::convertToUInt16(values))' % (enumName))
         elif registerDefinition['type'] == 'int16':
-            return ('static_cast<%s>(ModbusDataUtils::convertToInt16(unit.values()))' % (enumName))
+            return ('static_cast<%s>(ModbusDataUtils::convertToInt16(values))' % (enumName))
         elif registerDefinition['type'] == 'uint32':
-            return ('static_cast<%s>(ModbusDataUtils::convertToUInt32(unit.values(), ModbusDataUtils::ByteOrder%s))' % (enumName, endianness))
+            return ('static_cast<%s>(ModbusDataUtils::convertToUInt32(values, ModbusDataUtils::ByteOrder%s))' % (enumName, endianness))
         elif registerDefinition['type'] == 'int32':
-            return ('static_cast<%s>(ModbusDataUtils::convertToInt32(unit.values(), ModbusDataUtils::ByteOrder%s))' % (enumName, endianness))
+            return ('static_cast<%s>(ModbusDataUtils::convertToInt32(values, ModbusDataUtils::ByteOrder%s))' % (enumName, endianness))
 
     # Handle scale factors
     if 'scaleFactor' in registerDefinition:
         scaleFactorProperty = 'm_%s' % registerDefinition['scaleFactor']
         if registerDefinition['type'] == 'uint16':
-            return ('ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, %s)' % (scaleFactorProperty))
+            return ('ModbusDataUtils::convertToUInt16(values) * 1.0 * pow(10, %s)' % (scaleFactorProperty))
         elif registerDefinition['type'] == 'int16':
-            return ('ModbusDataUtils::convertToInt16(unit.values()) * 1.0 * pow(10, %s)' % (scaleFactorProperty))
+            return ('ModbusDataUtils::convertToInt16(values) * 1.0 * pow(10, %s)' % (scaleFactorProperty))
         elif registerDefinition['type'] == 'uint32':
-            return ('ModbusDataUtils::convertToUInt32(unit.values(), ModbusDataUtils::ByteOrder%s) * 1.0 * pow(10, %s)' % (endianness, scaleFactorProperty))
+            return ('ModbusDataUtils::convertToUInt32(values, ModbusDataUtils::ByteOrder%s) * 1.0 * pow(10, %s)' % (endianness, scaleFactorProperty))
         elif registerDefinition['type'] == 'int32':
-            return ('ModbusDataUtils::convertToInt32(unit.values(), ModbusDataUtils::ByteOrder%s) * 1.0 * pow(10, %s)' % (endianness, scaleFactorProperty))
+            return ('ModbusDataUtils::convertToInt32(values, ModbusDataUtils::ByteOrder%s) * 1.0 * pow(10, %s)' % (endianness, scaleFactorProperty))
 
     elif 'staticScaleFactor' in registerDefinition:
         scaleFactor = registerDefinition['staticScaleFactor']
         if registerDefinition['type'] == 'uint16':
-            return ('ModbusDataUtils::convertToUInt16(unit.values()) * 1.0 * pow(10, %s)' % (scaleFactor))
+            return ('ModbusDataUtils::convertToUInt16(values) * 1.0 * pow(10, %s)' % (scaleFactor))
         elif registerDefinition['type'] == 'int16':
-            return ('ModbusDataUtils::convertToInt16(unit.values()) * 1.0 * pow(10, %s)' % (scaleFactor))
+            return ('ModbusDataUtils::convertToInt16(values) * 1.0 * pow(10, %s)' % (scaleFactor))
         elif registerDefinition['type'] == 'uint32':
-            return ('ModbusDataUtils::convertToUInt32(unit.values(), ModbusDataUtils::ByteOrder%s) * 1.0 * pow(10, %s)' % (endianness, scaleFactor))
+            return ('ModbusDataUtils::convertToUInt32(values, ModbusDataUtils::ByteOrder%s) * 1.0 * pow(10, %s)' % (endianness, scaleFactor))
         elif registerDefinition['type'] == 'int32':
-            return ('ModbusDataUtils::convertToInt32(unit.values(), ModbusDataUtils::ByteOrder%s) * 1.0 * pow(10, %s)' % (endianness, scaleFactor))
+            return ('ModbusDataUtils::convertToInt32(values, ModbusDataUtils::ByteOrder%s) * 1.0 * pow(10, %s)' % (endianness, scaleFactor))
 
     # Handle default types
     elif registerDefinition['type'] == 'uint16':
-        return ('ModbusDataUtils::convertToUInt16(unit.values())')
+        return ('ModbusDataUtils::convertToUInt16(values)')
     elif registerDefinition['type'] == 'int16':
-        return ('ModbusDataUtils::convertToInt16(unit.values())')
+        return ('ModbusDataUtils::convertToInt16(values)')
     elif registerDefinition['type'] == 'uint32':
-        return ('ModbusDataUtils::convertToUInt32(unit.values(), ModbusDataUtils::ByteOrder%s)' % endianness)
+        return ('ModbusDataUtils::convertToUInt32(values, ModbusDataUtils::ByteOrder%s)' % endianness)
     elif registerDefinition['type'] == 'int32':
-        return ('ModbusDataUtils::convertToInt32(unit.values(), ModbusDataUtils::ByteOrder%s)' % endianness)
+        return ('ModbusDataUtils::convertToInt32(values, ModbusDataUtils::ByteOrder%s)' % endianness)
     elif registerDefinition['type'] == 'uint64':
-        return ('ModbusDataUtils::convertToUInt64(unit.values(), ModbusDataUtils::ByteOrder%s)' % endianness)
+        return ('ModbusDataUtils::convertToUInt64(values, ModbusDataUtils::ByteOrder%s)' % endianness)
     elif registerDefinition['type'] == 'int64':
-        return ('ModbusDataUtils::convertToInt64(unit.values(), ModbusDataUtils::ByteOrder%s)' % endianness)
+        return ('ModbusDataUtils::convertToInt64(values, ModbusDataUtils::ByteOrder%s)' % endianness)
     elif registerDefinition['type'] == 'float':
-        return ('ModbusDataUtils::convertToFloat32(unit.values(), ModbusDataUtils::ByteOrder%s)' % endianness)
+        return ('ModbusDataUtils::convertToFloat32(values, ModbusDataUtils::ByteOrder%s)' % endianness)
     elif registerDefinition['type'] == 'float64':
-        return ('ModbusDataUtils::convertToFloat64(unit.values(), ModbusDataUtils::ByteOrder%s)' % endianness)
+        return ('ModbusDataUtils::convertToFloat64(values, ModbusDataUtils::ByteOrder%s)' % endianness)
     elif registerDefinition['type'] == 'string':
-        return ('ModbusDataUtils::convertToString(unit.values())')
+        return ('ModbusDataUtils::convertToString(values)')
 
 
 def writePropertyGetSetMethodDeclarations(fileDescriptor, registerDefinitions):
@@ -300,7 +300,7 @@ def writePropertyGetSetMethodDeclarations(fileDescriptor, registerDefinitions):
         writeLine(fileDescriptor)
 
 
-def writePropertyGetSetMethodImplementations(fileDescriptor, className, registerDefinitions):
+def writePropertyGetSetMethodImplementationsTcp(fileDescriptor, className, registerDefinitions):
     for registerDefinition in registerDefinitions:
         propertyName = registerDefinition['id']
         propertyTyp = getCppDataType(registerDefinition)
@@ -332,6 +332,41 @@ def writePropertyGetSetMethodImplementations(fileDescriptor, className, register
             writeLine(fileDescriptor, '}')
             writeLine(fileDescriptor)
 
+def writePropertyGetSetMethodImplementationsRtu(fileDescriptor, className, registerDefinitions):
+    for registerDefinition in registerDefinitions:
+        propertyName = registerDefinition['id']
+        propertyTyp = getCppDataType(registerDefinition)
+        # Get
+        if 'enum' in registerDefinition:
+            writeLine(fileDescriptor, '%s::%s %s::%s() const' % (className, propertyTyp, className, propertyName))
+        else:
+            writeLine(fileDescriptor, '%s %s::%s() const' % (propertyTyp, className, propertyName))
+    
+        writeLine(fileDescriptor, '{')
+        writeLine(fileDescriptor, '    return m_%s;' % propertyName)
+        writeLine(fileDescriptor, '}')
+        writeLine(fileDescriptor)
+
+        # Check if we require a set method
+        # TODO: 
+        # if registerDefinition['access'] == 'RW' or registerDefinition['access'] == 'WO':
+        #     writeLine(fileDescriptor, 'QModbusReply *%s::set%s(%s %s)' % (className, propertyName[0].upper() + propertyName[1:], propertyTyp, propertyName))
+        #     writeLine(fileDescriptor, '{')
+
+        #     writeLine(fileDescriptor, '    QVector<quint16> values = %s;' % getConversionToValueMethod(registerDefinition))
+        #     writeLine(fileDescriptor, '    qCDebug(dc%s()) << "--> Write \\"%s\\" register:" << %s << "size:" << %s << values;' % (className, registerDefinition['description'], registerDefinition['address'], registerDefinition['size']))
+        #     if registerDefinition['registerType'] == 'holdingRegister':
+        #         writeLine(fileDescriptor, '    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, %s, values.count());' % (registerDefinition['address']))
+
+        #     # TODO: other write methods
+
+        #     writeLine(fileDescriptor, '    request.setValues(values);')
+        #     writeLine(fileDescriptor, '    return sendWriteRequest(request, m_slaveId);')
+        #     writeLine(fileDescriptor, '}')
+        #     writeLine(fileDescriptor)
+
+
+
 
 
 def writePropertyUpdateMethodDeclarations(fileDescriptor, registerDefinitions):
@@ -344,7 +379,7 @@ def writePropertyUpdateMethodDeclarations(fileDescriptor, registerDefinitions):
         writeLine(fileDescriptor, '    void update%s();' % (propertyName[0].upper() + propertyName[1:]))
 
 
-def writePropertyUpdateMethodImplementations(fileDescriptor, className, registerDefinitions):
+def writePropertyUpdateMethodImplementationsTcp(fileDescriptor, className, registerDefinitions):
     for registerDefinition in registerDefinitions:
         if 'readSchedule' in registerDefinition and registerDefinition['readSchedule'] == 'init':
             continue
@@ -362,7 +397,8 @@ def writePropertyUpdateMethodImplementations(fileDescriptor, className, register
         writeLine(fileDescriptor, '            connect(reply, &QModbusReply::finished, this, [this, reply](){')
         writeLine(fileDescriptor, '                if (reply->error() == QModbusDevice::NoError) {')
         writeLine(fileDescriptor, '                    const QModbusDataUnit unit = reply->result();')
-        writeLine(fileDescriptor, '                    qCDebug(dc%s()) << "<-- Response from \\"%s\\" register" << %s << "size:" << %s << unit.values();' % (className, registerDefinition['description'], registerDefinition['address'], registerDefinition['size']))
+        writeLine(fileDescriptor, '                    const QVector<quint16> values = unit.values();')
+        writeLine(fileDescriptor, '                    qCDebug(dc%s()) << "<-- Response from \\"%s\\" register" << %s << "size:" << %s << values;' % (className, registerDefinition['description'], registerDefinition['address'], registerDefinition['size']))
 
         # FIXME: introduce bool and check register type for parsing
         writeLine(fileDescriptor, '                    %s received%s = %s;' % (propertyTyp, propertyName[0].upper() + propertyName[1:], getValueConversionMethod(registerDefinition)))
@@ -387,13 +423,58 @@ def writePropertyUpdateMethodImplementations(fileDescriptor, className, register
         writeLine(fileDescriptor)
 
 
-def writeInternalPropertyReadMethodDeclarations(fileDescriptor, registerDefinitions):
+def writePropertyUpdateMethodImplementationsRtu(fileDescriptor, className, registerDefinitions):
+    for registerDefinition in registerDefinitions:
+        if 'readSchedule' in registerDefinition and registerDefinition['readSchedule'] == 'init':
+            continue
+
+        propertyName = registerDefinition['id']
+        propertyTyp = getCppDataType(registerDefinition)
+        writeLine(fileDescriptor, 'void %s::update%s()' % (className, propertyName[0].upper() + propertyName[1:]))
+        writeLine(fileDescriptor, '{')
+        writeLine(fileDescriptor, '    // Update registers from %s' % registerDefinition['description'])
+        writeLine(fileDescriptor, '    qCDebug(dc%s()) << "--> Read \\"%s\\" register:" << %s << "size:" << %s;' % (className, registerDefinition['description'], registerDefinition['address'], registerDefinition['size']))
+        writeLine(fileDescriptor, '    ModbusRtuReply *reply = read%s();' % (propertyName[0].upper() + propertyName[1:]))
+        writeLine(fileDescriptor, '    if (reply) {')
+        writeLine(fileDescriptor, '        if (!reply->isFinished()) {')
+        writeLine(fileDescriptor, '            connect(reply, &ModbusRtuReply::finished, this, [this, reply](){')
+        writeLine(fileDescriptor, '                if (reply->error() == ModbusRtuReply::NoError) {')
+        writeLine(fileDescriptor, '                    const QVector<quint16> values = reply->result();')
+        writeLine(fileDescriptor, '                    qCDebug(dc%s()) << "<-- Response from \\"%s\\" register" << %s << "size:" << %s << values;' % (className, registerDefinition['description'], registerDefinition['address'], registerDefinition['size']))
+
+        # FIXME: introduce bool and check register type for parsing
+        writeLine(fileDescriptor, '                    %s received%s = %s;' % (propertyTyp, propertyName[0].upper() + propertyName[1:], getValueConversionMethod(registerDefinition)))
+        writeLine(fileDescriptor, '                    if (m_%s != received%s) {' % (propertyName, propertyName[0].upper() + propertyName[1:]))
+        writeLine(fileDescriptor, '                        m_%s = received%s;' % (propertyName, propertyName[0].upper() + propertyName[1:]))
+        writeLine(fileDescriptor, '                        emit %sChanged(m_%s);' % (propertyName, propertyName))
+        writeLine(fileDescriptor, '                    }')
+        writeLine(fileDescriptor, '                }')
+        writeLine(fileDescriptor, '            });')
+        writeLine(fileDescriptor)
+        writeLine(fileDescriptor, '            connect(reply, &ModbusRtuReply::errorOccurred, this, [reply] (ModbusRtuReply::Error error){')
+        writeLine(fileDescriptor, '                qCWarning(dc%s()) << "ModbusRtu reply error occurred while updating \\"%s\\" registers" << error << reply->errorString();' % (className, registerDefinition['description']))
+        writeLine(fileDescriptor, '                emit reply->finished();')
+        writeLine(fileDescriptor, '            });')
+        writeLine(fileDescriptor, '        }')
+        writeLine(fileDescriptor, '    } else {')
+        writeLine(fileDescriptor, '        qCWarning(dc%s()) << "Error occurred while reading \\"%s\\" registers";' % (className, registerDefinition['description']))
+        writeLine(fileDescriptor, '    }')
+        writeLine(fileDescriptor, '}')
+        writeLine(fileDescriptor)
+
+
+def writeInternalPropertyReadMethodDeclarationsTcp(fileDescriptor, registerDefinitions):
     for registerDefinition in registerDefinitions:
         propertyName = registerDefinition['id']
         writeLine(fileDescriptor, '    QModbusReply *read%s();' % (propertyName[0].upper() + propertyName[1:]))
 
+def writeInternalPropertyReadMethodDeclarationsRtu(fileDescriptor, registerDefinitions):
+    for registerDefinition in registerDefinitions:
+        propertyName = registerDefinition['id']
+        writeLine(fileDescriptor, '    ModbusRtuReply *read%s();' % (propertyName[0].upper() + propertyName[1:]))
 
-def writeInternalPropertyReadMethodImplementations(fileDescriptor, className, registerDefinitions):
+
+def writeInternalPropertyReadMethodImplementationsTcp(fileDescriptor, className, registerDefinitions):
     for registerDefinition in registerDefinitions:
         propertyName = registerDefinition['id']
         writeLine(fileDescriptor, 'QModbusReply *%s::read%s()' % (className, propertyName[0].upper() + propertyName[1:]))
@@ -413,6 +494,27 @@ def writeInternalPropertyReadMethodImplementations(fileDescriptor, className, re
         writeLine(fileDescriptor, '    return sendReadRequest(request, m_slaveId);')
         writeLine(fileDescriptor, '}')
         writeLine(fileDescriptor)
+
+def writeInternalPropertyReadMethodImplementationsRtu(fileDescriptor, className, registerDefinitions):
+    for registerDefinition in registerDefinitions:
+        propertyName = registerDefinition['id']
+        writeLine(fileDescriptor, 'ModbusRtuReply *%s::read%s()' % (className, propertyName[0].upper() + propertyName[1:]))
+        writeLine(fileDescriptor, '{')
+
+        # Build request depending on the register type
+        if registerDefinition['registerType'] == 'inputRegister':
+            writeLine(fileDescriptor, '    return m_modbusRtuMaster->readInputRegister(m_slaveId, %s, %s);' % (registerDefinition['address'], registerDefinition['size']))
+        elif registerDefinition['registerType'] == 'discreteInputs':
+            writeLine(fileDescriptor, '    return m_modbusRtuMaster->readDiscreteInput(m_slaveId, %s, %s);' % (registerDefinition['address'], registerDefinition['size']))
+        elif registerDefinition['registerType'] == 'coils':
+            writeLine(fileDescriptor, '    return m_modbusRtuMaster->readCoil(m_slaveId, %s, %s);' % (registerDefinition['address'], registerDefinition['size']))
+        else:
+            #Default to holdingRegister
+            writeLine(fileDescriptor, '    return m_modbusRtuMaster->readHoldingRegister(m_slaveId, %s, %s);' % (registerDefinition['address'], registerDefinition['size']))
+
+        writeLine(fileDescriptor, '}')
+        writeLine(fileDescriptor)
+
 
 
 def writePropertyChangedSignals(fileDescriptor, registerDefinitions):
@@ -512,6 +614,294 @@ def writeUpdateMethod(fileDescriptor, className, registerDefinitions):
     writeLine(fileDescriptor)
 
 
+
+def writeTcpHeaderFile():
+    print('Writing modbus TCP hader file %s' % headerFilePath)
+    headerFile = open(headerFilePath, 'w')
+
+    writeLicenseHeader(headerFile)
+    writeLine(headerFile, '#ifndef %s_H' % className.upper())
+    writeLine(headerFile, '#define %s_H' % className.upper())
+    writeLine(headerFile)
+    writeLine(headerFile, '#include <QObject>')
+    writeLine(headerFile)
+    writeLine(headerFile, '#include "../modbus/modbusdatautils.h"')
+    writeLine(headerFile, '#include "../modbus/modbustcpmaster.h"')
+
+    writeLine(headerFile)
+
+    # Begin of class
+    writeLine(headerFile, 'class %s : public ModbusTCPMaster' % className)
+    writeLine(headerFile, '{')
+    writeLine(headerFile, '    Q_OBJECT')
+
+    # Public members
+    writeLine(headerFile, 'public:')
+
+    # Enum declarations
+    if 'enums' in registerJson:
+        for enumDefinition in registerJson['enums']:
+            writeEnumDefinition(headerFile, enumDefinition)
+
+    # Constructor
+    writeLine(headerFile, '    explicit %s(const QHostAddress &hostAddress, uint port, quint16 slaveId, QObject *parent = nullptr);' % className)
+    writeLine(headerFile, '    ~%s() = default;' % className)
+    writeLine(headerFile)
+
+    # Write registers get method declarations
+    writePropertyGetSetMethodDeclarations(headerFile, registerJson['registers'])
+
+    # Write init and update method declarations
+    writeLine(headerFile, '    virtual void initialize();')
+    writeLine(headerFile, '    virtual void update();')
+    writeLine(headerFile)
+
+    writePropertyUpdateMethodDeclarations(headerFile, registerJson['registers'])
+    writeLine(headerFile)
+
+    # Write registers value changed signals
+    writeLine(headerFile, 'signals:')
+    writeLine(headerFile, '    void initializationFinished();')
+    writeLine(headerFile)
+    writePropertyChangedSignals(headerFile, registerJson['registers'])
+    writeLine(headerFile)
+
+    # Private members
+    writeLine(headerFile, 'private:')
+    writeLine(headerFile, '    quint16 m_slaveId = 1;')
+    writeLine(headerFile, '    QVector<QModbusReply *> m_pendingInitReplies;')
+    writeLine(headerFile)
+    writePrivatePropertyMembers(headerFile, registerJson['registers'])
+    writeLine(headerFile)
+    writeLine(headerFile, '    void verifyInitFinished();')
+    writeLine(headerFile)
+    writeInternalPropertyReadMethodDeclarationsTcp(headerFile, registerJson['registers'])
+    writeLine(headerFile)
+
+    # End of class
+    writeLine(headerFile)
+    writeLine(headerFile, '};')
+    writeLine(headerFile)
+    writeLine(headerFile, 'QDebug operator<<(QDebug debug, %s *%s);' % (className, className[0].lower() + className[1:]))
+    writeLine(headerFile)
+    writeLine(headerFile, '#endif // %s_H' % className.upper())
+
+    headerFile.close()
+
+
+def writeTcpSourceFile():
+    print('Writing modbus TCP source file %s' % sourceFilePath)
+    sourceFile = open(sourceFilePath, 'w')
+    writeLicenseHeader(sourceFile)
+    writeLine(sourceFile)
+    writeLine(sourceFile, '#include "%s"' % headerFileName)
+    writeLine(sourceFile, '#include "loggingcategories.h"')
+    writeLine(sourceFile)
+    writeLine(sourceFile, 'NYMEA_LOGGING_CATEGORY(dc%s, "%s")' % (className, className))
+    writeLine(sourceFile)
+
+    # Constructor
+    writeLine(sourceFile, '%s::%s(const QHostAddress &hostAddress, uint port, quint16 slaveId, QObject *parent) :' % (className, className))
+    writeLine(sourceFile, '    ModbusTCPMaster(hostAddress, port, parent),')
+    writeLine(sourceFile, '    m_slaveId(slaveId)')
+    writeLine(sourceFile, '{')
+    writeLine(sourceFile, '    ')
+    writeLine(sourceFile, '}')
+    writeLine(sourceFile)
+
+    # Property get methods
+    writePropertyGetSetMethodImplementationsTcp(sourceFile, className, registerJson['registers'])
+
+    # Write init and update method implementation
+    writeInitializeMethod(sourceFile, className, registerJson['registers'])
+    writeUpdateMethod(sourceFile, className, registerJson['registers'])
+
+    # Write update methods
+    writePropertyUpdateMethodImplementationsTcp(sourceFile, className, registerJson['registers'])
+
+    # Write property read method implementations
+    writeInternalPropertyReadMethodImplementationsTcp(sourceFile, className, registerJson['registers'])
+
+    writeLine(sourceFile, 'void %s::verifyInitFinished()' % (className))
+    writeLine(sourceFile, '{')
+    writeLine(sourceFile, '    if (m_pendingInitReplies.isEmpty()) {')
+    writeLine(sourceFile, '        qCDebug(dc%s()) << "Initialization finished of %s" << hostAddress().toString();' % (className, className))
+    writeLine(sourceFile, '        emit initializationFinished();')
+    writeLine(sourceFile, '    }')
+    writeLine(sourceFile, '}')
+    writeLine(sourceFile)
+
+    # Write the debug print
+    debugObjectParamName = className[0].lower() + className[1:]
+    writeLine(sourceFile, 'QDebug operator<<(QDebug debug, %s *%s)' % (className, debugObjectParamName))
+    writeLine(sourceFile, '{')
+    writeLine(sourceFile, '    debug.nospace().noquote() << "%s(" << %s->hostAddress().toString() << ":" << %s->port() << ")" << "\\n";' % (className, debugObjectParamName, debugObjectParamName))
+    for registerDefinition in registerJson['registers']:
+        propertyName = registerDefinition['id']
+        propertyTyp = getCppDataType(registerDefinition)
+        line = ('"    - %s:" << %s->%s()' % (registerDefinition['description'], debugObjectParamName, propertyName))
+        if 'unit' in registerDefinition and registerDefinition['unit'] != '':
+            line += (' << " [%s]"' % registerDefinition['unit'])
+        writeLine(sourceFile, '    debug.nospace().noquote() << %s << "\\n";' % (line))
+
+    writeLine(sourceFile, '    return debug.quote().space();')
+    writeLine(sourceFile, '}')
+    writeLine(sourceFile)
+
+    sourceFile.close()
+
+
+def writeRtuHeaderFile():
+    print('Writing modbus TCP hader file %s' % headerFilePath)
+    headerFile = open(headerFilePath, 'w')
+
+    writeLicenseHeader(headerFile)
+    writeLine(headerFile, '#ifndef %s_H' % className.upper())
+    writeLine(headerFile, '#define %s_H' % className.upper())
+    writeLine(headerFile)
+    writeLine(headerFile, '#include <QObject>')
+    writeLine(headerFile)
+    writeLine(headerFile, '#include "../modbus/modbusdatautils.h"')
+    writeLine(headerFile, '#include <hardware/modbus/modbusrtumaster.h>')
+
+    writeLine(headerFile)
+
+    # Begin of class
+    writeLine(headerFile, 'class %s : public QObject' % className)
+    writeLine(headerFile, '{')
+    writeLine(headerFile, '    Q_OBJECT')
+
+    # Public members
+    writeLine(headerFile, 'public:')
+
+    # Enum declarations
+    if 'enums' in registerJson:
+        for enumDefinition in registerJson['enums']:
+            writeEnumDefinition(headerFile, enumDefinition)
+
+    # Constructor
+    writeLine(headerFile, '    explicit %s(ModbusRtuMaster *modbusRtuMaster, quint16 slaveId, QObject *parent = nullptr);' % className)
+    writeLine(headerFile, '    ~%s() = default;' % className)
+    writeLine(headerFile)
+
+    writeLine(headerFile, '    ModbusRtuMaster *modbusRtuMaster() const;')
+    writeLine(headerFile, '    quint16 slaveId() const;')
+    writeLine(headerFile)
+
+    # Write registers get method declarations
+    writePropertyGetSetMethodDeclarations(headerFile, registerJson['registers'])
+
+    # Write init and update method declarations
+    writeLine(headerFile, '    virtual void initialize();')
+    writeLine(headerFile, '    virtual void update();')
+    writeLine(headerFile)
+
+    writePropertyUpdateMethodDeclarations(headerFile, registerJson['registers'])
+    writeLine(headerFile)
+
+    # Write registers value changed signals
+    writeLine(headerFile, 'signals:')
+    writeLine(headerFile, '    void initializationFinished();')
+    writeLine(headerFile)
+    writePropertyChangedSignals(headerFile, registerJson['registers'])
+    writeLine(headerFile)
+
+    # Private members
+    writeLine(headerFile, 'private:')
+    writeLine(headerFile, '    ModbusRtuMaster *m_modbusRtuMaster = nullptr;')
+    writeLine(headerFile, '    quint16 m_slaveId = 1;')
+    writeLine(headerFile, '    QVector<ModbusRtuReply *> m_pendingInitReplies;')
+    writeLine(headerFile)
+    writePrivatePropertyMembers(headerFile, registerJson['registers'])
+    writeLine(headerFile)
+    writeLine(headerFile, '    void verifyInitFinished();')
+    writeLine(headerFile)
+    writeInternalPropertyReadMethodDeclarationsRtu(headerFile, registerJson['registers'])
+    writeLine(headerFile)
+    
+    # End of class
+    writeLine(headerFile)
+    writeLine(headerFile, '};')
+    writeLine(headerFile)
+    writeLine(headerFile, 'QDebug operator<<(QDebug debug, %s *%s);' % (className, className[0].lower() + className[1:]))
+    writeLine(headerFile)
+    writeLine(headerFile, '#endif // %s_H' % className.upper())
+
+    headerFile.close()
+
+def writeRtuSourceFile():
+    print('Writing modbus RTU source file %s' % sourceFilePath)
+    sourceFile = open(sourceFilePath, 'w')
+    writeLicenseHeader(sourceFile)
+    writeLine(sourceFile)
+    writeLine(sourceFile, '#include "%s"' % headerFileName)
+    writeLine(sourceFile, '#include "loggingcategories.h"')
+    writeLine(sourceFile)
+    writeLine(sourceFile, 'NYMEA_LOGGING_CATEGORY(dc%s, "%s")' % (className, className))
+    writeLine(sourceFile)
+
+    # Constructor
+    writeLine(sourceFile, '%s::%s(ModbusRtuMaster *modbusRtuMaster, quint16 slaveId, QObject *parent) :' % (className, className))
+    writeLine(sourceFile, '    QObject(parent),')
+    writeLine(sourceFile, '    m_modbusRtuMaster(modbusRtuMaster),')
+    writeLine(sourceFile, '    m_slaveId(slaveId)')
+    writeLine(sourceFile, '{')
+    writeLine(sourceFile, '    ')
+    writeLine(sourceFile, '}')
+    writeLine(sourceFile)
+
+    writeLine(sourceFile, 'ModbusRtuMaster *%s::modbusRtuMaster() const' % (className))
+    writeLine(sourceFile, '{')
+    writeLine(sourceFile, '    return m_modbusRtuMaster;')
+    writeLine(sourceFile, '}')
+
+    writeLine(sourceFile, 'quint16 %s::slaveId() const' % (className))
+    writeLine(sourceFile, '{')
+    writeLine(sourceFile, '    return m_slaveId;')
+    writeLine(sourceFile, '}')
+
+
+    # Property get methods
+    writePropertyGetSetMethodImplementationsRtu(sourceFile, className, registerJson['registers'])
+
+    # Write init and update method implementation
+    writeInitializeMethod(sourceFile, className, registerJson['registers'])
+    writeUpdateMethod(sourceFile, className, registerJson['registers'])
+
+    # Write update methods
+    writePropertyUpdateMethodImplementationsRtu(sourceFile, className, registerJson['registers'])
+
+    # Write property read method implementations
+    writeInternalPropertyReadMethodImplementationsRtu(sourceFile, className, registerJson['registers'])
+
+    writeLine(sourceFile, 'void %s::verifyInitFinished()' % (className))
+    writeLine(sourceFile, '{')
+    writeLine(sourceFile, '    if (m_pendingInitReplies.isEmpty()) {')
+    writeLine(sourceFile, '        qCDebug(dc%s()) << "Initialization finished of %s";' % (className, className))
+    writeLine(sourceFile, '        emit initializationFinished();')
+    writeLine(sourceFile, '    }')
+    writeLine(sourceFile, '}')
+    writeLine(sourceFile)
+
+    # Write the debug print
+    debugObjectParamName = className[0].lower() + className[1:]
+    writeLine(sourceFile, 'QDebug operator<<(QDebug debug, %s *%s)' % (className, debugObjectParamName))
+    writeLine(sourceFile, '{')
+    writeLine(sourceFile, '    debug.nospace().noquote() << "%s(" << %s->modbusRtuMaster()->modbusUuid().toString() << ", " << %s->modbusRtuMaster()->serialPort() << ", slave ID:" << %s->slaveId() << ")" << "\\n";' % (className, debugObjectParamName, debugObjectParamName, debugObjectParamName))
+    for registerDefinition in registerJson['registers']:
+        propertyName = registerDefinition['id']
+        propertyTyp = getCppDataType(registerDefinition)
+        line = ('"    - %s:" << %s->%s()' % (registerDefinition['description'], debugObjectParamName, propertyName))
+        if 'unit' in registerDefinition and registerDefinition['unit'] != '':
+            line += (' << " [%s]"' % registerDefinition['unit'])
+        writeLine(sourceFile, '    debug.nospace().noquote() << %s << "\\n";' % (line))
+
+    writeLine(sourceFile, '    return debug.quote().space();')
+    writeLine(sourceFile, '}')
+    writeLine(sourceFile)
+
+    sourceFile.close()
+
 ############################################################################################
 # Main
 ############################################################################################
@@ -545,142 +935,16 @@ endianness = 'BigEndian'
 if 'endianness' in registerJson:
     endianness = registerJson['endianness']
 
+protocol = 'TCP'
+if 'protocol' in registerJson:
+    protocol = registerJson['protocol']
 
-#############################################################################
-# Write header file
-#############################################################################
-
-headerFile = open(headerFilePath, 'w')
-
-writeLicenseHeader(headerFile)
-writeLine(headerFile, '#ifndef %s_H' % className.upper())
-writeLine(headerFile, '#define %s_H' % className.upper())
-writeLine(headerFile)
-writeLine(headerFile, '#include <QObject>')
-writeLine(headerFile)
-writeLine(headerFile, '#include "../modbus/modbusdatautils.h"')
-writeLine(headerFile, '#include "../modbus/modbustcpmaster.h"')
-
-writeLine(headerFile)
-
-# Begin of class
-writeLine(headerFile, 'class %s : public ModbusTCPMaster' % className)
-writeLine(headerFile, '{')
-writeLine(headerFile, '    Q_OBJECT')
-
-# Public members
-writeLine(headerFile, 'public:')
-
-# Enum declarations
-for enumDefinition in registerJson['enums']:
-    writeEnumDefinition(headerFile, enumDefinition)
-
-# Constructor
-writeLine(headerFile, '    explicit %s(const QHostAddress &hostAddress, uint port, quint16 slaveId, QObject *parent = nullptr);' % className)
-writeLine(headerFile, '    ~%s() = default;' % className)
-writeLine(headerFile)
-
-# Write registers get method declarations
-writePropertyGetSetMethodDeclarations(headerFile, registerJson['registers'])
-
-# Write init and update method declarations
-writeLine(headerFile, '    virtual void initialize();')
-writeLine(headerFile, '    virtual void update();')
-writeLine(headerFile)
-
-writePropertyUpdateMethodDeclarations(headerFile, registerJson['registers'])
-writeLine(headerFile)
-
-# Write registers value changed signals
-writeLine(headerFile, 'signals:')
-writeLine(headerFile, '    void initializationFinished();')
-writeLine(headerFile)
-writePropertyChangedSignals(headerFile, registerJson['registers'])
-writeLine(headerFile)
-
-# Private members
-writeLine(headerFile, 'private:')
-writeLine(headerFile, '    quint16 m_slaveId = 1;')
-writeLine(headerFile, '    QVector<QModbusReply *> m_pendingInitReplies;')
-writeLine(headerFile)
-writePrivatePropertyMembers(headerFile, registerJson['registers'])
-writeLine(headerFile)
-writeLine(headerFile, '    void verifyInitFinished();')
-writeLine(headerFile)
-writeInternalPropertyReadMethodDeclarations(headerFile, registerJson['registers'])
-writeLine(headerFile)
-
-# End of class
-writeLine(headerFile)
-writeLine(headerFile, '};')
-writeLine(headerFile)
-writeLine(headerFile, 'QDebug operator<<(QDebug debug, %s *%s);' % (className, className[0].lower() + className[1:]))
-writeLine(headerFile)
-writeLine(headerFile, '#endif // %s_H' % className.upper())
-
-headerFile.close()
+if protocol == 'TCP':
+    writeTcpHeaderFile()
+    writeTcpSourceFile()
+else:
+    writeRtuHeaderFile()
+    writeRtuSourceFile()
 
 
 
-#############################################################################
-# Write source file
-#############################################################################
-
-sourceFile = open(sourceFilePath, 'w')
-writeLicenseHeader(sourceFile)
-writeLine(sourceFile)
-writeLine(sourceFile, '#include "%s"' % headerFileName)
-writeLine(sourceFile, '#include "loggingcategories.h"')
-writeLine(sourceFile)
-writeLine(sourceFile, 'NYMEA_LOGGING_CATEGORY(dc%s, "%s")' % (className, className))
-writeLine(sourceFile)
-
-# Constructor
-writeLine(sourceFile, '%s::%s(const QHostAddress &hostAddress, uint port, quint16 slaveId, QObject *parent) :' % (className, className))
-writeLine(sourceFile, '    ModbusTCPMaster(hostAddress, port, parent),')
-writeLine(sourceFile, '    m_slaveId(slaveId)')
-writeLine(sourceFile, '{')
-writeLine(sourceFile, '    ')
-writeLine(sourceFile, '}')
-writeLine(sourceFile)
-
-# Property get methods
-writePropertyGetSetMethodImplementations(sourceFile, className, registerJson['registers'])
-
-# Write init and update method implementation
-writeInitializeMethod(sourceFile, className, registerJson['registers'])
-writeUpdateMethod(sourceFile, className, registerJson['registers'])
-
-# Write update methods
-writePropertyUpdateMethodImplementations(sourceFile, className, registerJson['registers'])
-
-# Write property read method implementations
-writeInternalPropertyReadMethodImplementations(sourceFile, className, registerJson['registers'])
-
-writeLine(sourceFile, 'void %s::verifyInitFinished()' % (className))
-writeLine(sourceFile, '{')
-writeLine(sourceFile, '    if (m_pendingInitReplies.isEmpty()) {')
-writeLine(sourceFile, '        qCDebug(dc%s()) << "Initialization finished of %s" << hostAddress().toString();' % (className, className))
-writeLine(sourceFile, '        emit initializationFinished();')
-writeLine(sourceFile, '    }')
-writeLine(sourceFile, '}')
-writeLine(sourceFile)
-
-# Write the debug print
-debugObjectParamName = className[0].lower() + className[1:]
-writeLine(sourceFile, 'QDebug operator<<(QDebug debug, %s *%s)' % (className, debugObjectParamName))
-writeLine(sourceFile, '{')
-writeLine(sourceFile, '    debug.nospace().noquote() << "%s(" << %s->hostAddress().toString() << ":" << %s->port() << ")" << "\\n";' % (className, debugObjectParamName, debugObjectParamName))
-for registerDefinition in registerJson['registers']:
-    propertyName = registerDefinition['id']
-    propertyTyp = getCppDataType(registerDefinition)
-    line = ('"    - %s:" << %s->%s()' % (registerDefinition['description'], debugObjectParamName, propertyName))
-    if 'unit' in registerDefinition and registerDefinition['unit'] != '':
-        line += (' << " [%s]"' % registerDefinition['unit'])
-    writeLine(sourceFile, '    debug.nospace().noquote() << %s << "\\n";' % (line))
-
-writeLine(sourceFile, '    return debug.quote().space();')
-writeLine(sourceFile, '}')
-writeLine(sourceFile)
-
-sourceFile.close()

@@ -170,7 +170,7 @@
             "thingClasses": [
                 {
                     "name": "sdm630",
-                    "displayName": "SDM630Modbus",
+                    "displayName": "SDM630 Modbus",
                     "id": "f37597bb-35fe-48f2-9617-343dd54c0903",
                     "createMethods": ["discovery"],
                     "interfaces": ["smartmeterconsumer", "smartmeterproducer"],
