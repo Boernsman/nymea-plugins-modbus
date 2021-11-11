@@ -258,19 +258,19 @@ void IntegrationPluginEnergyMeters::setupThing(ThingSetupInfo *info)
         });
 
         connect(proConnection, &Pro380ModbusRtuConnection::totalCurrentPowerChanged, this, [=](float currentPower){
-            thing->setStateValue(pro380CurrentPowerStateTypeId, currentPower);
+            thing->setStateValue(pro380CurrentPowerStateTypeId, currentPower * 1000); // kW
         });
 
         connect(proConnection, &Pro380ModbusRtuConnection::powerPhaseAChanged, this, [=](float powerPhaseA){
-            thing->setStateValue(pro380CurrentPowerPhaseAStateTypeId, powerPhaseA);
+            thing->setStateValue(pro380CurrentPowerPhaseAStateTypeId, powerPhaseA * 1000); // kW
         });
 
         connect(proConnection, &Pro380ModbusRtuConnection::powerPhaseBChanged, this, [=](float powerPhaseB){
-            thing->setStateValue(pro380CurrentPowerPhaseBStateTypeId, powerPhaseB);
+            thing->setStateValue(pro380CurrentPowerPhaseBStateTypeId, powerPhaseB * 1000); // kW
         });
 
         connect(proConnection, &Pro380ModbusRtuConnection::powerPhaseCChanged, this, [=](float powerPhaseC){
-            thing->setStateValue(pro380CurrentPowerPhaseCStateTypeId, powerPhaseC);
+            thing->setStateValue(pro380CurrentPowerPhaseCStateTypeId, powerPhaseC * 1000); // kW
         });
 
         connect(proConnection, &Pro380ModbusRtuConnection::frequencyChanged, this, [=](float frequency){
