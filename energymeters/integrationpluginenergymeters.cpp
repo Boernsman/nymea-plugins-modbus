@@ -59,6 +59,8 @@ void IntegrationPluginEnergyMeters::init()
 
                     if (thing->thingClassId() == sdm630ThingClassId) {
                         delete m_sdmConnections.take(thing);
+                    } else if (thing->thingClassId() == pro380ThingClassId) {
+                        delete m_ineproConnections.take(thing);
                     }
                 }
             }
@@ -84,16 +86,17 @@ void IntegrationPluginEnergyMeters::discoverThings(ThingDiscoveryInfo *info)
 
     foreach (ModbusRtuMaster *modbusMaster, hardwareManager()->modbusRtuResource()->modbusRtuMasters()) {
         qCDebug(dcEnergyMeters()) << "Found RTU master resource" << modbusMaster << "connected" << modbusMaster->connected();
-        if (!modbusMaster->connected()) {
+        if (!modbusMaster->connected())
             continue;
-        }
-        ThingDescriptor descriptor(info->thingClassId(), QT_TR_NOOP("Energy meter"), QT_TR_NOOP("Slave address ") +QString::number(slaveAddress)+" "+modbusMaster->serialPort());
+
+        ThingDescriptor descriptor(info->thingClassId(), QT_TR_NOOP("Energy meter"), QT_TR_NOOP("Slave address ") + QString::number(slaveAddress) + " " + modbusMaster->serialPort());
         ParamList params;
         params << Param(m_slaveIdParamTypeIds.value(info->thingClassId()), slaveAddress);
         params << Param(m_modbusUuidParamTypeIds.value(info->thingClassId()), modbusMaster->modbusUuid());
         descriptor.setParams(params);
         info->addThingDescriptor(descriptor);
     }
+
     info->finish(Thing::ThingErrorNoError);
     return;
 }
@@ -213,6 +216,103 @@ void IntegrationPluginEnergyMeters::setupThing(ThingSetupInfo *info)
         // FIXME: try to read before setup success
         m_sdmConnections.insert(thing, sdmConnection);
         info->finish(Thing::ThingErrorNoError);
+
+    } else if (thing->thingClassId() == pro380ThingClassId) {
+        if (m_ineproConnections.contains(thing)) {
+            qCDebug(dcEnergyMeters()) << "Setup after rediscovery, cleaning up ...";
+            m_ineproConnections.take(thing)->deleteLater();
+        }
+
+        Pro380ModbusRtuConnection *proConnection = new Pro380ModbusRtuConnection(hardwareManager()->modbusRtuResource()->getModbusRtuMaster(uuid), address, this);
+        connect(proConnection->modbusRtuMaster(), &ModbusRtuMaster::connectedChanged, this, [=](bool connected){
+            if (connected) {
+                qCDebug(dcEnergyMeters()) << "Modbus RTU resource connected" << thing << proConnection->modbusRtuMaster()->serialPort();
+            } else {
+                qCWarning(dcEnergyMeters()) << "Modbus RTU resource disconnected" << thing << proConnection->modbusRtuMaster()->serialPort();
+            }
+        });
+
+        connect(proConnection, &Pro380ModbusRtuConnection::currentPhaseAChanged, this, [=](float currentPhaseA){
+            thing->setStateValue(pro380CurrentPhaseAStateTypeId, currentPhaseA);
+            thing->setStateValue(pro380ConnectedStateTypeId, true);
+        });
+
+        connect(proConnection, &Pro380ModbusRtuConnection::currentPhaseBChanged, this, [=](float currentPhaseB){
+            thing->setStateValue(pro380CurrentPhaseBStateTypeId, currentPhaseB);
+        });
+
+        connect(proConnection, &Pro380ModbusRtuConnection::currentPhaseCChanged, this, [=](float currentPhaseC){
+            thing->setStateValue(pro380CurrentPhaseCStateTypeId, currentPhaseC);
+        });
+
+        connect(proConnection, &Pro380ModbusRtuConnection::voltagePhaseAChanged, this, [=](float voltagePhaseA){
+            thing->setStateValue(pro380VoltagePhaseAStateTypeId, voltagePhaseA);
+        });
+
+        connect(proConnection, &Pro380ModbusRtuConnection::voltagePhaseBChanged, this, [=](float voltagePhaseB){
+            thing->setStateValue(pro380VoltagePhaseBStateTypeId, voltagePhaseB);
+        });
+
+        connect(proConnection, &Pro380ModbusRtuConnection::voltagePhaseCChanged, this, [=](float voltagePhaseC){
+            thing->setStateValue(pro380VoltagePhaseCStateTypeId, voltagePhaseC);
+        });
+
+        connect(proConnection, &Pro380ModbusRtuConnection::totalCurrentPowerChanged, this, [=](float currentPower){
+            thing->setStateValue(pro380CurrentPowerStateTypeId, currentPower);
+        });
+
+        connect(proConnection, &Pro380ModbusRtuConnection::powerPhaseAChanged, this, [=](float powerPhaseA){
+            thing->setStateValue(pro380CurrentPowerPhaseAStateTypeId, powerPhaseA);
+        });
+
+        connect(proConnection, &Pro380ModbusRtuConnection::powerPhaseBChanged, this, [=](float powerPhaseB){
+            thing->setStateValue(pro380CurrentPowerPhaseBStateTypeId, powerPhaseB);
+        });
+
+        connect(proConnection, &Pro380ModbusRtuConnection::powerPhaseCChanged, this, [=](float powerPhaseC){
+            thing->setStateValue(pro380CurrentPowerPhaseCStateTypeId, powerPhaseC);
+        });
+
+        connect(proConnection, &Pro380ModbusRtuConnection::frequencyChanged, this, [=](float frequency){
+            thing->setStateValue(pro380FrequencyStateTypeId, frequency);
+        });
+
+        connect(proConnection, &Pro380ModbusRtuConnection::totalEnergyConsumedChanged, this, [=](float totalEnergyConsumed){
+            thing->setStateValue(pro380TotalEnergyConsumedStateTypeId, totalEnergyConsumed);
+        });
+
+        connect(proConnection, &Pro380ModbusRtuConnection::totalEnergyProducedChanged, this, [=](float totalEnergyProduced){
+            thing->setStateValue(pro380TotalEnergyProducedStateTypeId, totalEnergyProduced);
+        });
+
+        connect(proConnection, &Pro380ModbusRtuConnection::energyProducedPhaseAChanged, this, [=](float energyProducedPhaseA){
+            thing->setStateValue(pro380EnergyProducedPhaseAStateTypeId, energyProducedPhaseA);
+        });
+
+        connect(proConnection, &Pro380ModbusRtuConnection::energyProducedPhaseBChanged, this, [=](float energyProducedPhaseB){
+            thing->setStateValue(pro380EnergyProducedPhaseBStateTypeId, energyProducedPhaseB);
+        });
+
+        connect(proConnection, &Pro380ModbusRtuConnection::energyProducedPhaseCChanged, this, [=](float energyProducedPhaseC){
+            thing->setStateValue(pro380EnergyProducedPhaseCStateTypeId, energyProducedPhaseC);
+        });
+
+        connect(proConnection, &Pro380ModbusRtuConnection::energyConsumedPhaseAChanged, this, [=](float energyConsumedPhaseA){
+            thing->setStateValue(pro380EnergyConsumedPhaseAStateTypeId, energyConsumedPhaseA);
+        });
+
+        connect(proConnection, &Pro380ModbusRtuConnection::energyConsumedPhaseBChanged, this, [=](float energyConsumedPhaseB){
+            thing->setStateValue(pro380EnergyConsumedPhaseBStateTypeId, energyConsumedPhaseB);
+        });
+
+        connect(proConnection, &Pro380ModbusRtuConnection::energyConsumedPhaseCChanged, this, [=](float energyConsumedPhaseC){
+            thing->setStateValue(pro380EnergyConsumedPhaseCStateTypeId, energyConsumedPhaseC);
+        });
+
+
+        // FIXME: try to read before setup success
+        m_ineproConnections.insert(thing, proConnection);
+        info->finish(Thing::ThingErrorNoError);
     }
 }
 
@@ -225,7 +325,12 @@ void IntegrationPluginEnergyMeters::postSetupThing(Thing *thing)
             foreach (Thing *thing, myThings().filterByThingClassId(sdm630ThingClassId)) {
                 m_sdmConnections.value(thing)->update();
             }
+
+            foreach (Thing *thing, myThings().filterByThingClassId(pro380ThingClassId)) {
+                m_sdmConnections.value(thing)->update();
+            }
         });
+
         qCDebug(dcEnergyMeters()) << "Starting refresh timer...";
         m_refreshTimer->start();
     }
@@ -237,6 +342,10 @@ void IntegrationPluginEnergyMeters::thingRemoved(Thing *thing)
 
     if (m_sdmConnections.contains(thing))
         m_sdmConnections.take(thing)->deleteLater();
+
+
+    if (m_ineproConnections.contains(thing))
+        m_ineproConnections.take(thing)->deleteLater();
 
     if (myThings().isEmpty() && m_refreshTimer) {
         qCDebug(dcEnergyMeters()) << "Stopping reconnect timer";

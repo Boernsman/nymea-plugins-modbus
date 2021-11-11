@@ -36,6 +36,7 @@
 #include <plugintimer.h>
 
 #include "sdm630modbusrtuconnection.h"
+#include "pro380modbusrtuconnection.h"
 
 #include <QObject>
 #include <QTimer>
@@ -58,14 +59,13 @@ public:
 private:
     PluginTimer *m_refreshTimer = nullptr;
 
-    QHash<Thing *, Sdm630ModbusRtuConnection *> m_sdmConnections;
+    QHash<Thing *, Sdm630ModbusRtuConnection *> m_sdmConnections; // sdm 630
+    QHash<Thing *, Pro380ModbusRtuConnection *> m_ineproConnections; // pro 380
 
     QHash<ThingClassId, ParamTypeId> m_discoverySlaveAddressParamTypeIds;
     QHash<ThingClassId, ParamTypeId> m_slaveIdParamTypeIds;
     QHash<ThingClassId, ParamTypeId> m_modbusUuidParamTypeIds;
     QHash<ThingClassId, StateTypeId> m_connectionStateTypeIds;
-
-private slots:
 
 };
 

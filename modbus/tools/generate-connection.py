@@ -332,6 +332,7 @@ def writePropertyGetSetMethodImplementationsTcp(fileDescriptor, className, regis
             writeLine(fileDescriptor, '}')
             writeLine(fileDescriptor)
 
+
 def writePropertyGetSetMethodImplementationsRtu(fileDescriptor, className, registerDefinitions):
     for registerDefinition in registerDefinitions:
         propertyName = registerDefinition['id']
