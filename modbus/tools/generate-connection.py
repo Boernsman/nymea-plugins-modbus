@@ -559,7 +559,7 @@ def writeBlockUpdateMethodImplementationsRtu(fileDescriptor, className, blockDef
             writeLine(fileDescriptor, '    ModbusRtuReply *reply = m_modbusRtuMaster->readCoil(m_slaveId, %s, %s);' % (blockStartAddress, blockSize))
         else:
             #Default to holdingRegister
-            writeLine(fileDescriptor, '    ModbusRtuReply *reply = m_modbusRtuMaster->readreadHoldingRegisterCoil(m_slaveId, %s, %s);' % (blockStartAddress, blockSize))
+            writeLine(fileDescriptor, '    ModbusRtuReply *reply = m_modbusRtuMaster->readHoldingRegister(m_slaveId, %s, %s);' % (blockStartAddress, blockSize))
 
         writeLine(fileDescriptor, '    if (reply) {')
         writeLine(fileDescriptor, '        if (!reply->isFinished()) {')

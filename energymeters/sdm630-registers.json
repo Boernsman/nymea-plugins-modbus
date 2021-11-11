@@ -1,6 +1,20 @@
 {
     "protocol": "RTU",
     "endianness": "BigEndian",
+    "registers": [
+        {
+            "id": "totalCurrentPower",
+            "address": 52,
+            "size": 2,
+            "type": "float",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Total system power",
+            "unit": "W",
+            "defaultValue": "0",
+            "access": "RO"
+        }
+    ],
     "blocks": [
         {
             "id": "phaseVoltageAndCurrent",
@@ -241,21 +255,6 @@
                     "access": "RO"
                 }
             ]
-        }
-    ],
-    "registers": [
-        
-        {
-            "id": "totalCurrentPower",
-            "address": 52,
-            "size": 2,
-            "type": "float",
-            "registerType": "inputRegister",
-            "readSchedule": "update",
-            "description": "Total system power",
-            "unit": "W",
-            "defaultValue": "0",
-            "access": "RO"
         }
     ]
 }
