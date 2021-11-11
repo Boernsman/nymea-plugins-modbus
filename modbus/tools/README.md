@@ -65,7 +65,7 @@ The basic structure of the modbus register JSON looks like following example:
         },
         ...
     ]
-}
+}   
 
 ```
 
@@ -128,6 +128,50 @@ Earch register will be defined as a property in the resulting class modbus TCP c
 * `scaleFactor`: Optional. The name of the scale factor register to convert this value to float. `floatValue = intValue * 10^scaleFactor value`. The scale factor value is normally a `int16` value, i.e. -10 or 10
 * `staticScaleFactor`: Optional. Use this static scale factor to convert this register value to float. `floatValue = registerValue * 10^staticScaleFactor`. The scale factor value is normally a `int16` value, i.e. -10 or 10
 * `defaultValue`: Optional. The value for initializing the property.
+
+# Register blocks
+
+On many device it is possible to read multiple registers in one modbus call. This can improve speed significantly when reading many register addresses which are in a row. 
+
+> Important: all registers within the block must exist, be in a row with no gaps inbetween!
+
+A block sequence looks like this and will define a read method for reading the entwire block. Writing multiple blocks is currently not supported since not needed so far, but could be added to. In any case, all registers must be read or written, never have combinations.
+
+* `id`: Mandatory. The id defines the name of the block used in the resulting class.
+* `readSchedule`: Optional. Defines when the register needs to be fetched. If no read schedule has been defined, the class will provide only the update methods, but will not read the value during `initialize()` or `update()` calls. Possible values are:
+    * `init`: The register will be fetched during initialization. Once all `init `registers have been fetched, the `initializationFinished()` signal will be emitted.
+    * `update`: The register will be feched each time the `update()` method will be called.
+* `registers`: Mandatory. The list of registers within the block. Please see the [Registers](#register) definition for more details about registers. The must be from the same register type, the same access type and there are no gaps allowed.
+
+Example block:
+
+    "blocks": [
+        {
+            "id": "meaningFullName",
+            "readSchedule": "update",
+            "registers": [
+                {
+                    "id": "registerOne",
+                    "address": 0,
+                    "size": 2,
+                    ...
+                },
+                {
+                    "id": "registerTwo",
+                    "address": 2,
+                    "size": 1,
+                    ...
+                },
+                {
+                    "id": "registerThree",
+                    "address": 3,
+                    "size": 2,
+                    ...
+                },
+            ]
+        }
+    ]
+
 
 # Example
 

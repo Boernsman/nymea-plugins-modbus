@@ -320,7 +320,7 @@ void IntegrationPluginEnergyMeters::postSetupThing(Thing *thing)
 {
     qCDebug(dcEnergyMeters) << "Post setup thing" << thing->name();
     if (!m_refreshTimer) {
-        m_refreshTimer = hardwareManager()->pluginTimerManager()->registerTimer(5);
+        m_refreshTimer = hardwareManager()->pluginTimerManager()->registerTimer(2);
         connect(m_refreshTimer, &PluginTimer::timeout, this, [this] {
             foreach (Thing *thing, myThings().filterByThingClassId(sdm630ThingClassId)) {
                 m_sdmConnections.value(thing)->update();
@@ -342,7 +342,6 @@ void IntegrationPluginEnergyMeters::thingRemoved(Thing *thing)
 
     if (m_sdmConnections.contains(thing))
         m_sdmConnections.take(thing)->deleteLater();
-
 
     if (m_ineproConnections.contains(thing))
         m_ineproConnections.take(thing)->deleteLater();

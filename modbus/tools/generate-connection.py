@@ -380,6 +380,69 @@ def writePropertyUpdateMethodDeclarations(fileDescriptor, registerDefinitions):
         writeLine(fileDescriptor, '    void update%s();' % (propertyName[0].upper() + propertyName[1:]))
 
 
+def validateBlocks(blockDefinitions):
+    for blockDefinition in blockDefinitions:
+        blockName = blockDefinition['id']
+        blockRegisters = blockDefinition['registers']
+        
+        blockStartAddress = 0
+        registerCount = 0
+        blockSize = 0
+        registerAccess = ""
+
+        for i, blockRegister in enumerate(blockRegisters):
+            if i == 0:
+                blockStartAddress = blockRegister['address']
+                registerAccess = blockRegister['access']
+            else:
+                previouseRegisterAddress = blockRegisters[i - 1]['address']
+                previouseRegisterSize = blockRegisters[i - 1]['size']
+                if previouseRegisterAddress + previouseRegisterSize != blockRegister['address']:
+                    print('Warning: block %s has invalid register order in register %s. There seems to be a gap between the registers.' % (blockName, blockRegister['id']))
+                    exit(1)
+
+                if blockRegister['access'] != registerAccess:
+                    print('Warning: block %s has inconsistent register access in register %s. The block registers dont seem to have the same access rights.' % (blockName, blockRegister['id']))
+                    exit(1)
+
+            registerCount += 1
+            blockSize += blockRegister['size']
+
+        print('Define valid block \"%s\" starting at %s with length %s containing %s properties to read.' % (blockName, blockStartAddress, blockSize, registerCount))
+
+
+def writeBlocksUpdateMethodDeclarations(fileDescriptor, blockDefinitions):
+    for blockDefinition in blockDefinitions:
+        blockName = blockDefinition['id']
+        blockRegisters = blockDefinition['registers']
+
+        # Write the property get / set methods for the block registers
+        writePropertyGetSetMethodDeclarations(fileDescriptor, blockRegisters)
+        
+        blockStartAddress = 0
+        blockSize = 0
+        registerCount = 0
+
+        for i, blockRegister in enumerate(blockRegisters):
+            if i == 0:
+                blockStartAddress = blockRegister['address']
+
+            registerCount += 1
+            blockSize += blockRegister['size']
+
+
+        # Write the block update method
+        writeLine(fileDescriptor, '    /* Read block from start addess %s with size of %s registers containing following %s properties:' % (blockStartAddress, blockSize, registerCount))
+        for i, registerDefinition in enumerate(blockRegisters):
+            if 'unit' in registerDefinition and registerDefinition['unit'] != '':
+                writeLine(fileDescriptor, '      - %s [%s] - Address: %s, Size: %s' % (registerDefinition['description'], registerDefinition['unit'], registerDefinition['address'], registerDefinition['size']))
+            else:
+                writeLine(fileDescriptor, '    -- %s - Address: %s, Size: %s' % (registerDefinition['description'], registerDefinition['address'], registerDefinition['size']))
+        writeLine(fileDescriptor, '    */ ' )
+        writeLine(fileDescriptor, '    void update%sBlock();' % (blockName[0].upper() + blockName[1:]))
+    writeLine(fileDescriptor)
+
+
 def writePropertyUpdateMethodImplementationsTcp(fileDescriptor, className, registerDefinitions):
     for registerDefinition in registerDefinitions:
         if 'readSchedule' in registerDefinition and registerDefinition['readSchedule'] == 'init':
@@ -464,10 +527,84 @@ def writePropertyUpdateMethodImplementationsRtu(fileDescriptor, className, regis
         writeLine(fileDescriptor)
 
 
+def writeBlockUpdateMethodImplementationsRtu(fileDescriptor, className, blockDefinitions):
+    for blockDefinition in blockDefinitions:
+        blockName = blockDefinition['id']
+        blockRegisters = blockDefinition['registers']
+        blockStartAddress = 0
+        registerCount = 0
+        blockSize = 0
+        registerType = ""
+
+        for i, blockRegister in enumerate(blockRegisters):
+            if i == 0:
+                blockStartAddress = blockRegister['address']
+                registerType = blockRegister['registerType']
+
+            registerCount += 1
+            blockSize += blockRegister['size']
+
+        writeLine(fileDescriptor, 'void %s::update%sBlock()' % (className, blockName[0].upper() + blockName[1:]))
+        writeLine(fileDescriptor, '{')
+        writeLine(fileDescriptor, '    // Update register block \"%s\"' % blockName)
+        writeLine(fileDescriptor, '    qCDebug(dc%s()) << "--> Read block \\"%s\\" registers from:" << %s << "size:" << %s;' % (className, blockName, blockStartAddress, blockSize))
+
+
+        # Build request depending on the register type
+        if registerType == 'inputRegister':
+            writeLine(fileDescriptor, '    ModbusRtuReply *reply = m_modbusRtuMaster->readInputRegister(m_slaveId, %s, %s);' % (blockStartAddress, blockSize))
+        elif registerType == 'discreteInputs':
+            writeLine(fileDescriptor, '    ModbusRtuReply *reply = m_modbusRtuMaster->readDiscreteInput(m_slaveId, %s, %s);' % (blockStartAddress, blockSize))
+        elif registerType == 'coils':
+            writeLine(fileDescriptor, '    ModbusRtuReply *reply = m_modbusRtuMaster->readCoil(m_slaveId, %s, %s);' % (blockStartAddress, blockSize))
+        else:
+            #Default to holdingRegister
+            writeLine(fileDescriptor, '    ModbusRtuReply *reply = m_modbusRtuMaster->readreadHoldingRegisterCoil(m_slaveId, %s, %s);' % (blockStartAddress, blockSize))
+
+        writeLine(fileDescriptor, '    if (reply) {')
+        writeLine(fileDescriptor, '        if (!reply->isFinished()) {')
+        writeLine(fileDescriptor, '            connect(reply, &ModbusRtuReply::finished, this, [this, reply](){')
+        writeLine(fileDescriptor, '                if (reply->error() == ModbusRtuReply::NoError) {')
+        writeLine(fileDescriptor, '                    QVector<quint16> blockValues = reply->result();')
+        writeLine(fileDescriptor, '                    QVector<quint16> values;')
+        writeLine(fileDescriptor, '                    qCDebug(dc%s()) << "<-- Response from reading block \\"%s\\" register" << %s << "size:" << %s << blockValues;' % (className, blockName, blockStartAddress, blockSize))
+        
+        # Start parsing the registers using offsets
+        offset = 0
+        for i, blockRegister in enumerate(blockRegisters):
+            propertyName = blockRegister['id']
+            propertyTyp = getCppDataType(blockRegister)
+            writeLine(fileDescriptor, '                    values = blockValues.mid(%s, %s);' % (offset, blockRegister['size']))
+            writeLine(fileDescriptor, '                    %s received%s = %s;' % (propertyTyp, propertyName[0].upper() + propertyName[1:], getValueConversionMethod(blockRegister)))
+            writeLine(fileDescriptor, '                    if (m_%s != received%s) {' % (propertyName, propertyName[0].upper() + propertyName[1:]))
+            writeLine(fileDescriptor, '                        m_%s = received%s;' % (propertyName, propertyName[0].upper() + propertyName[1:]))
+            writeLine(fileDescriptor, '                        emit %sChanged(m_%s);' % (propertyName, propertyName))
+            writeLine(fileDescriptor, '                    }')
+            writeLine(fileDescriptor)
+            offset += blockRegister['size']
+
+        writeLine(fileDescriptor, '                }')
+        writeLine(fileDescriptor, '            });')
+        writeLine(fileDescriptor)
+        writeLine(fileDescriptor, '            connect(reply, &ModbusRtuReply::errorOccurred, this, [reply] (ModbusRtuReply::Error error){')
+        writeLine(fileDescriptor, '                qCWarning(dc%s()) << "ModbusRtu reply error occurred while updating block \\"%s\\" registers" << error << reply->errorString();' % (className, blockName))
+        writeLine(fileDescriptor, '                emit reply->finished();')
+        writeLine(fileDescriptor, '            });')
+        writeLine(fileDescriptor, '        }')
+        writeLine(fileDescriptor, '    } else {')
+        writeLine(fileDescriptor, '        qCWarning(dc%s()) << "Error occurred while reading block \\"%s\\" registers";' % (className, blockName))
+        writeLine(fileDescriptor, '    }')
+        writeLine(fileDescriptor, '}')
+        writeLine(fileDescriptor)      
+
+
+
+
 def writeInternalPropertyReadMethodDeclarationsTcp(fileDescriptor, registerDefinitions):
     for registerDefinition in registerDefinitions:
         propertyName = registerDefinition['id']
         writeLine(fileDescriptor, '    QModbusReply *read%s();' % (propertyName[0].upper() + propertyName[1:]))
+
 
 def writeInternalPropertyReadMethodDeclarationsRtu(fileDescriptor, registerDefinitions):
     for registerDefinition in registerDefinitions:
@@ -495,6 +632,7 @@ def writeInternalPropertyReadMethodImplementationsTcp(fileDescriptor, className,
         writeLine(fileDescriptor, '    return sendReadRequest(request, m_slaveId);')
         writeLine(fileDescriptor, '}')
         writeLine(fileDescriptor)
+
 
 def writeInternalPropertyReadMethodImplementationsRtu(fileDescriptor, className, registerDefinitions):
     for registerDefinition in registerDefinitions:
@@ -550,6 +688,7 @@ def writeInitializeMethod(fileDescriptor, className, registerDefinitions):
             break
 
     if initRequired:
+        # FIXME: distinguish between RTU and TCP 
         writeLine(fileDescriptor, '    QModbusReply *reply = nullptr;')
         writeLine(fileDescriptor)
         writeLine(fileDescriptor, '    if (!m_pendingInitReplies.isEmpty()) {')
@@ -611,9 +750,23 @@ def writeUpdateMethod(fileDescriptor, className, registerDefinitions):
         if 'readSchedule' in registerDefinition and registerDefinition['readSchedule'] == 'update':
             writeLine(fileDescriptor, '    update%s();' % (propertyName[0].upper() + propertyName[1:]))
 
+    # Add the update block methods
+    for blockDefinition in registerJson['blocks']:
+        blockName = blockDefinition['id']
+        writeLine(fileDescriptor, '    update%sBlock();' % (blockName[0].upper() + blockName[1:]))
+
     writeLine(fileDescriptor, '}')
     writeLine(fileDescriptor)
 
+
+def writeRegistersDebugLine(fileDescriptor, debugObjectParamName, registerDefinitions):
+    for registerDefinition in registerDefinitions:
+        propertyName = registerDefinition['id']
+        propertyTyp = getCppDataType(registerDefinition)
+        line = ('"    - %s:" << %s->%s()' % (registerDefinition['description'], debugObjectParamName, propertyName))
+        if 'unit' in registerDefinition and registerDefinition['unit'] != '':
+            line += (' << " [%s]"' % registerDefinition['unit'])
+        writeLine(fileDescriptor, '    debug.nospace().noquote() << %s << "\\n";' % (line))
 
 
 def writeTcpHeaderFile():
@@ -652,6 +805,9 @@ def writeTcpHeaderFile():
     # Write registers get method declarations
     writePropertyGetSetMethodDeclarations(headerFile, registerJson['registers'])
 
+    # Write block get/set method declarations
+    writeBlocksUpdateMethodDeclarations(headerFile, registerJson['blocks'])
+
     # Write init and update method declarations
     writeLine(headerFile, '    virtual void initialize();')
     writeLine(headerFile, '    virtual void update();')
@@ -665,6 +821,8 @@ def writeTcpHeaderFile():
     writeLine(headerFile, '    void initializationFinished();')
     writeLine(headerFile)
     writePropertyChangedSignals(headerFile, registerJson['registers'])
+    for blockDefinition in registerJson['blocks']:
+        writePropertyChangedSignals(headerFile, blockDefinition['registers'])
     writeLine(headerFile)
 
     # Private members
@@ -673,6 +831,8 @@ def writeTcpHeaderFile():
     writeLine(headerFile, '    QVector<QModbusReply *> m_pendingInitReplies;')
     writeLine(headerFile)
     writePrivatePropertyMembers(headerFile, registerJson['registers'])
+    for blockDefinition in registerJson['blocks']:
+        writePrivatePropertyMembers(headerFile, blockDefinition['registers'])
     writeLine(headerFile)
     writeLine(headerFile, '    void verifyInitFinished();')
     writeLine(headerFile)
@@ -737,13 +897,10 @@ def writeTcpSourceFile():
     writeLine(sourceFile, 'QDebug operator<<(QDebug debug, %s *%s)' % (className, debugObjectParamName))
     writeLine(sourceFile, '{')
     writeLine(sourceFile, '    debug.nospace().noquote() << "%s(" << %s->hostAddress().toString() << ":" << %s->port() << ")" << "\\n";' % (className, debugObjectParamName, debugObjectParamName))
-    for registerDefinition in registerJson['registers']:
-        propertyName = registerDefinition['id']
-        propertyTyp = getCppDataType(registerDefinition)
-        line = ('"    - %s:" << %s->%s()' % (registerDefinition['description'], debugObjectParamName, propertyName))
-        if 'unit' in registerDefinition and registerDefinition['unit'] != '':
-            line += (' << " [%s]"' % registerDefinition['unit'])
-        writeLine(sourceFile, '    debug.nospace().noquote() << %s << "\\n";' % (line))
+    writeRegistersDebugLine(sourceFile, debugObjectParamName, registerJson['registers'])
+
+    for blockDefinition in registerJson['blocks']:
+        writeRegistersDebugLine(sourceFile, debugObjectParamName, blockDefinition['registers'])
 
     writeLine(sourceFile, '    return debug.quote().space();')
     writeLine(sourceFile, '}')
@@ -752,6 +909,7 @@ def writeTcpSourceFile():
     sourceFile.close()
 
 
+##########################################################################################################
 def writeRtuHeaderFile():
     print('Writing modbus TCP hader file %s' % headerFilePath)
     headerFile = open(headerFilePath, 'w')
@@ -789,15 +947,18 @@ def writeRtuHeaderFile():
     writeLine(headerFile, '    quint16 slaveId() const;')
     writeLine(headerFile)
 
-    # Write registers get method declarations
+    # Write registers get/set method declarations
     writePropertyGetSetMethodDeclarations(headerFile, registerJson['registers'])
+
+    # Write block get/set method declarations
+    writeBlocksUpdateMethodDeclarations(headerFile, registerJson['blocks'])
+
+    writePropertyUpdateMethodDeclarations(headerFile, registerJson['registers'])
+    writeLine(headerFile)
 
     # Write init and update method declarations
     writeLine(headerFile, '    virtual void initialize();')
     writeLine(headerFile, '    virtual void update();')
-    writeLine(headerFile)
-
-    writePropertyUpdateMethodDeclarations(headerFile, registerJson['registers'])
     writeLine(headerFile)
 
     # Write registers value changed signals
@@ -805,6 +966,8 @@ def writeRtuHeaderFile():
     writeLine(headerFile, '    void initializationFinished();')
     writeLine(headerFile)
     writePropertyChangedSignals(headerFile, registerJson['registers'])
+    for blockDefinition in registerJson['blocks']:
+        writePropertyChangedSignals(headerFile, blockDefinition['registers'])
     writeLine(headerFile)
 
     # Private members
@@ -814,6 +977,9 @@ def writeRtuHeaderFile():
     writeLine(headerFile, '    QVector<ModbusRtuReply *> m_pendingInitReplies;')
     writeLine(headerFile)
     writePrivatePropertyMembers(headerFile, registerJson['registers'])
+    for blockDefinition in registerJson['blocks']:
+        writePrivatePropertyMembers(headerFile, blockDefinition['registers'])
+
     writeLine(headerFile)
     writeLine(headerFile, '    void verifyInitFinished();')
     writeLine(headerFile)
@@ -829,6 +995,7 @@ def writeRtuHeaderFile():
     writeLine(headerFile, '#endif // %s_H' % className.upper())
 
     headerFile.close()
+
 
 def writeRtuSourceFile():
     print('Writing modbus RTU source file %s' % sourceFilePath)
@@ -865,12 +1032,19 @@ def writeRtuSourceFile():
     # Property get methods
     writePropertyGetSetMethodImplementationsRtu(sourceFile, className, registerJson['registers'])
 
+    # Block property get methods
+    for blockDefinition in registerJson['blocks']:
+        writePropertyGetSetMethodImplementationsRtu(sourceFile, className, blockDefinition['registers'])
+
     # Write init and update method implementation
     writeInitializeMethod(sourceFile, className, registerJson['registers'])
     writeUpdateMethod(sourceFile, className, registerJson['registers'])
 
     # Write update methods
     writePropertyUpdateMethodImplementationsRtu(sourceFile, className, registerJson['registers'])
+
+    # Write block update method
+    writeBlockUpdateMethodImplementationsRtu(sourceFile, className, registerJson['blocks'])
 
     # Write property read method implementations
     writeInternalPropertyReadMethodImplementationsRtu(sourceFile, className, registerJson['registers'])
@@ -889,19 +1063,17 @@ def writeRtuSourceFile():
     writeLine(sourceFile, 'QDebug operator<<(QDebug debug, %s *%s)' % (className, debugObjectParamName))
     writeLine(sourceFile, '{')
     writeLine(sourceFile, '    debug.nospace().noquote() << "%s(" << %s->modbusRtuMaster()->modbusUuid().toString() << ", " << %s->modbusRtuMaster()->serialPort() << ", slave ID:" << %s->slaveId() << ")" << "\\n";' % (className, debugObjectParamName, debugObjectParamName, debugObjectParamName))
-    for registerDefinition in registerJson['registers']:
-        propertyName = registerDefinition['id']
-        propertyTyp = getCppDataType(registerDefinition)
-        line = ('"    - %s:" << %s->%s()' % (registerDefinition['description'], debugObjectParamName, propertyName))
-        if 'unit' in registerDefinition and registerDefinition['unit'] != '':
-            line += (' << " [%s]"' % registerDefinition['unit'])
-        writeLine(sourceFile, '    debug.nospace().noquote() << %s << "\\n";' % (line))
+    writeRegistersDebugLine(sourceFile, debugObjectParamName, registerJson['registers'])
+
+    for blockDefinition in registerJson['blocks']:
+        writeRegistersDebugLine(sourceFile, debugObjectParamName, blockDefinition['registers'])
 
     writeLine(sourceFile, '    return debug.quote().space();')
     writeLine(sourceFile, '}')
     writeLine(sourceFile)
 
     sourceFile.close()
+
 
 ############################################################################################
 # Main
@@ -939,6 +1111,8 @@ if 'endianness' in registerJson:
 protocol = 'TCP'
 if 'protocol' in registerJson:
     protocol = registerJson['protocol']
+
+validateBlocks(registerJson['blocks'])
 
 if protocol == 'TCP':
     writeTcpHeaderFile()
