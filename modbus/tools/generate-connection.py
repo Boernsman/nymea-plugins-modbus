@@ -324,8 +324,11 @@ def writePropertyGetSetMethodImplementationsTcp(fileDescriptor, className, regis
             writeLine(fileDescriptor, '    qCDebug(dc%s()) << "--> Write \\"%s\\" register:" << %s << "size:" << %s << values;' % (className, registerDefinition['description'], registerDefinition['address'], registerDefinition['size']))
             if registerDefinition['registerType'] == 'holdingRegister':
                 writeLine(fileDescriptor, '    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, %s, values.count());' % (registerDefinition['address']))
-
-            # TODO: other write methods
+            elif registerDefinition['registerType'] == 'coils':
+                writeLine(fileDescriptor, '    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::Coils, %s, values.count());' % (registerDefinition['address']))
+            else:
+                print('Error: invalid register type for writing.')
+                exit(1)
 
             writeLine(fileDescriptor, '    request.setValues(values);')
             writeLine(fileDescriptor, '    return sendWriteRequest(request, m_slaveId);')
@@ -349,25 +352,22 @@ def writePropertyGetSetMethodImplementationsRtu(fileDescriptor, className, regis
         writeLine(fileDescriptor)
 
         # Check if we require a set method
-        # TODO: 
-        # if registerDefinition['access'] == 'RW' or registerDefinition['access'] == 'WO':
-        #     writeLine(fileDescriptor, 'QModbusReply *%s::set%s(%s %s)' % (className, propertyName[0].upper() + propertyName[1:], propertyTyp, propertyName))
-        #     writeLine(fileDescriptor, '{')
+        if registerDefinition['access'] == 'RW' or registerDefinition['access'] == 'WO':
+            writeLine(fileDescriptor, 'ModbusRtuReply *%s::set%s(%s %s)' % (className, propertyName[0].upper() + propertyName[1:], propertyTyp, propertyName))
+            writeLine(fileDescriptor, '{')
 
-        #     writeLine(fileDescriptor, '    QVector<quint16> values = %s;' % getConversionToValueMethod(registerDefinition))
-        #     writeLine(fileDescriptor, '    qCDebug(dc%s()) << "--> Write \\"%s\\" register:" << %s << "size:" << %s << values;' % (className, registerDefinition['description'], registerDefinition['address'], registerDefinition['size']))
-        #     if registerDefinition['registerType'] == 'holdingRegister':
-        #         writeLine(fileDescriptor, '    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, %s, values.count());' % (registerDefinition['address']))
+            writeLine(fileDescriptor, '    QVector<quint16> values = %s;' % getConversionToValueMethod(registerDefinition))
+            writeLine(fileDescriptor, '    qCDebug(dc%s()) << "--> Write \\"%s\\" register:" << %s << "size:" << %s << values;' % (className, registerDefinition['description'], registerDefinition['address'], registerDefinition['size']))
+            if registerDefinition['registerType'] == 'holdingRegister':
+                writeLine(fileDescriptor, '    return m_modbusRtuMaster->writeHoldingRegisters(m_slaveId, %s, values);' % (registerDefinition['address']))
+            elif registerDefinition['registerType'] == 'coils':
+                writeLine(fileDescriptor, '    return m_modbusRtuMaster->writeCoils(m_slaveId, %s, values);' % (registerDefinition['address']))
+            else:
+                print('Error: invalid register type for writing.')
+                exit(1)
 
-        #     # TODO: other write methods
-
-        #     writeLine(fileDescriptor, '    request.setValues(values);')
-        #     writeLine(fileDescriptor, '    return sendWriteRequest(request, m_slaveId);')
-        #     writeLine(fileDescriptor, '}')
-        #     writeLine(fileDescriptor)
-
-
-
+            writeLine(fileDescriptor, '}')
+            writeLine(fileDescriptor)
 
 
 def writePropertyUpdateMethodDeclarations(fileDescriptor, registerDefinitions):
@@ -389,20 +389,27 @@ def validateBlocks(blockDefinitions):
         registerCount = 0
         blockSize = 0
         registerAccess = ""
+        registerType = ""
 
         for i, blockRegister in enumerate(blockRegisters):
             if i == 0:
                 blockStartAddress = blockRegister['address']
                 registerAccess = blockRegister['access']
+                registerType = blockRegister['registerType']
             else:
                 previouseRegisterAddress = blockRegisters[i - 1]['address']
                 previouseRegisterSize = blockRegisters[i - 1]['size']
+                previouseRegisterType = blockRegisters[i - 1]['registerType']
                 if previouseRegisterAddress + previouseRegisterSize != blockRegister['address']:
-                    print('Warning: block %s has invalid register order in register %s. There seems to be a gap between the registers.' % (blockName, blockRegister['id']))
+                    print('Error: block %s has invalid register order in register %s. There seems to be a gap between the registers.' % (blockName, blockRegister['id']))
                     exit(1)
 
                 if blockRegister['access'] != registerAccess:
-                    print('Warning: block %s has inconsistent register access in register %s. The block registers dont seem to have the same access rights.' % (blockName, blockRegister['id']))
+                    print('Error: block %s has inconsistent register access in register %s. The block registers dont seem to have the same access rights.' % (blockName, blockRegister['id']))
+                    exit(1)
+
+                if blockRegister['registerType'] != registerType:
+                    print('Error: block %s has inconsistent register type in register %s. The block registers dont seem to be from the same type.' % (blockName, blockRegister['id']))
                     exit(1)
 
             registerCount += 1
@@ -429,7 +436,6 @@ def writeBlocksUpdateMethodDeclarations(fileDescriptor, blockDefinitions):
 
             registerCount += 1
             blockSize += blockRegister['size']
-
 
         # Write the block update method
         writeLine(fileDescriptor, '    /* Read block from start addess %s with size of %s registers containing following %s properties:' % (blockStartAddress, blockSize, registerCount))
@@ -463,8 +469,6 @@ def writePropertyUpdateMethodImplementationsTcp(fileDescriptor, className, regis
         writeLine(fileDescriptor, '                    const QModbusDataUnit unit = reply->result();')
         writeLine(fileDescriptor, '                    const QVector<quint16> values = unit.values();')
         writeLine(fileDescriptor, '                    qCDebug(dc%s()) << "<-- Response from \\"%s\\" register" << %s << "size:" << %s << values;' % (className, registerDefinition['description'], registerDefinition['address'], registerDefinition['size']))
-
-        # FIXME: introduce bool and check register type for parsing
         writeLine(fileDescriptor, '                    %s received%s = %s;' % (propertyTyp, propertyName[0].upper() + propertyName[1:], getValueConversionMethod(registerDefinition)))
         writeLine(fileDescriptor, '                    if (m_%s != received%s) {' % (propertyName, propertyName[0].upper() + propertyName[1:]))
         writeLine(fileDescriptor, '                        m_%s = received%s;' % (propertyName, propertyName[0].upper() + propertyName[1:]))
@@ -751,9 +755,10 @@ def writeUpdateMethod(fileDescriptor, className, registerDefinitions):
             writeLine(fileDescriptor, '    update%s();' % (propertyName[0].upper() + propertyName[1:]))
 
     # Add the update block methods
-    for blockDefinition in registerJson['blocks']:
-        blockName = blockDefinition['id']
-        writeLine(fileDescriptor, '    update%sBlock();' % (blockName[0].upper() + blockName[1:]))
+    if 'blocks' in registerJson:
+        for blockDefinition in registerJson['blocks']:
+            blockName = blockDefinition['id']
+            writeLine(fileDescriptor, '    update%sBlock();' % (blockName[0].upper() + blockName[1:]))
 
     writeLine(fileDescriptor, '}')
     writeLine(fileDescriptor)
@@ -1001,7 +1006,7 @@ def writeRtuSourceFile():
     print('Writing modbus RTU source file %s' % sourceFilePath)
     sourceFile = open(sourceFilePath, 'w')
     writeLicenseHeader(sourceFile)
-    writeLine(sourceFile)
+
     writeLine(sourceFile, '#include "%s"' % headerFileName)
     writeLine(sourceFile, '#include "loggingcategories.h"')
     writeLine(sourceFile)
