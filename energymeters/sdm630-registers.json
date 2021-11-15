@@ -1,10 +1,141 @@
 {
     "protocol": "RTU",
     "endianness": "BigEndian",
+    "enums": [
+        {
+            "name": "InverterDeviceStatus",
+            "values": [
+                {
+                    "key": "StandbyInitializing",
+                    "value": 0
+                },
+                {
+                    "key": "StandbyDetectingInsulationResistance",
+                    "value": 1
+                },
+                {
+                    "key": "StandbyDetectingIrradiation",
+                    "value": 2
+                },
+                {
+                    "key": "StandbyDridDetecting",
+                    "value": 3
+                },
+                {
+                    "key": "Starting",
+                    "value": 256
+                },
+                {
+                    "key": "OnGrid",
+                    "value": 512
+                },
+                {
+                    "key": "PowerLimited",
+                    "value": 513
+                },
+                {
+                    "key": "SelfDerating",
+                    "value": 514
+                },
+                {
+                    "key": "ShutdownFault",
+                    "value": 768
+                },
+                {
+                    "key": "ShutdownCommand",
+                    "value": 769
+                },
+                {
+                    "key": "ShutdownOVGR",
+                    "value": 770
+                },
+                {
+                    "key": "ShutdownCommunicationDisconnected",
+                    "value": 771
+                },
+                {
+                    "key": "ShutdownPowerLimit",
+                    "value": 772
+                },
+                {
+                    "key": "ShutdownManualStartupRequired",
+                    "value": 773
+                },
+                {
+                    "key": "ShutdownInputUnderpower",
+                    "value": 774
+                },
+                {
+                    "key": "GridSchedulingPCurve",
+                    "value": 1025
+                },
+                {
+                    "key": "GridSchedulingQUCurve",
+                    "value": 1026
+                },
+                {
+                    "key": "GridSchedulingPFUCurve",
+                    "value": 1027
+                },
+                {
+                    "key": "GridSchedulingDryContact",
+                    "value": 1028
+                },
+                {
+                    "key": "GridSchedulingQPCurve",
+                    "value": 1029
+                },
+                {
+                    "key": "SpotCheckReady",
+                    "value": 1280
+                },
+                {
+                    "key": "SpotChecking",
+                    "value": 1281
+                },
+                {
+                    "key": "Inspecting",
+                    "value": 1536
+                },
+                {
+                    "key": "AfciSelfCheck",
+                    "value": 1792
+                },
+                {
+                    "key": "IVScanning",
+                    "value": 2048
+                },
+                {
+                    "key": "DCInputDetection",
+                    "value": 2304
+                },
+                {
+                    "key": "RunningOffGridCharging",
+                    "value": 2560
+                },
+                {
+                    "key": "StandbyNoIrradiation",
+                    "value": 40960
+                }
+            ]
+        }
+    ],
     "registers": [
         {
             "id": "totalCurrentPower",
             "address": 52,
+            "size": 2,
+            "type": "float",
+            "registerType": "inputRegister",
+            "readSchedule": "update",
+            "description": "Total system power",
+            "unit": "W",
+            "defaultValue": "0",
+            "access": "RO"
+        }, InverterDeviceStatus
+        {
+            "id": "inverterDeviceStatus",
+            "address": 32089,
             "size": 2,
             "type": "float",
             "registerType": "inputRegister",

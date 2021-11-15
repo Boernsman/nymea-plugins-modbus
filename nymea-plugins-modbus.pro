@@ -8,6 +8,7 @@ PLUGIN_DIRS = \
     alphainnotec            \
     drexelundweiss          \
     energymeters            \
+    huawei                  \
     kostal                  \
     modbuscommander         \
     mtec                    \

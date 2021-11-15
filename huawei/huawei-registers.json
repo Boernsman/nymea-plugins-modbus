@@ -1,0 +1,374 @@
+{
+    "endianness": "BigEndian",
+    "enums": [
+        {
+            "name": "InverterDeviceStatus",
+            "values": [
+                {
+                    "key": "StandbyInitializing",
+                    "value": 0
+                },
+                {
+                    "key": "StandbyDetectingInsulationResistance",
+                    "value": 1
+                },
+                {
+                    "key": "StandbyDetectingIrradiation",
+                    "value": 2
+                },
+                {
+                    "key": "StandbyDridDetecting",
+                    "value": 3
+                },
+                {
+                    "key": "Starting",
+                    "value": 256
+                },
+                {
+                    "key": "OnGrid",
+                    "value": 512
+                },
+                {
+                    "key": "PowerLimited",
+                    "value": 513
+                },
+                {
+                    "key": "SelfDerating",
+                    "value": 514
+                },
+                {
+                    "key": "ShutdownFault",
+                    "value": 768
+                },
+                {
+                    "key": "ShutdownCommand",
+                    "value": 769
+                },
+                {
+                    "key": "ShutdownOVGR",
+                    "value": 770
+                },
+                {
+                    "key": "ShutdownCommunicationDisconnected",
+                    "value": 771
+                },
+                {
+                    "key": "ShutdownPowerLimit",
+                    "value": 772
+                },
+                {
+                    "key": "ShutdownManualStartupRequired",
+                    "value": 773
+                },
+                {
+                    "key": "ShutdownInputUnderpower",
+                    "value": 774
+                },
+                {
+                    "key": "GridSchedulingPCurve",
+                    "value": 1025
+                },
+                {
+                    "key": "GridSchedulingQUCurve",
+                    "value": 1026
+                },
+                {
+                    "key": "GridSchedulingPFUCurve",
+                    "value": 1027
+                },
+                {
+                    "key": "GridSchedulingDryContact",
+                    "value": 1028
+                },
+                {
+                    "key": "GridSchedulingQPCurve",
+                    "value": 1029
+                },
+                {
+                    "key": "SpotCheckReady",
+                    "value": 1280
+                },
+                {
+                    "key": "SpotChecking",
+                    "value": 1281
+                },
+                {
+                    "key": "Inspecting",
+                    "value": 1536
+                },
+                {
+                    "key": "AfciSelfCheck",
+                    "value": 1792
+                },
+                {
+                    "key": "IVScanning",
+                    "value": 2048
+                },
+                {
+                    "key": "DCInputDetection",
+                    "value": 2304
+                },
+                {
+                    "key": "RunningOffGridCharging",
+                    "value": 2560
+                },
+                {
+                    "key": "StandbyNoIrradiation",
+                    "value": 40960
+                }
+            ]
+        }
+    ],
+    "blocks": [
+        {
+            "id": "inverterInformation",
+            "readSchedule": "init",
+            "registers": [
+                {
+                    "id": "model",
+                    "address": 30000,
+                    "size": 15,
+                    "type": "string",
+                    "registerType": "holdingRegister",
+                    "readSchedule": "init",
+                    "description": "Model",
+                    "access": "RO"
+                },
+                {
+                    "id": "serialNumber",
+                    "address": 30015,
+                    "size": 10,
+                    "type": "string",
+                    "registerType": "holdingRegister",
+                    "readSchedule": "init",
+                    "description": "Serial number",
+                    "access": "RO"
+                },
+                {
+                    "id": "productNumber",
+                    "address": 30025,
+                    "size": 10,
+                    "type": "string",
+                    "registerType": "holdingRegister",
+                    "readSchedule": "init",
+                    "description": "Product number",
+                    "access": "RO"
+                }
+            ]
+        },
+        {
+            "id": "inverterConfiguration",
+            "readSchedule": "init",
+            "registers": [
+                {
+                    "id": "modelId",
+                    "address": 30070,
+                    "size": 1,
+                    "type": "uint16",
+                    "registerType": "holdingRegister",
+                    "readSchedule": "init",
+                    "description": "Model identifier",
+                    "defaultValue": "0",
+                    "access": "RO"
+                },
+                {
+                    "id": "numberOfPvString",
+                    "address": 30071,
+                    "size": 1,
+                    "type": "uint16",
+                    "registerType": "holdingRegister",
+                    "readSchedule": "init",
+                    "description": "Number of PV strings",
+                    "defaultValue": "0",
+                    "access": "RO"
+                },
+                {
+                    "id": "numberOfMppTracks",
+                    "address": 30072,
+                    "size": 1,
+                    "type": "uint16",
+                    "registerType": "holdingRegister",
+                    "readSchedule": "init",
+                    "description": "Number of MPP tracks",
+                    "defaultValue": "0",
+                    "access": "RO"
+                }
+            ]
+        },
+        {
+            "id": "inverterVoltage",
+            "readSchedule": "update",
+            "registers": [
+                {
+                    "id": "inverterVoltagePhaseA",
+                    "address": 32069,
+                    "size": 1,
+                    "type": "uint16",
+                    "registerType": "holdingRegister",
+                    "readSchedule": "update",
+                    "description": "Inverter phase A voltage",
+                    "unit": "V",
+                    "staticScaleFactor": -10,
+                    "defaultValue": "0",
+                    "access": "RO"
+                },
+                {
+                    "id": "inverterVoltagePhaseB",
+                    "address": 32070,
+                    "size": 1,
+                    "type": "uint16",
+                    "registerType": "holdingRegister",
+                    "readSchedule": "update",
+                    "description": "Inverter phase B voltage",
+                    "unit": "V",
+                    "staticScaleFactor": -10,
+                    "defaultValue": "0",
+                    "access": "RO"
+                },
+                {
+                    "id": "inverterVoltagePhaseC",
+                    "address": 32071,
+                    "size": 1,
+                    "type": "uint16",
+                    "registerType": "holdingRegister",
+                    "readSchedule": "update",
+                    "description": "Inverter phase C voltage",
+                    "unit": "V",
+                    "staticScaleFactor": -1,
+                    "defaultValue": "0",
+                    "access": "RO"
+                },
+                {
+                    "id": "inverterPhaseACurrent",
+                    "address": 32072,
+                    "size": 2,
+                    "type": "int32",
+                    "registerType": "holdingRegister",
+                    "readSchedule": "update",
+                    "description": "Inverter phase A current",
+                    "unit": "A",
+                    "staticScaleFactor": -3,
+                    "defaultValue": "0",
+                    "access": "RO"
+                },
+                {
+                    "id": "inverterPhaseBCurrent",
+                    "address": 32074,
+                    "size": 2,
+                    "type": "int32",
+                    "registerType": "holdingRegister",
+                    "readSchedule": "update",
+                    "description": "Inverter phase B current",
+                    "unit": "A",
+                    "staticScaleFactor": -3,
+                    "defaultValue": "0",
+                    "access": "RO"
+                },
+                {
+                    "id": "inverterPhaseCCurrent",
+                    "address": 32076,
+                    "size": 2,
+                    "type": "int32",
+                    "registerType": "holdingRegister",
+                    "readSchedule": "update",
+                    "description": "Inverter phase C current",
+                    "unit": "A",
+                    "staticScaleFactor": -3,
+                    "defaultValue": "0",
+                    "access": "RO"
+                }
+            ]
+        }
+    ],
+    "registers": [
+        {
+            "id": "inverterActivePower",
+            "address": 32080,
+            "size": 2,
+            "type": "int32",
+            "registerType": "holdingRegister",
+            "readSchedule": "update",
+            "description": "Inverter active power",
+            "unit": "kW",
+            "staticScaleFactor": -3,
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "inverterGridFrequency",
+            "address": 32085,
+            "size": 1,
+            "type": "uint16",
+            "registerType": "holdingRegister",
+            "readSchedule": "update",
+            "description": "Inverter grid frequency",
+            "unit": "Hz",
+            "staticScaleFactor": -3,
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "inverterInternalTemperature",
+            "address": 32087,
+            "size": 1,
+            "type": "int16",
+            "registerType": "holdingRegister",
+            "readSchedule": "update",
+            "description": "Inverter internal temperature",
+            "unit": "°C",
+            "staticScaleFactor": -1,
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "inverterDeviceStatus",
+            "address": 32089,
+            "size": 1,
+            "type": "uint16",
+            "registerType": "holdingRegister",
+            "readSchedule": "update",
+            "description": "Inverter device status",
+            "enum": "InverterDeviceStatus",
+            "defaultValue": "InverterDeviceStatusStandbyInitializing",
+            "access": "RO"
+        },
+        {
+            "id": "inverterAccumulatedEnergyYield",
+            "address": 32106,
+            "size": 2,
+            "type": "uint32",
+            "registerType": "holdingRegister",
+            "readSchedule": "update",
+            "description": "Inverter accumulated energy yield",
+            "staticScaleFactor": -2,
+            "unit": "kWh",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "inverterDailyEnergyYield",
+            "address": 32114,
+            "size": 2,
+            "type": "uint32",
+            "registerType": "holdingRegister",
+            "readSchedule": "update",
+            "description": "Inverter daily energy yield",
+            "staticScaleFactor": -2,
+            "unit": "kWh",
+            "defaultValue": "0",
+            "access": "RO"
+        },
+        {
+            "id": "powerMeterActivePower",
+            "address": 37113,
+            "size": 2,
+            "type": "int32",
+            "registerType": "holdingRegister",
+            "readSchedule": "update",
+            "description": "Power meter active power",
+            "unit": "W",
+            "defaultValue": "0",
+            "access": "RO"
+        }
+    ]
+}
