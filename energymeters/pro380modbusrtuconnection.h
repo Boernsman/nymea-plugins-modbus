@@ -70,6 +70,7 @@ public:
       - Voltage phase L3 [V] - Address: 20486, Size: 2
     */ 
     void updatePhasesVoltageBlock();
+
     /* Current phase L1 [A] - Address: 20492, Size: 2 */
     float currentPhaseA() const;
 
@@ -85,6 +86,7 @@ public:
       - Current phase L3 [A] - Address: 20496, Size: 2
     */ 
     void updatePhasesCurrentBlock();
+
     /* Total system power [kW] - Address: 20498, Size: 2 */
     float totalCurrentPower() const;
 
@@ -104,6 +106,7 @@ public:
       - Power phase L3 [kW] - Address: 20504, Size: 2
     */ 
     void updateCurrentPowerBlock();
+
     /* Energy consumed phase A [kWh] - Address: 24594, Size: 2 */
     float energyConsumedPhaseA() const;
 
@@ -119,6 +122,7 @@ public:
       - Energy consumed phase C [kWh] - Address: 24598, Size: 2
     */ 
     void updatePhasesEnergyConsumedBlock();
+
     /* Energy produced phase A [kWh] - Address: 24606, Size: 2 */
     float energyProducedPhaseA() const;
 

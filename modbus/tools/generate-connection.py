@@ -594,8 +594,7 @@ def writePropertyUpdateMethodImplementationsRtu(fileDescriptor, className, regis
         writeLine(fileDescriptor, '        if (!reply->isFinished()) {')
         writeLine(fileDescriptor, '            connect(reply, &ModbusRtuReply::finished, this, [this, reply](){')
         writeLine(fileDescriptor, '                if (reply->error() == ModbusRtuReply::NoError) {')
-        writeLine(fileDescriptor, '                    QVector<quint16> blockValues = reply->result();')
-        writeLine(fileDescriptor, '                    QVector<quint16> values;')
+        writeLine(fileDescriptor, '                    QVector<quint16> values = reply->result();')
         writeLine(fileDescriptor, '                    qCDebug(dc%s()) << "<-- Response from \\"%s\\" register" << %s << "size:" << %s << values;' % (className, registerDefinition['description'], registerDefinition['address'], registerDefinition['size']))
 
         # FIXME: introduce bool and check register type for parsing

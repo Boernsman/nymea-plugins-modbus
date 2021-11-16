@@ -28,7 +28,6 @@
 *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-
 #include "pro380modbusrtuconnection.h"
 #include "loggingcategories.h"
 
