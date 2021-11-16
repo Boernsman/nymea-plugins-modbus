@@ -106,11 +106,12 @@ public:
     QString productNumber() const;
 
     /* Read block from start addess 30000 with size of 35 registers containing following 3 properties:
-    -- Model - Address: 30000, Size: 15
-    -- Serial number - Address: 30015, Size: 10
-    -- Product number - Address: 30025, Size: 10
+      - Model - Address: 30000, Size: 15
+      - Serial number - Address: 30015, Size: 10
+      - Product number - Address: 30025, Size: 10
     */ 
     void updateInverterInformationBlock();
+
     /* Model identifier - Address: 30070, Size: 1 */
     quint16 modelId() const;
 
@@ -121,11 +122,12 @@ public:
     quint16 numberOfMppTracks() const;
 
     /* Read block from start addess 30070 with size of 3 registers containing following 3 properties:
-    -- Model identifier - Address: 30070, Size: 1
-    -- Number of PV strings - Address: 30071, Size: 1
-    -- Number of MPP tracks - Address: 30072, Size: 1
+      - Model identifier - Address: 30070, Size: 1
+      - Number of PV strings - Address: 30071, Size: 1
+      - Number of MPP tracks - Address: 30072, Size: 1
     */ 
     void updateInverterConfigurationBlock();
+
     /* Inverter phase A voltage [V] - Address: 32069, Size: 1 */
     float inverterVoltagePhaseA() const;
 

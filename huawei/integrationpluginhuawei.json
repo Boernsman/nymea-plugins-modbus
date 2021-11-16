@@ -1,6 +1,6 @@
 {
     "name": "Huawei",
-        "displayName": "Huawei Solar",
+        "displayName": "Huawei FusionSolar",
         "id": "fc3e4509-47f3-4622-9bc4-0a90fe2b6262",
         "vendors": [
         {
@@ -10,7 +10,7 @@
             "thingClasses": [
                 {
                     "name": "huaweiInverter",
-                    "displayName": "Huawei Inverter",
+                    "displayName": "Huawei FusionSolar Inverter",
                     "id": "87e75ee0-d544-457b-add3-bd4e58160fcd",
                     "createMethods": ["discovery", "user"],
                     "interfaces": ["solarinverter", "connectable"],

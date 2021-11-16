@@ -76,6 +76,66 @@ qint32 HuaweiModbusTcpConnection::powerMeterActivePower() const
     return m_powerMeterActivePower;
 }
 
+QString HuaweiModbusTcpConnection::model() const
+{
+    return m_model;
+}
+
+QString HuaweiModbusTcpConnection::serialNumber() const
+{
+    return m_serialNumber;
+}
+
+QString HuaweiModbusTcpConnection::productNumber() const
+{
+    return m_productNumber;
+}
+
+quint16 HuaweiModbusTcpConnection::modelId() const
+{
+    return m_modelId;
+}
+
+quint16 HuaweiModbusTcpConnection::numberOfPvString() const
+{
+    return m_numberOfPvString;
+}
+
+quint16 HuaweiModbusTcpConnection::numberOfMppTracks() const
+{
+    return m_numberOfMppTracks;
+}
+
+float HuaweiModbusTcpConnection::inverterVoltagePhaseA() const
+{
+    return m_inverterVoltagePhaseA;
+}
+
+float HuaweiModbusTcpConnection::inverterVoltagePhaseB() const
+{
+    return m_inverterVoltagePhaseB;
+}
+
+float HuaweiModbusTcpConnection::inverterVoltagePhaseC() const
+{
+    return m_inverterVoltagePhaseC;
+}
+
+float HuaweiModbusTcpConnection::inverterPhaseACurrent() const
+{
+    return m_inverterPhaseACurrent;
+}
+
+float HuaweiModbusTcpConnection::inverterPhaseBCurrent() const
+{
+    return m_inverterPhaseBCurrent;
+}
+
+float HuaweiModbusTcpConnection::inverterPhaseCCurrent() const
+{
+    return m_inverterPhaseCCurrent;
+}
+
 void HuaweiModbusTcpConnection::initialize()
 {
     // No init registers defined. Nothing to be done and we are finished.
@@ -324,6 +384,180 @@ void HuaweiModbusTcpConnection::updatePowerMeterActivePower()
         }
     } else {
         qCWarning(dcHuaweiModbusTcpConnection()) << "Error occurred while reading \"Power meter active power\" registers from" << hostAddress().toString() << errorString();
+    }
+}
+
+void HuaweiModbusTcpConnection::updateInverterInformationBlock()
+{
+    // Update register block "inverterInformation"
+    qCDebug(dcHuaweiModbusTcpConnection()) << "--> Read block \"inverterInformation\" registers from:" << 30000 << "size:" << 35;
+    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 30000, 35);
+    QModbusReply *reply = sendReadRequest(request, m_slaveId);
+    if (reply) {
+        if (!reply->isFinished()) {
+            connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
+            connect(reply, &QModbusReply::finished, this, [this, reply](){
+                if (reply->error() == QModbusDevice::NoError) {
+                    const QModbusDataUnit unit = reply->result();
+                    QVector<quint16> blockValues = unit.values();
+                    QVector<quint16> values;
+                    qCDebug(dcHuaweiModbusTcpConnection()) << "<-- Response from \"inverterInformation\" register" << 30000 << "size:" << 35 << values;
+                    values = blockValues.mid(0, 15);
+                    QString receivedModel = ModbusDataUtils::convertToString(values);
+                    if (m_model != receivedModel) {
+                        m_model = receivedModel;
+                        emit modelChanged(m_model);
+                    }
+
+                    values = blockValues.mid(15, 10);
+                    QString receivedSerialNumber = ModbusDataUtils::convertToString(values);
+                    if (m_serialNumber != receivedSerialNumber) {
+                        m_serialNumber = receivedSerialNumber;
+                        emit serialNumberChanged(m_serialNumber);
+                    }
+
+                    values = blockValues.mid(25, 10);
+                    QString receivedProductNumber = ModbusDataUtils::convertToString(values);
+                    if (m_productNumber != receivedProductNumber) {
+                        m_productNumber = receivedProductNumber;
+                        emit productNumberChanged(m_productNumber);
+                    }
+
+                }
+            });
+
+            connect(reply, &QModbusReply::errorOccurred, this, [this, reply] (QModbusDevice::Error error){
+                qCWarning(dcHuaweiModbusTcpConnection()) << "Modbus reply error occurred while updating \"inverterInformation\" registers from" << hostAddress().toString() << error << reply->errorString();
+                emit reply->finished(); // To make sure it will be deleted
+            });
+        } else {
+            delete reply; // Broadcast reply returns immediatly
+        }
+    } else {
+        qCWarning(dcHuaweiModbusTcpConnection()) << "Error occurred while reading \"inverterInformation\" registers from" << hostAddress().toString() << errorString();
+    }
+}
+
+void HuaweiModbusTcpConnection::updateInverterConfigurationBlock()
+{
+    // Update register block "inverterConfiguration"
+    qCDebug(dcHuaweiModbusTcpConnection()) << "--> Read block \"inverterConfiguration\" registers from:" << 30070 << "size:" << 3;
+    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 30070, 3);
+    QModbusReply *reply = sendReadRequest(request, m_slaveId);
+    if (reply) {
+        if (!reply->isFinished()) {
+            connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
+            connect(reply, &QModbusReply::finished, this, [this, reply](){
+                if (reply->error() == QModbusDevice::NoError) {
+                    const QModbusDataUnit unit = reply->result();
+                    QVector<quint16> blockValues = unit.values();
+                    QVector<quint16> values;
+                    qCDebug(dcHuaweiModbusTcpConnection()) << "<-- Response from \"inverterConfiguration\" register" << 30070 << "size:" << 3 << values;
+                    values = blockValues.mid(0, 1);
+                    quint16 receivedModelId = ModbusDataUtils::convertToUInt16(values);
+                    if (m_modelId != receivedModelId) {
+                        m_modelId = receivedModelId;
+                        emit modelIdChanged(m_modelId);
+                    }
+
+                    values = blockValues.mid(1, 1);
+                    quint16 receivedNumberOfPvString = ModbusDataUtils::convertToUInt16(values);
+                    if (m_numberOfPvString != receivedNumberOfPvString) {
+                        m_numberOfPvString = receivedNumberOfPvString;
+                        emit numberOfPvStringChanged(m_numberOfPvString);
+                    }
+
+                    values = blockValues.mid(2, 1);
+                    quint16 receivedNumberOfMppTracks = ModbusDataUtils::convertToUInt16(values);
+                    if (m_numberOfMppTracks != receivedNumberOfMppTracks) {
+                        m_numberOfMppTracks = receivedNumberOfMppTracks;
+                        emit numberOfMppTracksChanged(m_numberOfMppTracks);
+                    }
+
+                }
+            });
+
+            connect(reply, &QModbusReply::errorOccurred, this, [this, reply] (QModbusDevice::Error error){
+                qCWarning(dcHuaweiModbusTcpConnection()) << "Modbus reply error occurred while updating \"inverterConfiguration\" registers from" << hostAddress().toString() << error << reply->errorString();
+                emit reply->finished(); // To make sure it will be deleted
+            });
+        } else {
+            delete reply; // Broadcast reply returns immediatly
+        }
+    } else {
+        qCWarning(dcHuaweiModbusTcpConnection()) << "Error occurred while reading \"inverterConfiguration\" registers from" << hostAddress().toString() << errorString();
+    }
+}
+
+void HuaweiModbusTcpConnection::updateInverterVoltageBlock()
+{
+    // Update register block "inverterVoltage"
+    qCDebug(dcHuaweiModbusTcpConnection()) << "--> Read block \"inverterVoltage\" registers from:" << 32069 << "size:" << 9;
+    QModbusDataUnit request = QModbusDataUnit(QModbusDataUnit::RegisterType::HoldingRegisters, 32069, 9);
+    QModbusReply *reply = sendReadRequest(request, m_slaveId);
+    if (reply) {
+        if (!reply->isFinished()) {
+            connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
+            connect(reply, &QModbusReply::finished, this, [this, reply](){
+                if (reply->error() == QModbusDevice::NoError) {
+                    const QModbusDataUnit unit = reply->result();
+                    QVector<quint16> blockValues = unit.values();
+                    QVector<quint16> values;
+                    qCDebug(dcHuaweiModbusTcpConnection()) << "<-- Response from \"inverterVoltage\" register" << 32069 << "size:" << 9 << values;
+                    values = blockValues.mid(0, 1);
+                    float receivedInverterVoltagePhaseA = ModbusDataUtils::convertToUInt16(values) * 1.0 * pow(10, -10);
+                    if (m_inverterVoltagePhaseA != receivedInverterVoltagePhaseA) {
+                        m_inverterVoltagePhaseA = receivedInverterVoltagePhaseA;
+                        emit inverterVoltagePhaseAChanged(m_inverterVoltagePhaseA);
+                    }
+
+                    values = blockValues.mid(1, 1);
+                    float receivedInverterVoltagePhaseB = ModbusDataUtils::convertToUInt16(values) * 1.0 * pow(10, -10);
+                    if (m_inverterVoltagePhaseB != receivedInverterVoltagePhaseB) {
+                        m_inverterVoltagePhaseB = receivedInverterVoltagePhaseB;
+                        emit inverterVoltagePhaseBChanged(m_inverterVoltagePhaseB);
+                    }
+
+                    values = blockValues.mid(2, 1);
+                    float receivedInverterVoltagePhaseC = ModbusDataUtils::convertToUInt16(values) * 1.0 * pow(10, -1);
+                    if (m_inverterVoltagePhaseC != receivedInverterVoltagePhaseC) {
+                        m_inverterVoltagePhaseC = receivedInverterVoltagePhaseC;
+                        emit inverterVoltagePhaseCChanged(m_inverterVoltagePhaseC);
+                    }
+
+                    values = blockValues.mid(3, 2);
+                    float receivedInverterPhaseACurrent = ModbusDataUtils::convertToInt32(values, ModbusDataUtils::ByteOrderBigEndian) * 1.0 * pow(10, -3);
+                    if (m_inverterPhaseACurrent != receivedInverterPhaseACurrent) {
+                        m_inverterPhaseACurrent = receivedInverterPhaseACurrent;
+                        emit inverterPhaseACurrentChanged(m_inverterPhaseACurrent);
+                    }
+
+                    values = blockValues.mid(5, 2);
+                    float receivedInverterPhaseBCurrent = ModbusDataUtils::convertToInt32(values, ModbusDataUtils::ByteOrderBigEndian) * 1.0 * pow(10, -3);
+                    if (m_inverterPhaseBCurrent != receivedInverterPhaseBCurrent) {
+                        m_inverterPhaseBCurrent = receivedInverterPhaseBCurrent;
+                        emit inverterPhaseBCurrentChanged(m_inverterPhaseBCurrent);
+                    }
+
+                    values = blockValues.mid(7, 2);
+                    float receivedInverterPhaseCCurrent = ModbusDataUtils::convertToInt32(values, ModbusDataUtils::ByteOrderBigEndian) * 1.0 * pow(10, -3);
+                    if (m_inverterPhaseCCurrent != receivedInverterPhaseCCurrent) {
+                        m_inverterPhaseCCurrent = receivedInverterPhaseCCurrent;
+                        emit inverterPhaseCCurrentChanged(m_inverterPhaseCCurrent);
+                    }
+
+                }
+            });
+
+            connect(reply, &QModbusReply::errorOccurred, this, [this, reply] (QModbusDevice::Error error){
+                qCWarning(dcHuaweiModbusTcpConnection()) << "Modbus reply error occurred while updating \"inverterVoltage\" registers from" << hostAddress().toString() << error << reply->errorString();
+                emit reply->finished(); // To make sure it will be deleted
+            });
+        } else {
+            delete reply; // Broadcast reply returns immediatly
+        }
+    } else {
+        qCWarning(dcHuaweiModbusTcpConnection()) << "Error occurred while reading \"inverterVoltage\" registers from" << hostAddress().toString() << errorString();
     }
 }
 
