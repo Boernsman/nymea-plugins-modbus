@@ -319,8 +319,13 @@ NeuronAnalogOutput::NeuronAnalogOutput(const QString &circuit, QObject *parent) 
 void NeuronAnalogOutput::setValue(double value)
 {
     qCDebug(dcUniPi()) << "NeuronAnalogOutput: Set value" << value << "to" << directory();
+    m_valueFile.seek(0);
     QTextStream out(&m_valueFile);
     out << value*1000;
+    if (m_currentValue != value) {
+        m_currentValue = value;
+        emit valueChanged(m_circuit, value);
+    }
 }
 
 NeuronAnalogInput::NeuronAnalogInput(const QString &circuit, QObject *parent) : NeuronIO(parent)
@@ -328,7 +333,7 @@ NeuronAnalogInput::NeuronAnalogInput(const QString &circuit, QObject *parent) : 
     m_circuit = circuit;
     QString fileName = m_unipiSysFsDir;
     fileName.append(circuit);
-    fileName.append("/in_voltage_raw");
+    fileName.append("/in_voltage_input");
 
     qCDebug(dcUniPi()) << "NeuronAnalogInput: File name" << fileName;
     m_valueFile.setFileName(fileName);
@@ -349,7 +354,7 @@ double NeuronAnalogInput::getValue()
     m_valueFile.seek(0);
 
     bool ok;
-    double voltage = QString::fromLocal8Bit(array).toDouble(&ok)/1000.00;
+    double voltage = QString::fromLocal8Bit(array).trimmed().toDouble(&ok)/1000.00;
     if (!ok) {
         qCWarning(dcUniPi()) << "NeuronAnalogInput: Could not parse analog input value";
         return 0;
