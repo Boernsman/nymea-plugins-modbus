@@ -1,20 +1,28 @@
 #!/usr/bin/env python3
 
-# Copyright (C) 2021 - 2023 nymea GmbH <developer@nymea.io>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
+# Copyright (C) 2013 - 2024, nymea GmbH
+# Copyright (C) 2024 - 2025, chargebyte austria GmbH
 #
-# This program is distributed in the hope that it will be useful,
+# This file is part of nymea-plugins-modbus.
+#
+# nymea-plugins-modbus is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# nymea-plugins-modbus is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# along with nymea-plugins-modbus. If not, see <https://www.gnu.org/licenses/>.
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # To lazy to type all those register plugins, let's make live much easier and generate code from a json register definition 
 
@@ -44,10 +52,11 @@ def writeTcpHeaderFile():
     writeLine(headerFile)
     writeLine(headerFile, '#include <modbusdatautils.h>')
     writeLine(headerFile, '#include <modbustcpmaster.h>')
+    writeLine(headerFile, '#include <modbustcpconnection.h>')
     writeLine(headerFile)
 
     # Begin of class
-    writeLine(headerFile, 'class %s : public QObject' % className)
+    writeLine(headerFile, 'class %s : public ModbusTcpConnection' % className)
     writeLine(headerFile, '{')
     writeLine(headerFile, '    Q_OBJECT')
 
@@ -69,18 +78,18 @@ def writeTcpHeaderFile():
     # Constructor
     writeLine(headerFile, '    explicit %s(const QHostAddress &hostAddress, uint port, quint16 slaveId, QObject *parent = nullptr);' % className)
     writeLine(headerFile, '    explicit %s(ModbusTcpMaster *modbusTcpMaster, quint16 slaveId, QObject *parent = nullptr);' % className)
-    writeLine(headerFile, '    ~%s() = default;' % className)
+    writeLine(headerFile, '    ~%s() override = default;' % className)
     writeLine(headerFile)
-    writeLine(headerFile, '    ModbusTcpMaster *modbusTcpMaster() const;')
+    writeLine(headerFile, '    ModbusTcpMaster *modbusTcpMaster() const override; ')
     writeLine(headerFile, '    quint16 slaveId() const;')
     writeLine(headerFile)
-    writeLine(headerFile, '    bool reachable() const;')
-    writeLine(headerFile, '    bool initializing() const;')
+    writeLine(headerFile, '    bool reachable() const override;')
+    writeLine(headerFile, '    bool initializing() const override;')
     writeLine(headerFile)
     
     # Write init and update method declarations
-    writeLine(headerFile, '    virtual bool initialize();')
-    writeLine(headerFile, '    virtual bool update();')
+    writeLine(headerFile, '    virtual bool initialize() override;')
+    writeLine(headerFile, '    virtual bool update() override;')
     writeLine(headerFile)
 
     writeLine(headerFile, '    ModbusDataUtils::ByteOrder endianness() const;')
@@ -102,11 +111,27 @@ def writeTcpHeaderFile():
         # Write block get/set method declarations
         writeBlocksUpdateMethodDeclarations(headerFile, registerJson['blocks'])
 
+    # Write registers get/set data unit declarations
+    writePropertyGetSetDataUnitDeclarationsTcp(headerFile, registerJson['registers'])
+    if 'blocks' in registerJson:
+        for blockDefinition in registerJson['blocks']:
+            writePropertyGetSetDataUnitDeclarationsTcp(headerFile, blockDefinition['registers'])
+
+    if 'blocks' in registerJson:
+        writeInternalBlockReadDataUnitDeclarationsTcp(headerFile, registerJson['blocks'])
+
+
+    # Update methods
     writePropertyUpdateMethodDeclarations(headerFile, registerJson['registers'])
     writeLine(headerFile)
     if 'blocks' in registerJson:
         for blockDefinition in registerJson['blocks']:
             writePropertyUpdateMethodDeclarations(headerFile, blockDefinition['registers'])
+
+    writeLine(headerFile)
+
+    if 'blocks' in registerJson:
+        writePropertyUpdateMethodDeclarations(headerFile, registerJson['blocks'])
 
     writeLine(headerFile)
 
@@ -121,18 +146,16 @@ def writeTcpHeaderFile():
     writeLine(headerFile)
 
     writeLine(headerFile, 'public slots:')
-    writeLine(headerFile, '    bool connectDevice();')
-    writeLine(headerFile, '    void disconnectDevice();')
-    writeLine(headerFile, '    bool reconnectDevice();')
+    writeLine(headerFile, '    bool connectDevice() override;')
+    writeLine(headerFile, '    void disconnectDevice() override;')
+    writeLine(headerFile, '    bool reconnectDevice() override;')
     writeLine(headerFile)
 
     # Write registers value changed signals
     writeLine(headerFile, 'signals:')
-    writeLine(headerFile, '    void reachableChanged(bool reachable);')
     writeLine(headerFile, '    void checkReachabilityFailed();')
     writeLine(headerFile, '    void checkReachableRetriesChanged(uint checkReachableRetries);')
     writeLine(headerFile)
-    writeLine(headerFile, '    void initializationFinished(bool success);')
     writeLine(headerFile, '    void updateFinished();')
     writeLine(headerFile)
     writeLine(headerFile, '    void endiannessChanged(ModbusDataUtils::ByteOrder endianness);')
@@ -161,6 +184,8 @@ def writeTcpHeaderFile():
         for blockDefinition in registerJson['blocks']:
             writePropertyProcessMethodDeclaration(headerFile, blockDefinition['registers'])
 
+        writeBlockPropertiesProcessMethodDeclaration(headerFile, registerJson['blocks'])
+
     writeLine(headerFile, '    void handleModbusError(QModbusDevice::Error error);')
     writeLine(headerFile, '    void testReachability();')
     writeLine(headerFile)
@@ -181,7 +206,7 @@ def writeTcpHeaderFile():
 
     writeLine(headerFile, '    bool m_reachable = false;')
     writeLine(headerFile, '    bool m_initializing = false;')
-    writeLine(headerFile, '    QModbusReply *m_checkRechableReply = nullptr;')
+    writeLine(headerFile, '    QModbusReply *m_checkReachableReply = nullptr;')
     writeLine(headerFile, '    uint m_checkReachableRetries = 0;')
     writeLine(headerFile, '    uint m_checkReachableRetriesCount = 0;')
     writeLine(headerFile, '    bool m_communicationWorking = false;')
@@ -228,29 +253,31 @@ def writeTcpSourceFile():
     writeLine(sourceFile)
     writeLine(sourceFile, '#include "%s"' % headerFileName)
     writeLine(sourceFile)
-    writeLine(sourceFile, '#include <loggingcategories.h>')
     writeLine(sourceFile, '#include <math.h>')
     writeLine(sourceFile, '#include <QTimer>')
+    writeLine(sourceFile, '#include <QPointer>')
     writeLine(sourceFile, '#include <QModbusDevice>')
     writeLine(sourceFile, '#include <QModbusResponse>')
+    writeLine(sourceFile)
+    writeLine(sourceFile, '#include <loggingcategories.h>')
     writeLine(sourceFile)
     writeLine(sourceFile, 'NYMEA_LOGGING_CATEGORY(dc%s, "%s")' % (className, className))
     writeLine(sourceFile)
 
     # Constructor
     writeLine(sourceFile, '%s::%s(const QHostAddress &hostAddress, uint port, quint16 slaveId, QObject *parent) :' % (className, className))
-    writeLine(sourceFile, '    QObject(parent),')
-    writeLine(sourceFile, '    m_modbusTcpMaster(new ModbusTcpMaster(hostAddress, port, this)),')
-    writeLine(sourceFile, '    m_slaveId(slaveId)')
+    writeLine(sourceFile, '    ModbusTcpConnection{parent},')
+    writeLine(sourceFile, '    m_modbusTcpMaster{new ModbusTcpMaster(hostAddress, port, this)},')
+    writeLine(sourceFile, '    m_slaveId{slaveId}')
     writeLine(sourceFile, '{')
     writeLine(sourceFile, '    setupConnection();')
     writeLine(sourceFile, '}')
     writeLine(sourceFile)
 
     writeLine(sourceFile, '%s::%s(ModbusTcpMaster *modbusTcpMaster, quint16 slaveId, QObject *parent) :' % (className, className))
-    writeLine(sourceFile, '    QObject(parent),')
-    writeLine(sourceFile, '    m_modbusTcpMaster(modbusTcpMaster),')
-    writeLine(sourceFile, '    m_slaveId(slaveId)')
+    writeLine(sourceFile, '    ModbusTcpConnection{parent},')
+    writeLine(sourceFile, '    m_modbusTcpMaster{modbusTcpMaster},')
+    writeLine(sourceFile, '    m_slaveId{slaveId}')
     writeLine(sourceFile, '{')
     writeLine(sourceFile, '    setupConnection();')
     writeLine(sourceFile, '}')
@@ -334,6 +361,18 @@ def writeTcpSourceFile():
         for blockDefinition in registerJson['blocks']:
             writePropertyGetSetMethodImplementationsTcp(sourceFile, className, blockDefinition['registers'])
 
+
+    # Property get/set data unit methods
+    writePropertyGetSetDataUnitImplementationsTcp(sourceFile, className, registerJson['registers'])
+    if 'blocks' in registerJson:
+        for blockDefinition in registerJson['blocks']:
+            writePropertyGetSetDataUnitImplementationsTcp(sourceFile, className, blockDefinition['registers'])
+
+    # Get block data unit method
+    if 'blocks' in registerJson:
+        writeInternalBlockReadDataUnitImplementationsTcp(sourceFile, className, registerJson['blocks'])
+
+
     # Write init and update method implementation
     blocks = []
     if 'blocks' in registerJson:
@@ -382,6 +421,8 @@ def writeTcpSourceFile():
     if 'blocks' in registerJson:
         for blockDefinition in registerJson['blocks']:
             writePropertyProcessMethodImplementations(sourceFile, className, blockDefinition['registers'])
+
+        writeBlockPropertiesProcessMethodImplementations(sourceFile, className, registerJson['blocks'])
 
     writeLine(sourceFile, 'void %s::handleModbusError(QModbusDevice::Error error)' % (className))
     writeLine(sourceFile, '{')
@@ -455,8 +496,11 @@ def writeTcpSourceFile():
     writeLine(sourceFile, '            // Cleanup before starting to initialize')
     writeLine(sourceFile, '            m_pendingInitReplies.clear();')
     writeLine(sourceFile, '            m_pendingUpdateReplies.clear();')
+
     if queuedRequests:
+        writeLine(sourceFile, '            m_currentUpdateReply = nullptr;')
         writeLine(sourceFile, '            m_updateRequestQueue.clear();')
+        writeLine(sourceFile, '            m_currentInitReply = nullptr;')
         writeLine(sourceFile, '            m_initRequestQueue.clear();')
 
     writeLine(sourceFile, '            m_communicationWorking = false;')
@@ -464,14 +508,16 @@ def writeTcpSourceFile():
     writeLine(sourceFile, '            m_checkReachableRetriesCount = 0;')
     writeLine(sourceFile, '            testReachability();')
     writeLine(sourceFile, '        } else {')
-    writeLine(sourceFile, '            qCWarning(dc%s()) << "Modbus TCP connection diconnected from" << m_modbusTcpMaster->hostAddress().toString() << ". The connection is not reachable any more.";' % (className))
+    writeLine(sourceFile, '            qCWarning(dc%s()) << "Modbus TCP connection disconnected from" << m_modbusTcpMaster->hostAddress().toString() << ". The connection is not reachable any more.";' % (className))
     writeLine(sourceFile, '            m_communicationWorking = false;')
     writeLine(sourceFile, '            m_communicationFailedCounter = 0;')
     writeLine(sourceFile, '            m_checkReachableRetriesCount = 0;')
     writeLine(sourceFile, '            m_initializing = false;')
 
     if queuedRequests:
+        writeLine(sourceFile, '            m_currentUpdateReply = nullptr;')
         writeLine(sourceFile, '            m_updateRequestQueue.clear();')
+        writeLine(sourceFile, '            m_currentInitReply = nullptr;')
         writeLine(sourceFile, '            m_initRequestQueue.clear();')
 
     writeLine(sourceFile, '        }')
@@ -559,7 +605,6 @@ def writeRtuHeaderFile():
     writeLine(headerFile)
     writeLine(headerFile, '#include <modbusdatautils.h>')
     writeLine(headerFile, '#include <hardware/modbus/modbusrtumaster.h>')
-
     writeLine(headerFile)
 
     # Begin of class
@@ -674,7 +719,7 @@ def writeRtuHeaderFile():
     writeLine(headerFile, '    quint16 m_slaveId = 1;')
     writeLine(headerFile)
     writeLine(headerFile, '    bool m_reachable = false;')
-    writeLine(headerFile, '    ModbusRtuReply *m_checkRechableReply = nullptr;')
+    writeLine(headerFile, '    ModbusRtuReply *m_checkReachableReply = nullptr;')
     writeLine(headerFile, '    uint m_checkReachableRetries = 0;')
     writeLine(headerFile, '    uint m_checkReachableRetriesCount = 0;')
     writeLine(headerFile, '    bool m_communicationWorking = false;')
@@ -712,9 +757,10 @@ def writeRtuSourceFile():
 
     writeLine(sourceFile, '#include "%s"' % headerFileName)
     writeLine(sourceFile)
-    writeLine(sourceFile, '#include <loggingcategories.h>')
     writeLine(sourceFile, '#include <math.h>')
     writeLine(sourceFile, '#include <QTimer>')
+    writeLine(sourceFile)
+    writeLine(sourceFile, '#include <loggingcategories.h>')
     writeLine(sourceFile)
     writeLine(sourceFile, 'NYMEA_LOGGING_CATEGORY(dc%s, "%s")' % (className, className))
     writeLine(sourceFile)
@@ -1029,7 +1075,7 @@ registerExists = False
 for registerDefinition in registerJson['registers']:
     if registerDefinition['id'] == checkReachableRegister:
         if not 'R' in registerDefinition['access']:
-            logger.warning('Error: The specified \"checkReachableRegister\" is not readable. Please select a manadtory readable register as checkReachableRegister.')
+            logger.warning('Error: The specified \"checkReachableRegister\" is not readable. Please select a mandatory readable register as checkReachableRegister.')
             exit(1)
 
         checkReachableRegister = registerDefinition
@@ -1041,7 +1087,7 @@ if 'blocks' in registerJson:
         for registerDefinition in blockDefinition['registers']:
             if registerDefinition['id'] == checkReachableRegister:
                 if not 'R' in registerDefinition['access']:
-                    logger.warning('Error: The specified \"checkReachableRegister\" is not readable. Please select a manadtory readable register as checkReachableRegister.')
+                    logger.warning('Error: The specified \"checkReachableRegister\" is not readable. Please select a mandatory readable register as checkReachableRegister.')
                     exit(1)
 
                 checkReachableRegister = registerDefinition

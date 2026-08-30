@@ -1,7 +1,20 @@
-QMAKE_CXXFLAGS += -Werror -std=c++11 -z defs
-QMAKE_LFLAGS += -std=c++11
-
 QT += network serialbus
+
+greaterThan(QT_MAJOR_VERSION, 5) {
+    message("Building using Qt6 support")
+    CONFIG *= c++17
+    QMAKE_LFLAGS *= -std=c++17
+    QMAKE_CXXFLAGS *= -std=c++17
+} else {
+    message("Building using Qt5 support")
+    CONFIG *= c++11
+    QMAKE_LFLAGS *= -std=c++11
+    QMAKE_CXXFLAGS *= -std=c++11
+    DEFINES += QT_DISABLE_DEPRECATED_UP_TO=0x050F00
+}
+
+QMAKE_CXXFLAGS += -Werror
+unix:!macx: QMAKE_LFLAGS += -Wl,-z,defs
 
 TARGET = nymea-sunspec1
 TEMPLATE = lib
@@ -32,8 +45,13 @@ target.path = $$[QT_INSTALL_LIBS]
 INSTALLS += target
 
 # install header file with relative subdirectory
+# Note: generated model headers (models/models.pri) use $$PWD/-prefixed absolute paths,
+# while root headers are relative to this .pro file. Normalize both via relative_path()
+# before taking dirname(), otherwise dirname() on an absolute header path leaks the
+# build-time source directory into the install path.
 for (header, HEADERS) {
-    path = $$[QT_INSTALL_PREFIX]/include/nymea-sunspec/$${dirname(header)}
+    relHeader = $$relative_path($$absolute_path($$header, $$PWD), $$PWD)
+    path = $$[QT_INSTALL_PREFIX]/include/nymea-sunspec/$${dirname(relHeader)}
     eval(headers_$${path}.files += $${header})
     eval(headers_$${path}.path = $${path})
     eval(INSTALLS *= headers_$${path})

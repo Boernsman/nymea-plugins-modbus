@@ -1,30 +1,24 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *
-* Copyright 2013 - 2023, nymea GmbH
-* Contact: contact@nymea.io
+* Copyright (C) 2013 - 2024, nymea GmbH
+* Copyright (C) 2024 - 2025, chargebyte austria GmbH
 *
-* This file is part of nymea.
-* This project including source code and documentation is protected by
-* copyright law, and remains the property of nymea GmbH. All rights, including
-* reproduction, publication, editing and translation, are reserved. The use of
-* this project is subject to the terms of a license agreement to be concluded
-* with nymea GmbH in accordance with the terms of use of nymea GmbH, available
-* under https://nymea.io/license
+* This file is part of nymea-plugins-modbus.
 *
-* GNU Lesser General Public License Usage
-* Alternatively, this project may be redistributed and/or modified under the
-* terms of the GNU Lesser General Public License as published by the Free
-* Software Foundation; version 3. This project is distributed in the hope that
-* it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-* Lesser General Public License for more details.
+* nymea-plugins-modbus is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
 *
-* You should have received a copy of the GNU Lesser General Public License
-* along with this project. If not, see <https://www.gnu.org/licenses/>.
+* nymea-plugins-modbus is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
 *
-* For any further details and any questions please contact us under
-* contact@nymea.io or see our FAQ/Licensing Information on
-* https://nymea.io/license/faq
+* You should have received a copy of the GNU General Public License
+* along with nymea-plugins-modbus. If not, see <https://www.gnu.org/licenses/>.
 *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -70,11 +64,20 @@ IntegrationPluginSunSpec::IntegrationPluginSunSpec()
 void IntegrationPluginSunSpec::init()
 {
     // SunSpec connection params
-    m_connectionPortParamTypeIds.insert(sunspecConnectionThingClassId, sunspecConnectionThingPortParamTypeId);
-    m_connectionPortParamTypeIds.insert(solarEdgeConnectionThingClassId, solarEdgeConnectionThingPortParamTypeId);
+    m_connectionDiscoverySlaveIdParamTypeIds.insert(sunspecConnectionThingClassId, sunspecConnectionDiscoverySlaveIdParamTypeId);
+    m_connectionDiscoverySlaveIdParamTypeIds.insert(solarEdgeConnectionThingClassId, solarEdgeConnectionDiscoverySlaveIdParamTypeId);
 
     m_connectionMacAddressParamTypeIds.insert(sunspecConnectionThingClassId, sunspecConnectionThingMacAddressParamTypeId);
     m_connectionMacAddressParamTypeIds.insert(solarEdgeConnectionThingClassId, solarEdgeConnectionThingMacAddressParamTypeId);
+
+    m_connectionHostNameParamTypeIds.insert(sunspecConnectionThingClassId, sunspecConnectionThingHostNameParamTypeId);
+    m_connectionHostNameParamTypeIds.insert(solarEdgeConnectionThingClassId, solarEdgeConnectionThingHostNameParamTypeId);
+
+    m_connectionAddressParamTypeIds.insert(sunspecConnectionThingClassId, sunspecConnectionThingAddressParamTypeId);
+    m_connectionAddressParamTypeIds.insert(solarEdgeConnectionThingClassId, solarEdgeConnectionThingAddressParamTypeId);
+
+    m_connectionPortParamTypeIds.insert(sunspecConnectionThingClassId, sunspecConnectionThingPortParamTypeId);
+    m_connectionPortParamTypeIds.insert(solarEdgeConnectionThingClassId, solarEdgeConnectionThingPortParamTypeId);
 
     m_connectionSlaveIdParamTypeIds.insert(sunspecConnectionThingClassId, sunspecConnectionThingSlaveIdParamTypeId);
     m_connectionSlaveIdParamTypeIds.insert(solarEdgeConnectionThingClassId, solarEdgeConnectionThingSlaveIdParamTypeId);
@@ -133,15 +136,16 @@ void IntegrationPluginSunSpec::discoverThings(ThingDiscoveryInfo *info)
         return;
     }
 
-    QList<quint16> slaveIds = {1, 2};
-    SunSpecDataPoint::ByteOrder byteOrder = SunSpecDataPoint::ByteOrderLittleEndian;
-    if (info->thingClassId() == solarEdgeConnectionThingClassId) {
-        byteOrder = SunSpecDataPoint::ByteOrderBigEndian;
-    }
 
-    SunSpecDiscovery *discovery = new SunSpecDiscovery(hardwareManager()->networkDeviceDiscovery(), slaveIds, byteOrder, info);
+    SunSpecDataPoint::ByteOrder byteOrder = SunSpecDataPoint::ByteOrderLittleEndian;
+    if (info->thingClassId() == solarEdgeConnectionThingClassId)
+        byteOrder = SunSpecDataPoint::ByteOrderBigEndian;
+
+    quint16 discoverySlaveId = info->params().paramValue(m_connectionDiscoverySlaveIdParamTypeIds.value(info->thingClassId())).toUInt();
+
+    SunSpecDiscovery *discovery = new SunSpecDiscovery(hardwareManager()->networkDeviceDiscovery(), discoverySlaveId, byteOrder, info);
     // Note: we could add here more
-    connect(discovery, &SunSpecDiscovery::discoveryFinished, info, [=](){
+    connect(discovery, &SunSpecDiscovery::discoveryFinished, info, [this, info, discovery](){
         foreach (const SunSpecDiscovery::Result &result, discovery->results()) {
 
             // Extract the manufacturer: we pick the first manufacturer name of the first common model having a manufacturer name for now
@@ -166,6 +170,7 @@ void IntegrationPluginSunSpec::discoverThings(ThingDiscoveryInfo *info)
                 // Full support of meter, inverter and storage will be provided in the kostal plugin which makes
                 // use of the native modbus communication from kostal.
                 if (hasManufacturer(result.modelManufacturers, "kostal")) {
+                    qCWarning(dcSunSpec()) << "Skipping Kostal manufacturer on SunSpec. Please use the native kostal integration plugin in order to add it to the system.";
                     continue;
                 }
             }
@@ -177,26 +182,40 @@ void IntegrationPluginSunSpec::discoverThings(ThingDiscoveryInfo *info)
             title.append("SunSpec connection");
 
             QString description;
-            if (result.networkDeviceInfo.macAddressManufacturer().isEmpty()) {
-                description = result.networkDeviceInfo.macAddress();
-            } else {
-                description = result.networkDeviceInfo.macAddress() + " (" + result.networkDeviceInfo.macAddressManufacturer() + ")";
+            MacAddressInfo macInfo;
+            switch (result.networkDeviceInfo.monitorMode()) {
+            case NetworkDeviceInfo::MonitorModeMac:
+                macInfo = result.networkDeviceInfo.macAddressInfos().constFirst();
+                description = result.networkDeviceInfo.address().toString();
+                if (!macInfo.vendorName().isEmpty())
+                    description += " - " + result.networkDeviceInfo.macAddressInfos().constFirst().vendorName();
+
+                break;
+            case NetworkDeviceInfo::MonitorModeHostName:
+                description = result.networkDeviceInfo.hostName();
+                break;
+            case NetworkDeviceInfo::MonitorModeIp:
+                description = "Interface: " + result.networkDeviceInfo.networkInterface().name();
+                break;
             }
 
             ThingDescriptor descriptor(info->thingClassId(), title, description);
 
-            // Check if we already have set up this device
-            Things existingThings = myThings().filterByParam(m_connectionMacAddressParamTypeIds.value(info->thingClassId()), result.networkDeviceInfo.macAddress());
-            if (existingThings.count() == 1) {
-                qCDebug(dcSunSpec()) << "This thing already exists in the system." << existingThings.first() << result.networkDeviceInfo;
-                descriptor.setThingId(existingThings.first()->id());
-            }
-
             ParamList params;
+            params << Param(m_connectionMacAddressParamTypeIds.value(info->thingClassId()), result.networkDeviceInfo.thingParamValueMacAddress());
+            params << Param(m_connectionHostNameParamTypeIds.value(info->thingClassId()), result.networkDeviceInfo.thingParamValueHostName());
+            params << Param(m_connectionAddressParamTypeIds.value(info->thingClassId()), result.networkDeviceInfo.thingParamValueAddress());
             params << Param(m_connectionPortParamTypeIds.value(info->thingClassId()), result.port);
-            params << Param(m_connectionMacAddressParamTypeIds.value(info->thingClassId()), result.networkDeviceInfo.macAddress());
             params << Param(m_connectionSlaveIdParamTypeIds.value(info->thingClassId()), result.slaveId);
             descriptor.setParams(params);
+
+            // Check if we already have set up this device
+            Thing *existingThing = myThings().findByParams(params);
+            if (existingThing) {
+                qCDebug(dcSunSpec()) << "This thing already exists in the system:" << result.networkDeviceInfo;
+                descriptor.setThingId(existingThing->id());
+            }
+
             info->addThingDescriptor(descriptor);
         }
 
@@ -213,7 +232,8 @@ void IntegrationPluginSunSpec::setupThing(ThingSetupInfo *info)
     qCDebug(dcSunSpec()) << "Setup thing" << thing;
     qCDebug(dcSunSpec()) << thing->params();
 
-    if (thing->thingClassId() == sunspecConnectionThingClassId || thing->thingClassId() == solarEdgeConnectionThingClassId) {
+    if (thing->thingClassId() == sunspecConnectionThingClassId ||
+        thing->thingClassId() == solarEdgeConnectionThingClassId) {
 
         // Handle reconfigure
         if (m_sunSpecConnections.contains(thing->id())) {
@@ -225,16 +245,16 @@ void IntegrationPluginSunSpec::setupThing(ThingSetupInfo *info)
             }
         }
 
-        MacAddress macAddress = MacAddress(thing->paramValue(m_connectionMacAddressParamTypeIds.value(thing->thingClassId())).toString());
-        if (!macAddress.isValid()) {
-            qCWarning(dcSunSpec()) << "The configured mac address is not valid" << thing->params();
-            info->finish(Thing::ThingErrorInvalidParameter, QT_TR_NOOP("The MAC address is not known. Please reconfigure the connection."));
+        // Create the monitor
+        NetworkDeviceMonitor *monitor = hardwareManager()->networkDeviceDiscovery()->registerMonitor(thing);
+        if (!monitor) {
+            qCWarning(dcSunSpec()) << "Unable to register monitor with the given params" << thing->params();
+            info->finish(Thing::ThingErrorInvalidParameter, QT_TR_NOOP("Unable to set up the connection with this configuration, please reconfigure the connection."));
             return;
         }
 
-        // Create the monitor
-        NetworkDeviceMonitor *monitor = hardwareManager()->networkDeviceDiscovery()->registerMonitor(macAddress);
         m_monitors.insert(thing, monitor);
+
         QHostAddress address = monitor->networkDeviceInfo().address();
         if (address.isNull() && info->isInitialSetup()) {
             qCWarning(dcSunSpec()) << "Cannot set up thing. The host address is not known and this is an initial setup";
@@ -305,9 +325,9 @@ void IntegrationPluginSunSpec::setupThing(ThingSetupInfo *info)
             }
         }
 
-    } else if (thing->thingClassId() == sunspecThreePhaseInverterThingClassId
-               || thing->thingClassId() == sunspecSplitPhaseInverterThingClassId
-               || thing->thingClassId() == sunspecSinglePhaseInverterThingClassId ) {
+    } else if (thing->thingClassId() == sunspecThreePhaseInverterThingClassId ||
+               thing->thingClassId() == sunspecSplitPhaseInverterThingClassId ||
+               thing->thingClassId() == sunspecSinglePhaseInverterThingClassId ) {
 
         Thing *thing = info->thing();
         uint modelId = thing->paramValue(m_modelIdParamTypeIds.value(thing->thingClassId())).toInt();
@@ -420,9 +440,8 @@ void IntegrationPluginSunSpec::thingRemoved(Thing *thing)
         Q_ASSERT_X(false, "thingRemoved", QString("Unhandled thingClassId: %1").arg(thing->thingClassId().toString()).toUtf8());
     }
 
-    if (m_monitors.contains(thing)) {
+    if (m_monitors.contains(thing))
         hardwareManager()->networkDeviceDiscovery()->unregisterMonitor(m_monitors.take(thing));
-    }
 
     if (myThings().isEmpty()) {
         qCDebug(dcSunSpec()) << "Stopping refresh timer";
@@ -466,25 +485,42 @@ void IntegrationPluginSunSpec::executeAction(ThingActionInfo *info)
                 }
                 info->finish(Thing::ThingErrorNoError);
             });
-        } else if (action.actionTypeId() == sunspecStorageEnableChargingActionTypeId || action.actionTypeId() == sunspecStorageEnableDischargingActionTypeId) {
-            SunSpecStorageModel::Storctl_modFlags controlModeFlags;
-            if (action.param(sunspecStorageEnableChargingActionEnableChargingParamTypeId).value().toBool())
-                controlModeFlags.setFlag(SunSpecStorageModel::Storctl_modCharge);
-
-            if (thing->stateValue(sunspecStorageEnableDischargingStateTypeId).toBool())
-                controlModeFlags.setFlag(SunSpecStorageModel::Storctl_modDiScharge);
-
+        } else if (action.actionTypeId() == sunspecStorageEnableChargingActionTypeId) {
+            SunSpecStorageModel::Storctl_modFlags controlModeFlags = storage->storCtlMod();
+            bool enabled = action.param(sunspecStorageEnableChargingActionEnableChargingParamTypeId).value().toBool();
+            controlModeFlags.setFlag(SunSpecStorageModel::Storctl_modCharge, enabled);
             QModbusReply *reply = storage->setStorCtlMod(controlModeFlags);
             if (!reply) {
                 info->finish(Thing::ThingErrorHardwareFailure);
                 return;
             }
             connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
-            connect(reply, &QModbusReply::finished, info, [info, reply]{
+            connect(reply, &QModbusReply::finished, info, [info, reply, enabled]{
                 if (reply->error() != QModbusDevice::NoError) {
                     info->finish(Thing::ThingErrorHardwareFailure);
                     return;
                 }
+
+                info->thing()->setStateValue(sunspecStorageEnableChargingStateTypeId, enabled);
+                info->finish(Thing::ThingErrorNoError);
+            });
+        } else if (action.actionTypeId() == sunspecStorageEnableDischargingActionTypeId) {
+            SunSpecStorageModel::Storctl_modFlags controlModeFlags = storage->storCtlMod();
+            bool enabled = action.param(sunspecStorageEnableDischargingActionEnableDischargingParamTypeId).value().toBool();
+            controlModeFlags.setFlag(SunSpecStorageModel::Storctl_modDiScharge, enabled);
+            QModbusReply *reply = storage->setStorCtlMod(controlModeFlags);
+            if (!reply) {
+                info->finish(Thing::ThingErrorHardwareFailure);
+                return;
+            }
+            connect(reply, &QModbusReply::finished, reply, &QModbusReply::deleteLater);
+            connect(reply, &QModbusReply::finished, info, [info, reply, enabled]{
+                if (reply->error() != QModbusDevice::NoError) {
+                    info->finish(Thing::ThingErrorHardwareFailure);
+                    return;
+                }
+
+                info->thing()->setStateValue(sunspecStorageEnableDischargingStateTypeId, enabled);
                 info->finish(Thing::ThingErrorNoError);
             });
         } else if (action.actionTypeId() == sunspecStorageChargingRateActionTypeId) {
@@ -547,7 +583,7 @@ bool IntegrationPluginSunSpec::sunspecThingAlreadyAdded(uint modelId, uint modbu
 
 void IntegrationPluginSunSpec::processDiscoveryResult(Thing *thing, SunSpecConnection *connection)
 {
-    qCDebug(dcSunSpec()) << "Processing discovery result from" << thing->name() << connection;
+    qCInfo(dcSunSpec()) << "Processing discovery result from" << thing->name() << connection;
 
     foreach (SunSpecModel *model, connection->models()) {
         Thing *modelThing = getThingForSunSpecModel(model->modelId(), model->modbusStartRegister(), thing->id());
@@ -631,7 +667,7 @@ void IntegrationPluginSunSpec::processDiscoveryResult(Thing *thing, SunSpecConne
     // As of now there might be following situation where this code is required:
     //  - A setup has changed and something has been removed or replaced
     //  - Some SunSpec device seem to communicate different model id depending on the startup phase
-    //    i.e. they communicate a SinglePhase Meter on register x, few mnutes later it is a 3 phase meter on x
+    //    i.e. they communicate a SinglePhase Meter on register x, few minutes later it is a 3 phase meter on x
     // This code should handle such weird setups...
 
     if (connection->models().isEmpty())
@@ -896,9 +932,34 @@ double IntegrationPluginSunSpec::calculateSolarEdgePvProduction(Thing *thing, do
 
 void IntegrationPluginSunSpec::autocreateSunSpecModelThing(const ThingClassId &thingClassId, const QString &thingName, const ThingId &parentId, SunSpecModel *model)
 {
+    /* On some systems we get duplicated things having the same serial number but are on different registers.
+     * Those devices normally dissapear after some time again. For now, we need to prevent to even create those
+     * devices by filtering out those who already have been added using the serialnumber, not only the combination
+     * of model number and start address. */
+
+    QString serialNumber = model->commonModelInfo().serialNumber;
+    if (!serialNumber.isEmpty()) {
+        // If we have any model with this exact serial number, we skip adding this model
+        foreach (Thing *thing, myThings()) {
+            if (m_serialNumberParamTypeIds.contains(thing->thingClassId())) {
+                QString thingSerialNumber = thing->paramValue(m_serialNumberParamTypeIds.value(thing->thingClassId())).toString();
+                if (serialNumber == thingSerialNumber) {
+                    qCWarning(dcSunSpec()) << "Trying to add a new thing for a SunSpec model, but we already have a thing with this serial number. Not adding it to the system...";
+                    qCWarning(dcSunSpec()) << "--> Already added:" << thing << thing->params();
+                    qCWarning(dcSunSpec()) << "--> Attempt to add:" << thingName << model
+                                           << model->commonModelInfo().modelName
+                                           << model->commonModelInfo().manufacturerName
+                                           << model->commonModelInfo().serialNumber
+                                           << model->commonModelInfo().versionString;
+
+                    return;
+                }
+            }
+        }
+    }
+
     ThingDescriptor descriptor(thingClassId);
     descriptor.setParentId(parentId);
-
     QString finalThingName;
     if (model->commonModelInfo().manufacturerName.isEmpty()) {
         finalThingName = thingName;

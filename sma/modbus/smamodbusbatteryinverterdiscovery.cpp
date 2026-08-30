@@ -1,30 +1,24 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *
-* Copyright 2013 - 2023, nymea GmbH
-* Contact: contact@nymea.io
+* Copyright (C) 2013 - 2024, nymea GmbH
+* Copyright (C) 2024 - 2025, chargebyte austria GmbH
 *
-* This file is part of nymea.
-* This project including source code and documentation is protected by
-* copyright law, and remains the property of nymea GmbH. All rights, including
-* reproduction, publication, editing and translation, are reserved. The use of
-* this project is subject to the terms of a license agreement to be concluded
-* with nymea GmbH in accordance with the terms of use of nymea GmbH, available
-* under https://nymea.io/license
+* This file is part of nymea-plugins-modbus.
 *
-* GNU Lesser General Public License Usage
-* Alternatively, this project may be redistributed and/or modified under the
-* terms of the GNU Lesser General Public License as published by the Free
-* Software Foundation; version 3. This project is distributed in the hope that
-* it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-* Lesser General Public License for more details.
+* nymea-plugins-modbus is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
 *
-* You should have received a copy of the GNU Lesser General Public License
-* along with this project. If not, see <https://www.gnu.org/licenses/>.
+* nymea-plugins-modbus is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
 *
-* For any further details and any questions please contact us under
-* contact@nymea.io or see our FAQ/Licensing Information on
-* https://nymea.io/license/faq
+* You should have received a copy of the GNU General Public License
+* along with nymea-plugins-modbus. If not, see <https://www.gnu.org/licenses/>.
 *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -45,20 +39,20 @@ SmaModbusBatteryInverterDiscovery::SmaModbusBatteryInverterDiscovery(NetworkDevi
         qCDebug(dcSma()) << "Discovery: Grace period timer triggered.";
         finishDiscovery();
     });
-
 }
 
 void SmaModbusBatteryInverterDiscovery::startDiscovery()
 {
     qCInfo(dcSma()) << "Discovery: Searching for SMA battery inverters in the network...";
     NetworkDeviceDiscoveryReply *discoveryReply = m_networkDeviceDiscovery->discover();
+    m_startDateTime = QDateTime::currentDateTime();
 
-    connect(discoveryReply, &NetworkDeviceDiscoveryReply::networkDeviceInfoAdded, this, &SmaModbusBatteryInverterDiscovery::checkNetworkDevice);
-
+    connect(discoveryReply, &NetworkDeviceDiscoveryReply::hostAddressDiscovered, this, &SmaModbusBatteryInverterDiscovery::checkNetworkDevice);
+    connect(discoveryReply, &NetworkDeviceDiscoveryReply::finished, discoveryReply, &NetworkDeviceDiscoveryReply::deleteLater);
     connect(discoveryReply, &NetworkDeviceDiscoveryReply::finished, this, [=](){
-        qCDebug(dcSma()) << "Discovery: Network discovery finished. Found" << discoveryReply->networkDeviceInfos().count() << "network devices";
+        qCDebug(dcSma()) << "Discovery: Network discovery finished. Found" << discoveryReply->networkDeviceInfos().length() << "network devices";
+        m_networkDeviceInfos = discoveryReply->networkDeviceInfos();
         m_gracePeriodTimer.start();
-        discoveryReply->deleteLater();
     });
 }
 
@@ -67,11 +61,11 @@ QList<SmaModbusBatteryInverterDiscovery::Result> SmaModbusBatteryInverterDiscove
     return m_discoveryResults;
 }
 
-void SmaModbusBatteryInverterDiscovery::checkNetworkDevice(const NetworkDeviceInfo &networkDeviceInfo)
+void SmaModbusBatteryInverterDiscovery::checkNetworkDevice(const QHostAddress &address)
 {
-    qCInfo(dcSma()) << "Checking network device:" << networkDeviceInfo << "Port:" << m_port << "Slave ID:" << m_modbusAddress;
+    qCInfo(dcSma()) << "Checking network device:" << address << "Port:" << m_port << "Slave ID:" << m_modbusAddress;
 
-    SmaBatteryInverterModbusTcpConnection *connection = new SmaBatteryInverterModbusTcpConnection(networkDeviceInfo.address(), m_port, m_modbusAddress, this);
+    SmaBatteryInverterModbusTcpConnection *connection = new SmaBatteryInverterModbusTcpConnection(address, m_port, m_modbusAddress, this);
     m_connections.append(connection);
 
     connect(connection, &SmaBatteryInverterModbusTcpConnection::reachableChanged, this, [=](bool reachable){
@@ -82,13 +76,13 @@ void SmaModbusBatteryInverterDiscovery::checkNetworkDevice(const NetworkDeviceIn
 
         connect(connection, &SmaBatteryInverterModbusTcpConnection::initializationFinished, this, [=](bool success){
             if (!success) {
-                qCInfo(dcSma()) << "Discovery: Initialization failed on" << networkDeviceInfo.address().toString() << "Skipping result...";;
+                qCInfo(dcSma()) << "Discovery: Initialization failed on" << address.toString() << "Skipping result...";;
                 cleanupConnection(connection);
                 return;
             }
 
             if (connection->deviceClass() != Sma::DeviceClassBatteryInverter) {
-                qCInfo(dcSma()) << "Discovery: Initialization successful for" << networkDeviceInfo.address().toString() << "but the device class is not a battery inverter. Skipping result...";;
+                qCInfo(dcSma()) << "Discovery: Initialization successful for" << address.toString() << "but the device class is not a battery inverter. Skipping result...";;
                 cleanupConnection(connection);
                 return;
             }
@@ -99,7 +93,7 @@ void SmaModbusBatteryInverterDiscovery::checkNetworkDevice(const NetworkDeviceIn
             result.port = m_port;
             result.modbusAddress = m_modbusAddress;
             result.softwareVersion = Sma::buildSoftwareVersionString(connection->softwarePackage());
-            result.networkDeviceInfo = networkDeviceInfo;
+            result.address = address;
             m_discoveryResults.append(result);
 
             qCInfo(dcSma()) << "Discovery: --> Found";
@@ -112,18 +106,17 @@ void SmaModbusBatteryInverterDiscovery::checkNetworkDevice(const NetworkDeviceIn
         });
 
         if (!connection->initialize()) {
-            qCDebug(dcSma()) << "Discovery: Unable to initialize connection on" << networkDeviceInfo.address().toString();
+            qCDebug(dcSma()) << "Discovery: Unable to initialize connection on" << address.toString();
             cleanupConnection(connection);
         }
     });
 
     connect(connection, &SmaBatteryInverterModbusTcpConnection::checkReachabilityFailed, this, [=](){
-        qCDebug(dcSma()) << "Discovery: Checking reachability failed on" << networkDeviceInfo.address().toString();
+        qCDebug(dcSma()) << "Discovery: Checking reachability failed on" << address.toString();
         cleanupConnection(connection);
     });
 
     connection->connectDevice();
-
 }
 
 void SmaModbusBatteryInverterDiscovery::cleanupConnection(SmaBatteryInverterModbusTcpConnection *connection)
@@ -137,12 +130,16 @@ void SmaModbusBatteryInverterDiscovery::finishDiscovery()
 {
     qint64 durationMilliSeconds = QDateTime::currentMSecsSinceEpoch() - m_startDateTime.toMSecsSinceEpoch();
 
+    // Fill in all network device infos we have
+    for (int i = 0; i < m_discoveryResults.length(); i++)
+        m_discoveryResults[i].networkDeviceInfo = m_networkDeviceInfos.get(m_discoveryResults.at(i).address);
+
     // Cleanup any leftovers...we don't care any more
     foreach (SmaBatteryInverterModbusTcpConnection *connection, m_connections)
         cleanupConnection(connection);
 
-    qCInfo(dcSma()) << "Discovery: Finished the discovery process. Found" << m_discoveryResults.count()
-                       << "SMA battery inverters in" << QTime::fromMSecsSinceStartOfDay(durationMilliSeconds).toString("mm:ss.zzz");
+    qCInfo(dcSma()) << "Discovery: Finished the discovery process. Found" << m_discoveryResults.length()
+                    << "SMA battery inverters in" << QTime::fromMSecsSinceStartOfDay(durationMilliSeconds).toString("mm:ss.zzz");
     m_gracePeriodTimer.stop();
 
     emit discoveryFinished();

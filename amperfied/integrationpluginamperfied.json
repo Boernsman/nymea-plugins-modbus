@@ -13,7 +13,7 @@
                     "displayName": "Energy Control",
                     "id": "5b87b9ab-c78b-48c2-9f5f-5a4efebd2c58",
                     "createMethods": ["discovery", "user"],
-                    "interfaces": ["evcharger", "smartmeterconsumer", "connectable"],
+                    "interfaces": ["evchargerac", "smartmeterconsumer", "connectable"],
                     "paramTypes": [
                         {
                             "id": "22aa91ef-d6bc-4ea3-b4c5-c2f773d86510",
@@ -64,7 +64,8 @@
                             "type": "uint",
                             "minValue": 1,
                             "maxValue": 3,
-                            "defaultValue": 1
+                            "defaultValue": 3,
+                            "cached": false
                         },
                         {
                             "id": "b7ea8449-c76f-4d42-8433-505f542abfd4",
@@ -98,10 +99,11 @@
                             "name": "maxChargingCurrent",
                             "displayName": "Maximum charging current",
                             "displayNameAction": "Set maximum charging current",
-                            "type": "uint",
+                            "type": "double",
                             "unit": "Ampere",
                             "minValue": 6,
                             "maxValue": 32,
+                            "stepSize": 0.1,
                             "defaultValue": 6,
                             "writable": true
                         },
@@ -120,12 +122,28 @@
                     "displayName": "connect.home",
                     "id": "f8805308-1ddd-496c-bea3-ef9163357bfa",
                     "createMethods": ["discovery", "user"],
-                    "interfaces": ["evcharger", "smartmeterconsumer", "connectable"],
+                    "interfaces": ["evchargerac", "smartmeterconsumer", "connectable", "networkdevice"],
                     "paramTypes": [
                         {
                             "id": "b4b0556e-0d5d-4951-b5cd-e0c7986b8dcf",
                             "name":"macAddress",
                             "displayName": "MAC address",
+                            "type": "QString",
+                            "inputType": "MacAddress",
+                            "defaultValue": ""
+                        },
+                        {
+                            "id": "134d8e0f-2c57-4318-8dc8-8a9f0779a589",
+                            "name": "address",
+                            "displayName": "Host address",
+                            "type": "QString",
+                            "inputType": "IPv4Address",
+                            "defaultValue": ""
+                        },
+                        {
+                            "id": "c6fdceef-259a-4a7f-8efd-78396171123c",
+                            "name": "hostName",
+                            "displayName": "Host name",
                             "type": "QString",
                             "defaultValue": ""
                         }
@@ -162,7 +180,8 @@
                             "type": "uint",
                             "minValue": 1,
                             "maxValue": 3,
-                            "defaultValue": 1
+                            "defaultValue": 3,
+                            "cached": false
                         },
                         {
                             "id": "6221212e-e21d-4006-bfdc-90a8a50b2587",
@@ -196,10 +215,11 @@
                             "name": "maxChargingCurrent",
                             "displayName": "Maximum charging current",
                             "displayNameAction": "Set maximum charging current",
-                            "type": "uint",
+                            "type": "double",
                             "unit": "Ampere",
                             "minValue": 6,
                             "maxValue": 32,
+                            "stepSize": 0.1,
                             "defaultValue": 6,
                             "writable": true
                         },
@@ -218,12 +238,27 @@
                     "displayName": "connect.business",
                     "id": "18e6d077-7cb5-4409-8c4b-b14ce7ddac9f",
                     "createMethods": ["discovery", "user"],
-                    "interfaces": ["evcharger", "smartmeterconsumer", "connectable"],
+                    "interfaces": ["evchargerac", "smartmeterconsumer", "connectable", "networkdevice"],
                     "paramTypes": [
                         {
                             "id": "d8545dfe-65c7-44bc-9ab7-642bfdccf540",
                             "name":"macAddress",
                             "displayName": "MAC address",
+                            "type": "QString",
+                            "defaultValue": ""
+                        },
+                        {
+                            "id": "7a3199da-22d7-4629-a58a-0f5ef5089780",
+                            "name": "address",
+                            "displayName": "Host address",
+                            "type": "QString",
+                            "inputType": "IPv4Address",
+                            "defaultValue": ""
+                        },
+                        {
+                            "id": "112d99f9-31a9-4645-99f4-8e4db52ce7b5",
+                            "name": "hostName",
+                            "displayName": "Host name",
                             "type": "QString",
                             "defaultValue": ""
                         }
@@ -260,7 +295,8 @@
                             "type": "uint",
                             "minValue": 1,
                             "maxValue": 3,
-                            "defaultValue": 1
+                            "defaultValue": 3,
+                            "cached": false
                         },
                         {
                             "id": "040b919c-455a-4289-b14c-33e59c48da01",
@@ -306,10 +342,11 @@
                             "name": "maxChargingCurrent",
                             "displayName": "Maximum charging current",
                             "displayNameAction": "Set maximum charging current",
-                            "type": "uint",
+                            "type": "double",
                             "unit": "Ampere",
                             "minValue": 6,
                             "maxValue": 32,
+                            "stepSize": 0.1,
                             "defaultValue": 6,
                             "writable": true
                         },
@@ -328,12 +365,27 @@
                     "displayName": "connect.solar",
                     "id": "0bfdf18d-5a5e-4c5d-aab1-139e96a5fec0",
                     "createMethods": ["discovery", "user"],
-                    "interfaces": ["evcharger", "smartmeterconsumer", "connectable"],
+                    "interfaces": ["evchargerac", "smartmeterconsumer", "connectable", "networkdevice"],
                     "paramTypes": [
                         {
                             "id": "72f82b3a-0bb0-476f-a2f9-9cde4de0ef6f",
                             "name":"macAddress",
                             "displayName": "MAC address",
+                            "type": "QString",
+                            "defaultValue": ""
+                        },
+                        {
+                            "id": "a9a217fa-fe12-4fdc-ab89-710b4a884d7a",
+                            "name": "address",
+                            "displayName": "Host address",
+                            "type": "QString",
+                            "inputType": "IPv4Address",
+                            "defaultValue": ""
+                        },
+                        {
+                            "id": "464a777b-9e15-4e23-aec1-d6df6ce54991",
+                            "name": "hostName",
+                            "displayName": "Host name",
                             "type": "QString",
                             "defaultValue": ""
                         }
@@ -370,7 +422,8 @@
                             "type": "uint",
                             "minValue": 1,
                             "maxValue": 3,
-                            "defaultValue": 1
+                            "defaultValue": 3,
+                            "cached": false
                         },
                         {
                             "id": "8096f537-748e-4040-a146-022a3aba05e1",
@@ -416,10 +469,11 @@
                             "name": "maxChargingCurrent",
                             "displayName": "Maximum charging current",
                             "displayNameAction": "Set maximum charging current",
-                            "type": "uint",
+                            "type": "double",
                             "unit": "Ampere",
                             "minValue": 6,
                             "maxValue": 32,
+                            "stepSize": 0.1,
                             "defaultValue": 6,
                             "writable": true
                         },

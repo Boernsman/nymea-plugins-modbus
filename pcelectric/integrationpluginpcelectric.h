@@ -1,0 +1,120 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*
+* Copyright (C) 2013 - 2024, nymea GmbH
+* Copyright (C) 2024 - 2026, chargebyte austria GmbH
+*
+* This file is part of nymea-plugins-modbus.
+*
+* nymea-plugins-modbus is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* nymea-plugins-modbus is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with nymea-plugins-modbus. If not, see <https://www.gnu.org/licenses/>.
+*
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+#ifndef INTEGRATIONPLUGINPCELECTRIC_H
+#define INTEGRATIONPLUGINPCELECTRIC_H
+
+#include <QDebug>
+#include <QObject>
+#include <QPointer>
+#include <QSslCertificate>
+#include <QSslKey>
+
+#include <functional>
+
+#include <integrations/integrationplugin.h>
+#include <network/networkdevicediscovery.h>
+#include <network/zeroconf/zeroconfserviceentry.h>
+#include "extern-plugininfo.h"
+#include "pcewallbox.h"
+
+class ZeroConfServiceBrowser;
+class ZeroConfServiceEntry;
+class QProcess;
+class QTemporaryDir;
+
+class IntegrationPluginPcElectric : public IntegrationPlugin
+{
+    Q_OBJECT
+
+    Q_PLUGIN_METADATA(IID "io.nymea.IntegrationPlugin" FILE "integrationpluginpcelectric.json")
+    Q_INTERFACES(IntegrationPlugin)
+
+public:
+    explicit IntegrationPluginPcElectric();
+    void init() override;
+
+    void discoverThings(ThingDiscoveryInfo *info) override;
+    void setupThing(ThingSetupInfo *info) override;
+    void postSetupThing(Thing *thing) override;
+    void thingRemoved(Thing *thing) override;
+    void executeAction(ThingActionInfo *info) override;
+
+private:
+    QHash<Thing *, PceWallbox *> m_connections;
+    QHash<Thing *, NetworkDeviceMonitor *> m_monitors;
+    QHash<Thing *, QHostAddress> m_monitorAddresses;
+    QHash<Thing *, QSet<QHostAddress>> m_zeroConfAddresses;
+    QHash<Thing *, QSet<QHostAddress>> m_attemptedAddresses;
+    QHash<Thing *, QPointer<ThingSetupInfo>> m_pendingInitialSetups;
+    QHash<Thing *, QString> m_unexpectedSerialNumbers;
+    QHash<Thing *, QString> m_configuredSerialNumbers;
+    QHash<Thing *, bool> m_staticAddressModes;
+    QSet<Thing *> m_addressAttemptsInProgress;
+    QSet<Thing *> m_addressRetriesScheduled;
+    QHash<Thing *, bool> m_initialUpdate;
+
+    // We need to buffer the desired power / current / phase count states because all 3 states
+    // will be represented by one register (200 - chaegingCurrent). If all 3 actions get executed, they might
+    // overwrite each other, since the action gets started right the way, but the request gets queued.
+    // If the actions would be queued, there would be still the issue with the order of the actions
+    // (set power to false and then set charging current would always enable charging in the end).
+    QHash<Thing *, PceWallbox::ChargingCurrentState> m_chargingCurrentStateBuffer;
+
+    QHash<ThingClassId, ParamTypeId> m_addressParamTypes;
+    QHash<ThingClassId, ParamTypeId> m_hostNameParamTypes;
+    QHash<ThingClassId, ParamTypeId> m_macParamTypes;
+    QHash<ThingClassId, ParamTypeId> m_serialNumberParamTypes;
+
+    ZeroConfServiceBrowser *m_modbusServiceBrowser = nullptr;
+    QSet<PceWallbox *> m_tlsUpgradesInProgress;
+
+    void setupConnection(ThingSetupInfo *info);
+    bool isStaticThing(Thing *thing) const;
+    bool isMatchingZeroConfService(Thing *thing, const ZeroConfServiceEntry &entry) const;
+    QSet<QHostAddress> availableAddresses(Thing *thing) const;
+    void refreshZeroConfAddresses(Thing *thing);
+    void providerAddressesChanged(Thing *thing);
+    void tryNextAddress(Thing *thing);
+    void addressAttemptFailed(Thing *thing, const QString &unexpectedSerial = QString());
+    void finishInitialSetup(Thing *thing, Thing::ThingError error, const QString &message = QString());
+    void clearAddressState(Thing *thing);
+    bool configureTls(Thing *thing, PceWallbox *connection);
+    bool ensureClientIdentity(QString *errorString = nullptr);
+    void ensureClientIdentityAsync(const std::function<void(bool, const QString &)> &callback, bool refresh = false);
+    QString resolvedIdentityPath(const QString &configuredPath) const;
+    QString storagePrefix(Thing *thing) const;
+    QString wallboxSerialNumber(PceWallbox *connection) const;
+    void handleZeroConfServiceAdded(const ZeroConfServiceEntry &entry);
+    void handleZeroConfServiceRemoved(const ZeroConfServiceEntry &entry);
+
+    QSslCertificate m_clientCertificate;
+    QSslKey m_clientPrivateKey;
+    QProcess *m_identityProcess = nullptr;
+    QTemporaryDir *m_identityTemporaryDirectory = nullptr;
+    QList<std::function<void(bool, const QString &)>> m_identityCallbacks;
+    bool m_identityRefreshInProgress = false;
+};
+
+#endif // INTEGRATIONPLUGINPCELECTRIC_H

@@ -1,4 +1,4 @@
-# nymea plug-ins modbus
+# nymea plugins modbus
 
 --------------------------------------------
 <p align="center">
@@ -10,16 +10,39 @@
 
 This repository contains modbus integrations for nymea. 
 
+## Modbus TCP over TLS
+
+`ModbusTcpMaster` supports plain TCP by default and an opt-in TLS transport. The
+existing API remains source-compatible, so current integrations keep using
+plain Modbus TCP until they explicitly select TLS.
+
+```cpp
+ModbusTcpMaster *master = new ModbusTcpMaster(address, 802, parent);
+master->setTransport(ModbusTcpMaster::TransportTls);
+
+QSslConfiguration tls = QSslConfiguration::defaultConfiguration();
+tls.setProtocol(QSsl::TlsV1_2);
+// tls.setLocalCertificate(clientCertificate); // Optional mutual TLS
+// tls.setPrivateKey(clientPrivateKey);
+master->setTlsConfiguration(tls);
+master->setAcceptedPeerCertificateFingerprint(serverCertificateSha256);
+master->connectDevice();
+```
+
+If no fingerprint is configured, Qt's normal CA-chain and hostname validation
+is used. A configured fingerprint pins the leaf certificate and intentionally
+overrides CA validation errors. `peerCertificateAvailable` is informational;
+an asynchronous consumer can verify and store the reported fingerprint, then
+call `reconnectDevice()` after applying it. The library never pauses a TLS
+handshake waiting for user interaction.
+
+Keeping the same client certificate and private key provides a stable client
+identity but does not by itself shorten a TLS 1.2 handshake. Session resumption
+would provide the relevant latency improvement; it is deliberately not enabled
+or persisted by the library yet. Callers should keep one connection open where
+possible instead of reconnecting for each Modbus operation.
+
 nymea (/[n'aiːmea:]/ - is an open source IoT edge server. The plug-in based architecture allows to integrate protocols and APIs. With the build-in rule engine you are able to interconnect devices or services available in the system and create individual scenes and behaviours for your environment.
-
-
-## Getting help
-
-If you want to present your project or want to share your newest developments you can share it in
-[Our Forum](https://forum.nymea.io)
-
-If you are facing any troubles, don't hesitate to reach out for us or the community members, we will be pleased to help you:
-Chat with us on [Telegram](http://t.me/nymeacommunity)
 
 ## Documentation
 
@@ -32,12 +55,8 @@ Chat with us on [Telegram](http://t.me/nymeacommunity)
     [nymea | developer documentation](https://nymea.io/documentation/developers/).
 
 
-## Contributing
-
-To contribute support for a device or service, you're welcome to file a pull request to this repository. If you need help in creating an integration plugin, feel free to ask in our forum or the Telegram group as well.
-
-If you don't have any developer skills at all, still feel free to bring the topic up. Our community is happy to help wherever possible."
-
 ## License
 --------------------------------------------
-> nymea is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 3 of the License.
+The nymea modbus plugins inside this repository are licensed under the GNU General Public License, version 3 or (at your option) any later version. The reusable libraries `libnymea-modbus` and `libnymea-sunspec` are licensed under the GNU Lesser General Public License, version 3 or (at your option) any later version. 
+
+The full license texts can be found in [`LICENSE.GPL3`](LICENSE.GPL3) for the GPL components and [`LICENSE.LGPL3`](LICENSE.LGPL3) for the LGPL libraries.

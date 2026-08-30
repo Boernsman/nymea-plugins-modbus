@@ -39,16 +39,42 @@
                     "name": "sunspecConnection",
                     "displayName": "SunSpec Generic",
                     "id": "f51853f3-8815-4cf3-b337-45cda1f3e6d5",
-                    "createMethods": [ "Discovery" ],
-                    "interfaces": ["gateway"],
+                    "createMethods": [ "discovery", "user" ],
+                    "interfaces": [ "gateway", "networkdevice" ],
                     "providedInterfaces": [ "solarinverter", "energymeter", "energystorage"],
+                    "discoveryParamTypes": [
+                        {
+                            "id": "50e027aa-ab15-44df-80d3-71964aee44af",
+                            "name":"slaveId",
+                            "displayName": "Slave ID",
+                            "type": "int",
+                            "defaultValue": 1
+                        }
+                    ],
                     "paramTypes": [
+                        {
+                            "id": "3567b389-9d42-48f9-a29b-d18388fb36a1",
+                            "name": "address",
+                            "displayName": "Host address",
+                            "type": "QString",
+                            "inputType": "IPv4Address",
+                            "defaultValue": ""
+                        },
+                        {
+                            "id": "1667b0ed-9a2b-47c6-a01f-690caee55ffa",
+                            "name": "hostName",
+                            "displayName": "Host name",
+                            "type": "QString",
+                            "inputType": "TextLine",
+                            "defaultValue": ""
+                        },
                         {
                             "id": "f65d6c36-1672-44cb-b52a-62d71837ae67",
                             "name":"macAddress",
                             "displayName": "MAC address",
                             "type": "QString",
-                            "defaultValue": "00:00:00:00:00:00"
+                            "inputType": "MacAddress",
+                            "defaultValue": ""
                         },
                         {
                             "id": "1fa4fc9c-f6be-47c7-928a-bcefc1142eec",
@@ -1457,16 +1483,42 @@
                     "name": "solarEdgeConnection",
                     "displayName": "SolarEdge",
                     "id": "7a92bf65-b443-4491-a012-2bec35eb5bf0",
-                    "createMethods": [ "Discovery" ],
-                    "interfaces": ["gateway"],
+                    "createMethods": [ "discovery", "user" ],
+                    "interfaces": [ "gateway", "networkdevice" ],
                     "providedInterfaces": [ "solarinverter", "energymeter", "energystorage" ],
+                    "discoveryParamTypes": [
+                        {
+                            "id": "9025a4e9-d994-45c7-9a00-62f7abf47107",
+                            "name":"slaveId",
+                            "displayName": "Slave ID",
+                            "type": "int",
+                            "defaultValue": 1
+                        }
+                    ],
                     "paramTypes": [
+                        {
+                            "id": "9c2bafd0-6d56-42e0-8ef3-c4940b4f18b5",
+                            "name": "address",
+                            "displayName": "Host address",
+                            "type": "QString",
+                            "inputType": "IPv4Address",
+                            "defaultValue": ""
+                        },
+                        {
+                            "id": "2e22c369-8476-4908-9cdc-186472f4d472",
+                            "name": "hostName",
+                            "displayName": "Host name",
+                            "type": "QString",
+                            "inputType": "TextLine",
+                            "defaultValue": ""
+                        },
                         {
                             "id": "bb395c12-54d6-4139-b0a6-e31b28bc4d2e",
                             "name":"macAddress",
                             "displayName": "MAC address",
                             "type": "QString",
-                            "defaultValue": "00:00:00:00:00:00"
+                            "inputType": "MacAddress",
+                            "defaultValue": ""
                         },
                         {
                             "id": "1bcede48-d167-4ced-8f1b-bea6302dd43f",

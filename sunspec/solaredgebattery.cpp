@@ -1,30 +1,24 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *
-* Copyright 2013 - 2020, nymea GmbH
-* Contact: contact@nymea.io
+* Copyright (C) 2013 - 2024, nymea GmbH
+* Copyright (C) 2024 - 2025, chargebyte austria GmbH
 *
-* This file is part of nymea.
-* This project including source code and documentation is protected by
-* copyright law, and remains the property of nymea GmbH. All rights, including
-* reproduction, publication, editing and translation, are reserved. The use of
-* this project is subject to the terms of a license agreement to be concluded
-* with nymea GmbH in accordance with the terms of use of nymea GmbH, available
-* under https://nymea.io/license
+* This file is part of nymea-plugins-modbus.
 *
-* GNU Lesser General Public License Usage
-* Alternatively, this project may be redistributed and/or modified under the
-* terms of the GNU Lesser General Public License as published by the Free
-* Software Foundation; version 3. This project is distributed in the hope that
-* it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-* Lesser General Public License for more details.
+* nymea-plugins-modbus is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
 *
-* You should have received a copy of the GNU Lesser General Public License
-* along with this project. If not, see <https://www.gnu.org/licenses/>.
+* nymea-plugins-modbus is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
 *
-* For any further details and any questions please contact us under
-* contact@nymea.io or see our FAQ/Licensing Information on
-* https://nymea.io/license/faq
+* You should have received a copy of the GNU General Public License
+* along with nymea-plugins-modbus. If not, see <https://www.gnu.org/licenses/>.
 *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -102,7 +96,7 @@ void SolarEdgeBattery::readBlockData()
 
                 const QModbusDataUnit unit = reply->result();
                 QVector<quint16> values = unit.values();
-                qCDebug(dcSunSpec()) << "SolarEdgeBattery: Received first block data" << m_modbusStartRegister << values.count();
+                qCDebug(dcSunSpec()) << "SolarEdgeBattery: Received first block data" << m_modbusStartRegister << values.length();
                 qCDebug(dcSunSpec()) << "SolarEdgeBattery:" << SunSpecDataPoint::registersToString(values);
 
                 m_batteryData.manufacturerName = SunSpecDataPoint::convertToString(values.mid(ManufacturerName, 16));
@@ -167,7 +161,7 @@ void SolarEdgeBattery::readBlockData()
                             const QModbusDataUnit unit = reply->result();
                             QVector<quint16> values = unit.values();
 
-                            qCDebug(dcSunSpec()) << "SolarEdgeBattery: Received second block data" << m_modbusStartRegister + offset << values.count();
+                            qCDebug(dcSunSpec()) << "SolarEdgeBattery: Received second block data" << m_modbusStartRegister + offset << values.length();
                             qCDebug(dcSunSpec()) << "SolarEdgeBattery:" << SunSpecDataPoint::registersToString(values);
                             QVector<quint16> valueRegisters;
 
@@ -236,24 +230,24 @@ void SolarEdgeBattery::readBlockData()
 
 QDebug operator<<(QDebug debug, const SolarEdgeBattery::BatteryData &batteryData)
 {
-    debug << "SolarEdgeBatteryData(" << batteryData.manufacturerName << "-" << batteryData.model << ")" << endl;
-    debug << "    - Battery Device ID" << batteryData.batteryDeviceId << endl;
-    debug << "    - Firmware version" << batteryData.firmwareVersion << endl;
-    debug << "    - Serial number" << batteryData.serialNumber << endl;
-    debug << "    - Rated Energy" << batteryData.ratedEnergy << "W * H" << endl;
-    debug << "    - Max charging continues power" << batteryData.maxChargeContinuesPower << "W" << endl;
-    debug << "    - Max discharging continues power" << batteryData.maxDischargeContinuesPower << "W" << endl;
-    debug << "    - Max charging peak power" << batteryData.maxChargePeakPower << "W" << endl;
-    debug << "    - Max discharging peak power" << batteryData.maxDischargePeakPower << "W" << endl;
-    debug << "    - Average temperature" << batteryData.averageTemperature << "°C" << endl;
-    debug << "    - Max temperature" << batteryData.maxTemperature << "°C" << endl;
-    debug << "    - Instantuouse Voltage" << batteryData.instantaneousVoltage << "V" << endl;
-    debug << "    - Instantuouse Current" << batteryData.instantaneousCurrent << "A" << endl;
-    debug << "    - Instantuouse Power" << batteryData.instantaneousPower << "W" << endl;
-    debug << "    - Max energy" << batteryData.maxEnergy << "W * H" << endl;
-    debug << "    - Available energy" << batteryData.availableEnergy << "W * H" << endl;
-    debug << "    - State of health" << batteryData.stateOfHealth << "%" << endl;
-    debug << "    - State of energy" << batteryData.stateOfEnergy << "%" << endl;
-    debug << "    - Battery status" << batteryData.batteryStatus << endl;
+    debug << "SolarEdgeBatteryData(" << batteryData.manufacturerName << "-" << batteryData.model << ")" << "\n";
+    debug << "    - Battery Device ID" << batteryData.batteryDeviceId << "\n";
+    debug << "    - Firmware version" << batteryData.firmwareVersion << "\n";
+    debug << "    - Serial number" << batteryData.serialNumber << "\n";
+    debug << "    - Rated Energy" << batteryData.ratedEnergy << "W * H" << "\n";
+    debug << "    - Max charging continues power" << batteryData.maxChargeContinuesPower << "W" << "\n";
+    debug << "    - Max discharging continues power" << batteryData.maxDischargeContinuesPower << "W" << "\n";
+    debug << "    - Max charging peak power" << batteryData.maxChargePeakPower << "W" << "\n";
+    debug << "    - Max discharging peak power" << batteryData.maxDischargePeakPower << "W" << "\n";
+    debug << "    - Average temperature" << batteryData.averageTemperature << "°C" << "\n";
+    debug << "    - Max temperature" << batteryData.maxTemperature << "°C" << "\n";
+    debug << "    - Instantuouse Voltage" << batteryData.instantaneousVoltage << "V" << "\n";
+    debug << "    - Instantuouse Current" << batteryData.instantaneousCurrent << "A" << "\n";
+    debug << "    - Instantuouse Power" << batteryData.instantaneousPower << "W" << "\n";
+    debug << "    - Max energy" << batteryData.maxEnergy << "W * H" << "\n";
+    debug << "    - Available energy" << batteryData.availableEnergy << "W * H" << "\n";
+    debug << "    - State of health" << batteryData.stateOfHealth << "%" << "\n";
+    debug << "    - State of energy" << batteryData.stateOfEnergy << "%" << "\n";
+    debug << "    - Battery status" << batteryData.batteryStatus << "\n";
     return debug;
 }

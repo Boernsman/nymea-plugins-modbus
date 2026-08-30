@@ -3,40 +3,59 @@ TEMPLATE = subdirs
 # Note: In the loop at the end of this file the plugin
 # dependency on the libs will be defined
 SUBDIRS += nymea-modbus-cli libnymea-modbus libnymea-sunspec
+nymea-modbus-cli.depends += libnymea-modbus
+
+disabletesting {
+    message("Building nymea-plugins-modbus without tests")
+} else {
+    SUBDIRS += tests
+    tests.depends += libnymea-modbus nymea-modbus-cli
+}
 
 PLUGIN_DIRS = \
+    abbterra               \
     alphainnotec            \
     amperfied               \
     bgetech                 \
+    bender                  \
     drexelundweiss          \
     huawei                  \
     idm                     \
     inepro                  \
+    inro                    \
     kostal                  \
     mennekes                \
     modbuscommander         \
     mtec                    \
     mypv                    \
+    pcelectric              \
     phoenixconnect          \
     schrack                 \
     senseair                \
     sma                     \
     solax                   \
     stiebeleltron           \
+    sungrow                 \
     sunspec                 \
-    unipi                   \
     vestel                  \
     wattsonic               \
     webasto                 \
+
+
+message(============================================)
+message("Qt version:" $$[QT_VERSION])
+
+!greaterThan(QT_MAJOR_VERSION, 5) {
+    # We disable unipi for
+    PLUGIN_DIRS += \
+        unipi
+}
 
 gcc {
     COMPILER_VERSION = $$system($$QMAKE_CXX " -dumpversion")
     COMPILER_MAJOR_VERSION = $$str_member($$COMPILER_VERSION)
     greaterThan(COMPILER_MAJOR_VERSION, 7): QMAKE_CXXFLAGS += -Wno-deprecated-copy
 }
-
-message(============================================)
-message("Qt version:" $$[QT_VERSION])
 
 plugininfo.depends = FORCE
 for (entry, PLUGIN_DIRS):plugininfo.commands += test -d $${entry} || mkdir -p $${entry}; cd $${entry} && qmake -o Makefile $$PWD/$${entry}/$${entry}.pro && cd ..;

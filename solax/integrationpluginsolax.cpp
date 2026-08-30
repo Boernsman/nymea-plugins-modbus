@@ -1,30 +1,24 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *
-* Copyright 2013 - 2023, nymea GmbH
-* Contact: contact@nymea.io
+* Copyright (C) 2013 - 2024, nymea GmbH
+* Copyright (C) 2024 - 2025, chargebyte austria GmbH
 *
-* This file is part of nymea.
-* This project including source code and documentation is protected by
-* copyright law, and remains the property of nymea GmbH. All rights, including
-* reproduction, publication, editing and translation, are reserved. The use of
-* this project is subject to the terms of a license agreement to be concluded
-* with nymea GmbH in accordance with the terms of use of nymea GmbH, available
-* under https://nymea.io/license
+* This file is part of nymea-plugins-modbus.
 *
-* GNU Lesser General Public License Usage
-* Alternatively, this project may be redistributed and/or modified under the
-* terms of the GNU Lesser General Public License as published by the Free
-* Software Foundation; version 3. This project is distributed in the hope that
-* it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-* Lesser General Public License for more details.
+* nymea-plugins-modbus is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
 *
-* You should have received a copy of the GNU Lesser General Public License
-* along with this project. If not, see <https://www.gnu.org/licenses/>.
+* nymea-plugins-modbus is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
 *
-* For any further details and any questions please contact us under
-* contact@nymea.io or see our FAQ/Licensing Information on
-* https://nymea.io/license/faq
+* You should have received a copy of the GNU General Public License
+* along with nymea-plugins-modbus. If not, see <https://www.gnu.org/licenses/>.
 *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -63,20 +57,23 @@ void IntegrationPluginSolax::discoverThings(ThingDiscoveryInfo *info)
             if (!result.serialNumber.isEmpty())
                 title.append(" " + result.serialNumber);
 
-            ThingDescriptor descriptor(solaxInverterTcpThingClassId, title, result.networkDeviceInfo.address().toString() + " " + result.networkDeviceInfo.macAddress());
+            ThingDescriptor descriptor(solaxInverterTcpThingClassId, title, result.networkDeviceInfo.address().toString());
             qCInfo(dcSolax()) << "Discovered:" << descriptor.title() << descriptor.description();
 
-            // Check if we already have set up this device
-            Things existingThings = myThings().filterByParam(solaxInverterTcpThingMacAddressParamTypeId, result.networkDeviceInfo.macAddress());
-            if (existingThings.count() == 1) {
-                qCDebug(dcSolax()) << "This solax inverter already exists in the system:" << result.networkDeviceInfo;
-                descriptor.setThingId(existingThings.first()->id());
-            }
-
             ParamList params;
-            params << Param(solaxInverterTcpThingMacAddressParamTypeId, result.networkDeviceInfo.macAddress());
+            params << Param(solaxInverterTcpThingMacAddressParamTypeId, result.networkDeviceInfo.thingParamValueMacAddress());
+            params << Param(solaxInverterTcpThingHostNameParamTypeId, result.networkDeviceInfo.thingParamValueHostName());
+            params << Param(solaxInverterTcpThingAddressParamTypeId, result.networkDeviceInfo.thingParamValueAddress());
             // Note: if we discover also the port and modbusaddress, we must fill them in from the discovery here, for now everywhere the defaults...
             descriptor.setParams(params);
+
+            // Check if we already have set up this device
+            Thing *existingThing = myThings().findByParams(params);
+            if (existingThing) {
+                qCDebug(dcSolax()) << "This thing already exists in the system:" << result.networkDeviceInfo;
+                descriptor.setThingId(existingThing->id());
+            }
+
             info->addThingDescriptor(descriptor);
         }
 
@@ -104,16 +101,16 @@ void IntegrationPluginSolax::setupThing(ThingSetupInfo *info)
             }
         }
 
-        MacAddress macAddress = MacAddress(thing->paramValue(solaxInverterTcpThingMacAddressParamTypeId).toString());
-        if (!macAddress.isValid()) {
-            qCWarning(dcSolax()) << "The configured mac address is not valid" << thing->params();
-            info->finish(Thing::ThingErrorInvalidParameter, QT_TR_NOOP("The MAC address is not known. Please reconfigure the thing."));
+        // Create the monitor
+        NetworkDeviceMonitor *monitor = hardwareManager()->networkDeviceDiscovery()->registerMonitor(thing);
+        if (!monitor) {
+            qCWarning(dcSolax()) << "Unable to register monitor with the given params" << thing->params();
+            info->finish(Thing::ThingErrorInvalidParameter, QT_TR_NOOP("Unable to set up the connection with this configuration, please reconfigure the connection."));
             return;
         }
 
-        // Create the monitor
-        NetworkDeviceMonitor *monitor = hardwareManager()->networkDeviceDiscovery()->registerMonitor(macAddress);
         m_monitors.insert(thing, monitor);
+
         connect(info, &ThingSetupInfo::aborted, monitor, [=](){
             // Clean up in case the setup gets aborted
             if (m_monitors.contains(thing)) {
@@ -128,7 +125,10 @@ void IntegrationPluginSolax::setupThing(ThingSetupInfo *info)
 
         qCInfo(dcSolax()) << "Setting up solax on" << address.toString() << port << "unit ID:" << slaveId;
         SolaxModbusTcpConnection *solaxConnection = new SolaxModbusTcpConnection(address, port, slaveId, this);
-        connect(info, &ThingSetupInfo::aborted, solaxConnection, &SolaxModbusTcpConnection::deleteLater);
+        connect(info, &ThingSetupInfo::aborted, solaxConnection, [solaxConnection](){
+            solaxConnection->disconnectDevice();
+            solaxConnection->deleteLater();
+        });
 
         // Reconnect on monitor reachable changed
         connect(monitor, &NetworkDeviceMonitor::reachableChanged, thing, [=](bool reachable){
@@ -149,9 +149,10 @@ void IntegrationPluginSolax::setupThing(ThingSetupInfo *info)
         connect(solaxConnection, &SolaxModbusTcpConnection::reachableChanged, thing, [this, thing, solaxConnection](bool reachable){
             qCDebug(dcSolax()) << "Reachable changed to" << reachable << "for" << thing;
             if (reachable) {
-                // Connected true will be set after successfull init
+                qCDebug(dcSolax()) << "The connection is now reachable for" << thing << "... start initializing.";
                 solaxConnection->initialize();
             } else {
+                qCDebug(dcSolax()) << "The connection is not reachable any more" << thing;
                 thing->setStateValue("connected", false);
                 foreach (Thing *childThing, myThings().filterByParentId(thing->id())) {
                     childThing->setStateValue("connected", false);
@@ -196,9 +197,12 @@ void IntegrationPluginSolax::setupThing(ThingSetupInfo *info)
             if (!success) {
                 // Try once to reconnect the device
                 solaxConnection->reconnectDevice();
+                qCWarning(dcSolax()) << "Unable to initialize" << thing << "Trying to reconnect...";
             } else {
                 qCInfo(dcSolax()) << "Connection initialized successfully for" << thing;
-                solaxConnection->update();
+                if (!solaxConnection->update()) {
+                    qCWarning(dcSolax()) << "Unable to update the values from" << thing << "after initializiation.";
+                }
             }
         });
 
@@ -252,7 +256,7 @@ void IntegrationPluginSolax::setupThing(ThingSetupInfo *info)
 
             // Update inverter states
 
-            int inverterPower = solaxConnection->powerDc1() + solaxConnection->powerDc1();
+            int inverterPower = solaxConnection->powerDc1() + solaxConnection->powerDc2();
             int inverterVoltage = solaxConnection->pvVoltage1() + solaxConnection->pvVoltage2();
             int inverterCurrent = solaxConnection->pvCurrent1() + solaxConnection->pvCurrent2();
             thing->setStateValue(solaxInverterTcpCurrentPowerStateTypeId, -inverterPower);
@@ -411,7 +415,6 @@ void IntegrationPluginSolax::setupThing(ThingSetupInfo *info)
 
 void IntegrationPluginSolax::postSetupThing(Thing *thing)
 {
-
     if (thing->thingClassId() == solaxInverterTcpThingClassId) {
 
         // Create the update timer if not already set up
@@ -420,10 +423,12 @@ void IntegrationPluginSolax::postSetupThing(Thing *thing)
             m_refreshTimer = hardwareManager()->pluginTimerManager()->registerTimer(2);
             connect(m_refreshTimer, &PluginTimer::timeout, this, [this] {
                 foreach(SolaxModbusTcpConnection *connection, m_tcpConnections) {
-                    if (connection->initializing())
+                    if (connection->initializing()) {
+                        qCDebug(dcSolax()) << "Skip updating" << connection->modbusTcpMaster() << "since the connection is still initializing.";
                         continue;
+                    }
 
-                    //qCDebug(dcSolax()) << "Update connection" << connection->modbusTcpMaster()->hostAddress().toString();
+                    qCDebug(dcSolax()) << "Updating connection" << connection->modbusTcpMaster()->hostAddress().toString();
                     connection->update();
                 }
             });

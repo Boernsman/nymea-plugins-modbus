@@ -1,30 +1,24 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *
-* Copyright 2013 - 2023, nymea GmbH
-* Contact: contact@nymea.io
+* Copyright (C) 2013 - 2024, nymea GmbH
+* Copyright (C) 2024 - 2025, chargebyte austria GmbH
 *
-* This file is part of nymea.
-* This project including source code and documentation is protected by
-* copyright law, and remains the property of nymea GmbH. All rights, including
-* reproduction, publication, editing and translation, are reserved. The use of
-* this project is subject to the terms of a license agreement to be concluded
-* with nymea GmbH in accordance with the terms of use of nymea GmbH, available
-* under https://nymea.io/license
+* This file is part of nymea-plugins-modbus.
 *
-* GNU Lesser General Public License Usage
-* Alternatively, this project may be redistributed and/or modified under the
-* terms of the GNU Lesser General Public License as published by the Free
-* Software Foundation; version 3. This project is distributed in the hope that
-* it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-* Lesser General Public License for more details.
+* nymea-plugins-modbus is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
 *
-* You should have received a copy of the GNU Lesser General Public License
-* along with this project. If not, see <https://www.gnu.org/licenses/>.
+* nymea-plugins-modbus is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
 *
-* For any further details and any questions please contact us under
-* contact@nymea.io or see our FAQ/Licensing Information on
-* https://nymea.io/license/faq
+* You should have received a copy of the GNU General Public License
+* along with nymea-plugins-modbus. If not, see <https://www.gnu.org/licenses/>.
 *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -33,8 +27,6 @@
 
 #include <modbusdatautils.h>
 
-QList<int> slaveIdCandidates = {247};
-
 WattsonicDiscovery::WattsonicDiscovery(ModbusRtuHardwareResource *modbusRtuResource, QObject *parent):
     QObject{parent},
     m_modbusRtuResource(modbusRtuResource)
@@ -42,28 +34,29 @@ WattsonicDiscovery::WattsonicDiscovery(ModbusRtuHardwareResource *modbusRtuResou
 
 }
 
-void WattsonicDiscovery::startDiscovery()
+void WattsonicDiscovery::startDiscovery(quint16 slaveId)
 {
     qCInfo(dcWattsonic()) << "Discovery: Searching for Wattsonic device on modbus RTU...";
+    m_candidateMasters.clear();
+    m_verifiedMasters.clear();
 
-    QList<ModbusRtuMaster*> candidateMasters;
     foreach (ModbusRtuMaster *master, m_modbusRtuResource->modbusRtuMasters()) {
         if (master->baudrate() == 9600 && master->dataBits() == 8 && master->stopBits() == 1 && master->parity() == QSerialPort::NoParity) {
-            candidateMasters.append(master);
+            m_candidateMasters.append(master);
         }
     }
 
-    if (candidateMasters.isEmpty()) {
-        qCWarning(dcWattsonic()) << "No usable modbus RTU master found.";
+    if (m_candidateMasters.isEmpty()) {
+        qCWarning(dcWattsonic()) << "Discovery: No usable modbus RTU master found.";
         emit discoveryFinished(false);
         return;
     }
 
-    foreach (ModbusRtuMaster *master, candidateMasters) {
+    foreach (ModbusRtuMaster *master, m_candidateMasters) {
         if (master->connected()) {
-            tryConnect(master, 0);
+            tryConnect(master, slaveId);
         } else {
-            qCWarning(dcWattsonic()) << "Modbus RTU master" << master->modbusUuid().toString() << "is not connected.";
+            qCWarning(dcWattsonic()) << "Discovery: Modbus RTU master" << master->modbusUuid().toString() << "is not connected.";
         }
     }
 }
@@ -73,27 +66,37 @@ QList<WattsonicDiscovery::Result> WattsonicDiscovery::discoveryResults() const
     return m_discoveryResults;
 }
 
-void WattsonicDiscovery::tryConnect(ModbusRtuMaster *master, quint16 slaveIdIndex)
+void WattsonicDiscovery::tryConnect(ModbusRtuMaster *master, quint16 slaveId)
 {
-    quint8 slaveId = slaveIdCandidates.at(slaveIdIndex);
-    qCDebug(dcWattsonic()) << "Scanning modbus RTU master" << master->modbusUuid() << "Slave ID:" << slaveId;
+    qCDebug(dcWattsonic()) << "Discovery: Scanning modbus RTU master" << master->modbusUuid() << "Slave ID:" << slaveId;
+    m_verifiedMasters.append(master);
 
-    ModbusRtuReply *reply = master->readHoldingRegister(slaveId, 10000, 8);
-    connect(reply, &ModbusRtuReply::finished, this, [=](){
+    WattsonicInverter *connection = new WattsonicInverter(master, slaveId, WattsonicInverter::InverterGenerationModeAuto, this);
+    connect(connection, &WattsonicInverter::reachableChanged, this, [connection](bool reachable){
+        if (reachable) {
+            qCDebug(dcWattsonic()) << "Discovery: The connection is now reachable. Starting the initialization";
+            connection->initialize();
+        } else {
+            connection->deleteLater();
+        }
+    });
 
-        if (reply->error() == ModbusRtuReply::NoError) {
 
-            QString serialNumber = ModbusDataUtils::convertToString(reply->result(), ModbusDataUtils::ByteOrderBigEndian);
-            qCDebug(dcWattsonic()) << "Test reply finished!" << reply->error() << reply->result() << serialNumber;
+    connect(connection, &WattsonicInverter::customInitializationFinished, this, [this, connection, master, slaveId](bool success){
 
-            Result result {master->modbusUuid(), serialNumber, slaveId};
-            m_discoveryResults.append(result);
-
+        if (!success) {
+            qCDebug(dcWattsonic()) << "Initialization failed on" << master << "skip ";
+            return;
         }
 
-        if (slaveIdIndex < slaveIdCandidates.count() - 1) {
-            tryConnect(master, slaveIdIndex+1);
-        } else {
+        qCDebug(dcWattsonic()) << "Discovery: Init finished successfully:" << connection->serialNumber()
+                               << connection->inverterInfo().type << connection->inverterInfo().model << connection->generation();
+
+        Result result {master->modbusUuid(), connection->serialNumber(), slaveId, connection->generation(), connection->inverterInfo()};
+        m_discoveryResults.append(result);
+
+        if (m_verifiedMasters.length() == m_candidateMasters.length()) {
+            qCDebug(dcWattsonic()) << "Discovery: Verified all masters. Finish discovery with" << m_discoveryResults.length() << "discovered inverters.";
             emit discoveryFinished(true);
         }
     });

@@ -1,24 +1,29 @@
-# Copyright (C) 2021 - 2023 nymea GmbH <developer@nymea.io>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
+# Copyright (C) 2013 - 2024, nymea GmbH
+# Copyright (C) 2024 - 2025, chargebyte austria GmbH
 #
-# This program is distributed in the hope that it will be useful,
+# This file is part of nymea-plugins-modbus.
+#
+# nymea-plugins-modbus is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# nymea-plugins-modbus is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# along with nymea-plugins-modbus. If not, see <https://www.gnu.org/licenses/>.
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-import os
 import re
-import sys
 import json
-import shutil
 import datetime
 import logging
 
@@ -50,7 +55,7 @@ def convertToCamelCase(text, capitalize = False):
         if len(camelCaseSplit) == 0:
             finalWords.append(words[i])  
         else:
-            logging.debug('Camel calse split words', camelCaseSplit)
+            logging.debug('Camel case split words', camelCaseSplit)
             for j in range(len(camelCaseSplit)):
                 finalWords.append(camelCaseSplit[j])  
 
@@ -77,35 +82,27 @@ def writeLine(fileDescriptor, line = ''):
 
 
 def writeLicenseHeader(fileDescriptor):
-    writeLine(fileDescriptor, '/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *')
+    writeLine(fileDescriptor, '// SPDX-License-Identifier: GPL-3.0-or-later')
+    writeLine(fileDescriptor)
+    writeLine(fileDescriptor, '/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *')
     writeLine(fileDescriptor, '*')
-    writeLine(fileDescriptor, '* Copyright 2013 - %s, nymea GmbH' % datetime.datetime.now().year)
-    writeLine(fileDescriptor, '* Contact: contact@nymea.io')
+    writeLine(fileDescriptor, '* Copyright (C) 2013 - 2024, nymea GmbH')
+    writeLine(fileDescriptor, '* Copyright (C) 2013 - %s, chargebyte austria GmbH' % datetime.datetime.now().year)
     writeLine(fileDescriptor, '*')
-    writeLine(fileDescriptor, '* This fileDescriptor is part of nymea.')
-    writeLine(fileDescriptor, '* This project including source code and documentation is protected by')
-    writeLine(fileDescriptor, '* copyright law, and remains the property of nymea GmbH. All rights, including')
-    writeLine(fileDescriptor, '* reproduction, publication, editing and translation, are reserved. The use of')
-    writeLine(fileDescriptor, '* this project is subject to the terms of a license agreement to be concluded')
-    writeLine(fileDescriptor, '* with nymea GmbH in accordance with the terms of use of nymea GmbH, available')
-    writeLine(fileDescriptor, '* under https://nymea.io/license')
+    writeLine(fileDescriptor, '* nymea-plugins-modbus is free software: you can redistribute it and/or modify')
+    writeLine(fileDescriptor, '* it under the terms of the GNU General Public License as published by')
+    writeLine(fileDescriptor, '* the Free Software Foundation, either version 3 of the License, or')
+    writeLine(fileDescriptor, '* (at your option) any later version.')
     writeLine(fileDescriptor, '*')
-    writeLine(fileDescriptor, '* GNU Lesser General Public License Usage')
-    writeLine(fileDescriptor, '* Alternatively, this project may be redistributed and/or modified under the')
-    writeLine(fileDescriptor, '* terms of the GNU Lesser General Public License as published by the Free')
-    writeLine(fileDescriptor, '* Software Foundation; version 3. This project is distributed in the hope that')
-    writeLine(fileDescriptor, '* it will be useful, but WITHOUT ANY WARRANTY; without even the implied')
-    writeLine(fileDescriptor, '* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU')
-    writeLine(fileDescriptor, '* Lesser General Public License for more details.')
+    writeLine(fileDescriptor, '* nymea-plugins-modbus is distributed in the hope that it will be useful,')
+    writeLine(fileDescriptor, '* but WITHOUT ANY WARRANTY; without even the implied warranty of')
+    writeLine(fileDescriptor, '* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the')
+    writeLine(fileDescriptor, '* GNU General Public License for more details.')
     writeLine(fileDescriptor, '*')
-    writeLine(fileDescriptor, '* You should have received a copy of the GNU Lesser General Public License')
-    writeLine(fileDescriptor, '* along with this project. If not, see <https://www.gnu.org/licenses/>.')
+    writeLine(fileDescriptor, '* You should have received a copy of the GNU General Public License')
+    writeLine(fileDescriptor, '* along with nymea-plugins-modbus. If not, see <https://www.gnu.org/licenses/>.')
     writeLine(fileDescriptor, '*')
-    writeLine(fileDescriptor, '* For any further details and any questions please contact us under')
-    writeLine(fileDescriptor, '* contact@nymea.io or see our FAQ/Licensing Information on')
-    writeLine(fileDescriptor, '* https://nymea.io/license/faq')
-    writeLine(fileDescriptor, '*')
-    writeLine(fileDescriptor, '* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */')
+    writeLine(fileDescriptor, '* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */')
     writeLine(fileDescriptor)
     writeLine(fileDescriptor, '/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *')
     writeLine(fileDescriptor, '*')
@@ -253,6 +250,11 @@ def getConversionToValueMethod(registerDefinition):
             return ('ModbusDataUtils::convertFromUInt32(static_cast<%s>(%s  * 1.0 / pow(10, %s)), m_endianness)' % (propertyTyp, propertyName, scaleFactorProperty))
         elif registerDefinition['type'] == 'int32':
             return ('ModbusDataUtils::convertFromInt32(static_cast<%s>(%s  * 1.0 / pow(10, %s)), m_endianness)' % (propertyTyp, propertyName, scaleFactorProperty))
+        elif registerDefinition['type'] == 'uint64':
+            return ('ModbusDataUtils::convertFromUInt64(static_cast<%s>(%s  * 1.0 / pow(10, %s)), m_endianness)' % (propertyTyp, propertyName, scaleFactorProperty))
+        elif registerDefinition['type'] == 'int64':
+            return ('ModbusDataUtils::convertFromInt64(static_cast<%s>(%s  * 1.0 / pow(10, %s)), m_endianness)' % (propertyTyp, propertyName, scaleFactorProperty))
+
 
     elif 'staticScaleFactor' in registerDefinition:
         scaleFactor = registerDefinition['staticScaleFactor']
@@ -264,6 +266,11 @@ def getConversionToValueMethod(registerDefinition):
             return ('ModbusDataUtils::convertFromUInt32(static_cast<%s>(%s  * 1.0 / pow(10, %s)), m_endianness)' % (propertyTyp, propertyName, scaleFactor))
         elif registerDefinition['type'] == 'int32':
             return ('ModbusDataUtils::convertFromInt32(static_cast<%s>(%s  * 1.0 / pow(10, %s)), m_endianness)' % (propertyTyp, propertyName, scaleFactor))
+        elif registerDefinition['type'] == 'uint64':
+            return ('ModbusDataUtils::convertFromUInt64(static_cast<%s>(%s  * 1.0 / pow(10, %s)), m_endianness)' % (propertyTyp, propertyName, scaleFactor))
+        elif registerDefinition['type'] == 'int64':
+            return ('ModbusDataUtils::convertFromInt64(static_cast<%s>(%s  * 1.0 / pow(10, %s)), m_endianness)' % (propertyTyp, propertyName, scaleFactor))
+
 
     # Handle default types
     elif registerDefinition['type'] == 'uint16':
@@ -310,6 +317,10 @@ def getValueConversionMethod(registerDefinition):
             return ('ModbusDataUtils::convertToUInt32(values, m_endianness) * 1.0 * pow(10, %s)' % (scaleFactorProperty))
         elif registerDefinition['type'] == 'int32':
             return ('ModbusDataUtils::convertToInt32(values, m_endianness) * 1.0 * pow(10, %s)' % (scaleFactorProperty))
+        elif registerDefinition['type'] == 'uint64':
+            return ('ModbusDataUtils::convertToUInt64(values, m_endianness) * 1.0 * pow(10, %s)' % (scaleFactorProperty))
+        elif registerDefinition['type'] == 'int64':
+            return ('ModbusDataUtils::convertToInt64(values, m_endianness) * 1.0 * pow(10, %s)' % (scaleFactorProperty))
 
     elif 'staticScaleFactor' in registerDefinition:
         scaleFactor = registerDefinition['staticScaleFactor']
@@ -321,6 +332,11 @@ def getValueConversionMethod(registerDefinition):
             return ('ModbusDataUtils::convertToUInt32(values, m_endianness) * 1.0 * pow(10, %s)' % (scaleFactor))
         elif registerDefinition['type'] == 'int32':
             return ('ModbusDataUtils::convertToInt32(values, m_endianness) * 1.0 * pow(10, %s)' % (scaleFactor))
+        elif registerDefinition['type'] == 'uint64':
+            return ('ModbusDataUtils::convertToUInt64(values, m_endianness) * 1.0 * pow(10, %s)' % (scaleFactor))
+        elif registerDefinition['type'] == 'int64':
+            return ('ModbusDataUtils::convertToInt64(values, m_endianness) * 1.0 * pow(10, %s)' % (scaleFactor))
+
 
     # Handle default types
     elif registerDefinition['type'] == 'uint16':
@@ -387,10 +403,10 @@ def validateBlocks(blockDefinitions):
                 registerAccess = blockRegister['access']
                 registerType = blockRegister['registerType']
             else:
-                previouseRegisterAddress = blockRegisters[i - 1]['address']
-                previouseRegisterSize = blockRegisters[i - 1]['size']
-                previouseRegisterType = blockRegisters[i - 1]['registerType']
-                if previouseRegisterAddress + previouseRegisterSize != blockRegister['address']:
+                previousRegisterAddress = blockRegisters[i - 1]['address']
+                previousRegisterSize = blockRegisters[i - 1]['size']
+                #previousRegisterType = blockRegisters[i - 1]['registerType']
+                if previousRegisterAddress + previousRegisterSize != blockRegister['address']:
                     logger.warning('Error: block %s has invalid register order in register %s. There seems to be a gap between the registers.' % (blockName, blockRegister['id']))
                     exit(1)
 
@@ -424,7 +440,7 @@ def writeBlocksUpdateMethodDeclarations(fileDescriptor, blockDefinitions):
             blockSize += blockRegister['size']
 
         # Write the block update method
-        writeLine(fileDescriptor, '    /* Read block from start addess %s with size of %s registers containing following %s properties:' % (blockStartAddress, blockSize, registerCount))
+        writeLine(fileDescriptor, '    /* Read block from start address %s with size of %s registers containing following %s properties:' % (blockStartAddress, blockSize, registerCount))
         for i, registerDefinition in enumerate(blockRegisters):
             if 'unit' in registerDefinition and registerDefinition['unit'] != '':
                 writeLine(fileDescriptor, '      - %s [%s] - Address: %s, Size: %s' % (registerDefinition['description'], registerDefinition['unit'], registerDefinition['address'], registerDefinition['size']))
@@ -488,6 +504,7 @@ def writeProtectedPropertyMembers(fileDescriptor, registerDefinitions):
         else:
             writeLine(fileDescriptor, '    %s m_%s;' % (propertyTyp, propertyName))
 
+##############################################################
 
 def writePropertyProcessMethodDeclaration(fileDescriptor, registerDefinitions):
     for registerDefinition in registerDefinitions:
@@ -512,16 +529,78 @@ def writePropertyProcessMethodImplementations(fileDescriptor, className, registe
 
         writeLine(fileDescriptor, 'void %s::process%sRegisterValues(const QVector<quint16> &values)' % (className, propertyName[0].upper() + propertyName[1:]))
         writeLine(fileDescriptor, '{')
-        writeLine(fileDescriptor, '    %s received%s = %s;' % (propertyTyp, propertyName[0].upper() + propertyName[1:], getValueConversionMethod(registerDefinition)))
-        writeLine(fileDescriptor, '    emit %sReadFinished(received%s);' % (propertyName, propertyName[0].upper() + propertyName[1:]))
+        writeLine(fileDescriptor, '    qCDebug(dc%s()) << "<-- Response from \\"%s\\" register" << %s << "size:" << %s << values;' % (className, registerDefinition['description'], registerDefinition['address'], registerDefinition['size']))
+        writeLine(fileDescriptor, '    if (values.size() == %s) {' % (registerDefinition['size']))
+        writeLine(fileDescriptor, '        %s received%s = %s;' % (propertyTyp, propertyName[0].upper() + propertyName[1:], getValueConversionMethod(registerDefinition)))
+        writeLine(fileDescriptor, '        emit %sReadFinished(received%s);' % (propertyName, propertyName[0].upper() + propertyName[1:]))
         writeLine(fileDescriptor)
-        writeLine(fileDescriptor, '    if (m_%s != received%s) {' % (propertyName, propertyName[0].upper() + propertyName[1:]))
-        writeLine(fileDescriptor, '        m_%s = received%s;' % (propertyName, propertyName[0].upper() + propertyName[1:]))
-        writeLine(fileDescriptor, '        emit %sChanged(m_%s);' % (propertyName, propertyName))
+        writeLine(fileDescriptor, '        if (m_%s != received%s) {' % (propertyName, propertyName[0].upper() + propertyName[1:]))
+        writeLine(fileDescriptor, '            m_%s = received%s;' % (propertyName, propertyName[0].upper() + propertyName[1:]))
+        writeLine(fileDescriptor, '            emit %sChanged(m_%s);' % (propertyName, propertyName))
+        writeLine(fileDescriptor, '        }')
+        writeLine(fileDescriptor, '    } else {')
+        writeLine(fileDescriptor, '        qCWarning(dc%s()) << "Reading from \\"%s\\" registers" << %s << "size:" << %s << "returned different size than requested. Ignoring incomplete data" << values;' % (className, registerDefinition['description'], registerDefinition['address'], registerDefinition['size']))
         writeLine(fileDescriptor, '    }')
         writeLine(fileDescriptor, '}')
         writeLine(fileDescriptor)
 
+##############################################################
+
+def writeBlockPropertiesProcessMethodDeclaration(fileDescriptor, blockDefinitions):
+
+    for blockDefinition in blockDefinitions:
+        blockName = blockDefinition['id']
+        blockRegisters = blockDefinition['registers']
+        blockStartAddress = 0
+        blockSize = 0
+        registerCount = 0
+
+        writeLine(fileDescriptor, '    /* Process block data from start address %s with size of %s registers containing following %s properties:' % (blockStartAddress, blockSize, registerCount))
+        for i, registerDefinition in enumerate(blockRegisters):
+            if 'unit' in registerDefinition and registerDefinition['unit'] != '':
+                writeLine(fileDescriptor, '     - %s [%s] - Address: %s, Size: %s' % (registerDefinition['description'], registerDefinition['unit'], registerDefinition['address'], registerDefinition['size']))
+            else:
+                writeLine(fileDescriptor, '     - %s - Address: %s, Size: %s' % (registerDefinition['description'], registerDefinition['address'], registerDefinition['size']))
+        
+        writeLine(fileDescriptor, '    */' )
+        writeLine(fileDescriptor, '    void processBlock%sRegisterValues(const QVector<quint16> &blockValues);' % (blockName[0].upper() + blockName[1:]))
+        writeLine(fileDescriptor)
+    
+
+def writeBlockPropertiesProcessMethodImplementations(fileDescriptor, className, blockDefinitions):
+    for blockDefinition in blockDefinitions:
+        blockName = blockDefinition['id']
+        blockRegisters = blockDefinition['registers']
+        blockStartAddress = 0
+        blockSize = 0
+        registerCount = 0
+
+        for i, blockRegister in enumerate(blockRegisters):
+            if i == 0:
+                blockStartAddress = blockRegister['address']
+
+            registerCount += 1
+            blockSize += blockRegister['size']
+
+        writeLine(fileDescriptor, 'void %s::processBlock%sRegisterValues(const QVector<quint16> &blockValues)' % (className, blockName[0].upper() + blockName[1:]))
+        writeLine(fileDescriptor, '{')
+        writeLine(fileDescriptor, '    qCDebug(dc%s()) << "<-- Response from reading block \\"%s\\" register" << %s << "size:" << %s << blockValues;' % (className, blockName, blockStartAddress, blockSize))
+        writeLine(fileDescriptor, '    if (blockValues.size() == %s) {' % (blockSize))
+
+        # Start parsing the registers using offsets
+        offset = 0
+        for i, blockRegister in enumerate(blockRegisters):
+            propertyName = blockRegister['id']
+            writeLine(fileDescriptor, '        process%sRegisterValues(blockValues.mid(%s, %s));' % (propertyName[0].upper() + propertyName[1:], offset, blockRegister['size']))
+            offset += blockRegister['size']
+
+        writeLine(fileDescriptor, '    } else {')
+        writeLine(fileDescriptor, '        qCWarning(dc%s()) << "Reading from \\"%s\\" block registers" << %s << "size:" << %s << "returned different size than requested. Ignoring incomplete data" << blockValues;' % (className, blockName, blockStartAddress, blockSize))
+        writeLine(fileDescriptor, '    }')
+        writeLine(fileDescriptor, '}')
+        writeLine(fileDescriptor)
+
+##############################################################
 
 def writeSendNextQueuedInitRequestMethodImplementation(fileDescriptor, className):
     writeLine(fileDescriptor, 'void %s::sendNextQueuedInitRequest()' % (className))
@@ -552,11 +631,15 @@ def writeEnqueueInitRequestMethodImplementation(fileDescriptor, className):
 def writeSendNextQueuedRequestMethodImplementation(fileDescriptor, className):
     writeLine(fileDescriptor, 'void %s::sendNextQueuedRequest()' % (className))
     writeLine(fileDescriptor, '{')
-    writeLine(fileDescriptor, '    if (m_updateRequestQueue.isEmpty())')
+    writeLine(fileDescriptor, '    if (m_updateRequestQueue.isEmpty()) {')
+    writeLine(fileDescriptor, '        qCDebug(dc%s()) << "Do not send next request since there are no requests left...";' % className)
     writeLine(fileDescriptor, '        return;')
+    writeLine(fileDescriptor, '    }')
     writeLine(fileDescriptor)
-    writeLine(fileDescriptor, '    if (m_currentUpdateReply)')
+    writeLine(fileDescriptor, '    if (m_currentUpdateReply) {')
+    writeLine(fileDescriptor, '        qCDebug(dc%s()) << "Do not send next request since there is already a request pending...";' % className)
     writeLine(fileDescriptor, '        return;')
+    writeLine(fileDescriptor, '    }')
     writeLine(fileDescriptor)
     writeLine(fileDescriptor, '    %s::Function function = m_updateRequestQueue.dequeue();' % (className))
     writeLine(fileDescriptor, '    (this->*function)();')

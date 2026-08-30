@@ -1,30 +1,24 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *
-* Copyright 2013 - 2022, nymea GmbH
-* Contact: contact@nymea.io
+* Copyright (C) 2013 - 2024, nymea GmbH
+* Copyright (C) 2024 - 2025, chargebyte austria GmbH
 *
-* This file is part of nymea.
-* This project including source code and documentation is protected by
-* copyright law, and remains the property of nymea GmbH. All rights, including
-* reproduction, publication, editing and translation, are reserved. The use of
-* this project is subject to the terms of a license agreement to be concluded
-* with nymea GmbH in accordance with the terms of use of nymea GmbH, available
-* under https://nymea.io/license
+* This file is part of nymea-plugins-modbus.
 *
-* GNU Lesser General Public License Usage
-* Alternatively, this project may be redistributed and/or modified under the
-* terms of the GNU Lesser General Public License as published by the Free
-* Software Foundation; version 3. This project is distributed in the hope that
-* it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-* Lesser General Public License for more details.
+* nymea-plugins-modbus is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
 *
-* You should have received a copy of the GNU Lesser General Public License
-* along with this project. If not, see <https://www.gnu.org/licenses/>.
+* nymea-plugins-modbus is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
 *
-* For any further details and any questions please contact us under
-* contact@nymea.io or see our FAQ/Licensing Information on
-* https://nymea.io/license/faq
+* You should have received a copy of the GNU General Public License
+* along with nymea-plugins-modbus. If not, see <https://www.gnu.org/licenses/>.
 *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -96,7 +90,6 @@ void SpeedwireDiscovery::startMulticastDiscovery()
     sendDiscoveryRequest();
 }
 
-
 void SpeedwireDiscovery::startUnicastDiscovery()
 {
     qCDebug(dcSma()) << "SpeedwireDiscovery: Start discovering network...";
@@ -104,13 +97,12 @@ void SpeedwireDiscovery::startUnicastDiscovery()
 
     NetworkDeviceDiscoveryReply *discoveryReply = m_networkDeviceDiscovery->discover();
     connect(discoveryReply, &NetworkDeviceDiscoveryReply::finished, discoveryReply, &NetworkDeviceDiscoveryReply::deleteLater);
-    connect(discoveryReply, &NetworkDeviceDiscoveryReply::networkDeviceInfoAdded, this, [this](const NetworkDeviceInfo &networkDeviceInfo){
-        m_networkDeviceInfos.append(networkDeviceInfo);
-        sendUnicastDiscoveryRequest(networkDeviceInfo.address());
-    });
+    connect(discoveryReply, &NetworkDeviceDiscoveryReply::hostAddressDiscovered, this, &SpeedwireDiscovery::sendUnicastDiscoveryRequest);
+    connect(discoveryReply, &NetworkDeviceDiscoveryReply::finished, this, [this, discoveryReply](){
+        qCDebug(dcSma()) << "Discovery finished. Found" << discoveryReply->networkDeviceInfos().length() << "network devices for unicast requests.";
 
-    connect(discoveryReply, &NetworkDeviceDiscoveryReply::finished, this, [=](){
-        qCDebug(dcSma()) << "Discovery finished. Found" << discoveryReply->networkDeviceInfos().count() << "network devices for unicast requests.";
+        m_networkDeviceInfos = discoveryReply->networkDeviceInfos();
+
         // Wait some extra second in otder to give the last hosts joined some time to respond.
         QTimer::singleShot(3000, this, [this](){
             m_multicastSearchRequestTimer.stop();
@@ -178,10 +170,6 @@ void SpeedwireDiscovery::processDatagram(const QHostAddress &senderAddress, quin
             m_resultMeters.insert(senderAddress, result);
         }
 
-        if (m_networkDeviceInfos.hasHostAddress(senderAddress)) {
-            m_resultMeters[senderAddress].networkDeviceInfo = m_networkDeviceInfos.get(senderAddress);
-        }
-
         m_resultMeters[senderAddress].modelId = modelId;
         m_resultMeters[senderAddress].serialNumber = serialNumber;
     } else if (header.protocolId == Speedwire::ProtocolIdInverter) {
@@ -194,10 +182,6 @@ void SpeedwireDiscovery::processDatagram(const QHostAddress &senderAddress, quin
             result.address = senderAddress;
             result.deviceType = Speedwire::DeviceTypeInverter;
             m_resultInverters.insert(senderAddress, result);
-        }
-
-        if (m_networkDeviceInfos.hasHostAddress(senderAddress)) {
-            m_resultInverters[senderAddress].networkDeviceInfo = m_networkDeviceInfos.get(senderAddress);
         }
 
         m_resultInverters[senderAddress].modelId = inverterPacket.sourceModelId;
@@ -218,11 +202,11 @@ void SpeedwireDiscovery::processDatagram(const QHostAddress &senderAddress, quin
         connect(reply, &SpeedwireInverterReply::finished, this, [/*this, inverter,*/ senderAddress, reply](){
             qCDebug(dcSma()) << "SpeedwireDiscovery: Identify request finished from" << senderAddress.toString() << reply->error();
 
-//            SpeedwireInverterReply *loginReply = inverter->sendLoginRequest();
-//            qCDebug(dcSma()) << "SpeedwireDiscovery: make login attempt using the default password.";
-//            connect(loginReply, &SpeedwireInverterReply::finished, this, [loginReply, senderAddress](){
-//                qCDebug(dcSma()) << "SpeedwireDiscovery: login attempt finished" << senderAddress.toString() << loginReply->error();
-//            });
+            // SpeedwireInverterReply *loginReply = inverter->sendLoginRequest();
+            // qCDebug(dcSma()) << "SpeedwireDiscovery: make login attempt using the default password.";
+            // connect(loginReply, &SpeedwireInverterReply::finished, this, [loginReply, senderAddress](){
+            //     qCDebug(dcSma()) << "SpeedwireDiscovery: login attempt finished" << senderAddress.toString() << loginReply->error();
+            // });
         });
 
     } else {
@@ -248,20 +232,22 @@ void SpeedwireDiscovery::finishDiscovery()
 {
     m_results = m_resultMeters.values() + m_resultInverters.values();
 
-    qCDebug(dcSma()) << "SpeedwireDiscovery: Discovey finished. Found" << m_results.count() << "SMA devices in the network";
+    // Fill in all network device infos we have
+    for (int i = 0; i < m_results.length(); i++)
+        m_results[i].networkDeviceInfo = m_networkDeviceInfos.get(m_results.at(i).address);
+
+    qCDebug(dcSma()) << "SpeedwireDiscovery: Discovey finished. Found" << m_results.length() << "SMA devices in the network";
     m_multicastSearchRequestTimer.stop();
 
     foreach (const SpeedwireDiscoveryResult &result, m_results) {
         qCDebug(dcSma()) << "SpeedwireDiscovery: ============================================";
         qCDebug(dcSma()) << "SpeedwireDiscovery: Device type:" << result.deviceType;
         qCDebug(dcSma()) << "SpeedwireDiscovery: Address:" << result.address.toString();
-        if (result.networkDeviceInfo.isValid()) {
-            qCDebug(dcSma()) << "SpeedwireDiscovery: Hostname:" << result.networkDeviceInfo.hostName();
-            qCDebug(dcSma()) << "SpeedwireDiscovery: MAC:" << result.networkDeviceInfo.macAddress();
-            qCDebug(dcSma()) << "SpeedwireDiscovery: MAC manufacturer:" << result.networkDeviceInfo.macAddressManufacturer();
-        }
         qCDebug(dcSma()) << "SpeedwireDiscovery: Model ID:" << result.modelId;
         qCDebug(dcSma()) << "SpeedwireDiscovery: Serial number:" << result.serialNumber;
+        if (result.networkDeviceInfo.isValid()) {
+            qCDebug(dcSma()) << "SpeedwireDiscovery:" << result.networkDeviceInfo;
+        }
     }
 
     emit discoveryFinished();

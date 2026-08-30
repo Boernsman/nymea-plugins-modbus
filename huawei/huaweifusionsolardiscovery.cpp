@@ -1,30 +1,24 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *
-* Copyright 2013 - 2022, nymea GmbH
-* Contact: contact@nymea.io
+* Copyright (C) 2013 - 2024, nymea GmbH
+* Copyright (C) 2024 - 2025, chargebyte austria GmbH
 *
-* This file is part of nymea.
-* This project including source code and documentation is protected by
-* copyright law, and remains the property of nymea GmbH. All rights, including
-* reproduction, publication, editing and translation, are reserved. The use of
-* this project is subject to the terms of a license agreement to be concluded
-* with nymea GmbH in accordance with the terms of use of nymea GmbH, available
-* under https://nymea.io/license
+* This file is part of nymea-plugins-modbus.
 *
-* GNU Lesser General Public License Usage
-* Alternatively, this project may be redistributed and/or modified under the
-* terms of the GNU Lesser General Public License as published by the Free
-* Software Foundation; version 3. This project is distributed in the hope that
-* it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-* Lesser General Public License for more details.
+* nymea-plugins-modbus is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
 *
-* You should have received a copy of the GNU Lesser General Public License
-* along with this project. If not, see <https://www.gnu.org/licenses/>.
+* nymea-plugins-modbus is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
 *
-* For any further details and any questions please contact us under
-* contact@nymea.io or see our FAQ/Licensing Information on
-* https://nymea.io/license/faq
+* You should have received a copy of the GNU General Public License
+* along with nymea-plugins-modbus. If not, see <https://www.gnu.org/licenses/>.
 *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -45,9 +39,11 @@ void HuaweiFusionSolarDiscovery::startDiscovery()
     qCInfo(dcHuawei()) << "Discovery: Start searching for Huawei FusionSolar SmartDongle in the network...";
     m_startDateTime = QDateTime::currentDateTime();
     NetworkDeviceDiscoveryReply *discoveryReply = m_networkDeviceDiscovery->discover();
-    connect(discoveryReply, &NetworkDeviceDiscoveryReply::networkDeviceInfoAdded, this, &HuaweiFusionSolarDiscovery::checkNetworkDevice);
+    connect(discoveryReply, &NetworkDeviceDiscoveryReply::hostAddressDiscovered, this, &HuaweiFusionSolarDiscovery::checkNetworkDevice);
     connect(discoveryReply, &NetworkDeviceDiscoveryReply::finished, discoveryReply, &NetworkDeviceDiscoveryReply::deleteLater);
-    connect(discoveryReply, &NetworkDeviceDiscoveryReply::finished, this, [=](){
+    connect(discoveryReply, &NetworkDeviceDiscoveryReply::finished, this, [this, discoveryReply](){
+        m_networkDeviceInfos = discoveryReply->networkDeviceInfos();
+
         // Finish with some delay so the last added network device information objects still can be checked.
         QTimer::singleShot(3000, this, [this](){
             qCDebug(dcHuawei()) << "Discovery: Grace period timer triggered.";
@@ -82,15 +78,15 @@ void HuaweiFusionSolarDiscovery::testNextConnection(const QHostAddress &address)
     }
 }
 
-void HuaweiFusionSolarDiscovery::checkNetworkDevice(const NetworkDeviceInfo &networkDeviceInfo)
+void HuaweiFusionSolarDiscovery::checkNetworkDevice(const QHostAddress &address)
 {
     QQueue<HuaweiFusionSolar *> connectionQueue;
     foreach (quint16 slaveId, m_slaveIds) {
-        HuaweiFusionSolar *connection = new HuaweiFusionSolar(networkDeviceInfo.address(), m_port, slaveId, this);
+        HuaweiFusionSolar *connection = new HuaweiFusionSolar(address, m_port, slaveId, this);
         m_connections.append(connection);
         connectionQueue.enqueue(connection);
 
-        connect(connection, &HuaweiFusionSolar::reachableChanged, this, [=](bool reachable){
+        connect(connection, &HuaweiFusionSolar::reachableChanged, this, [this, connection](bool reachable){
             if (!reachable) {
                 // Disconnected ... done with this connection
                 cleanupConnection(connection);
@@ -98,10 +94,10 @@ void HuaweiFusionSolarDiscovery::checkNetworkDevice(const NetworkDeviceInfo &net
             }
 
             // Todo: initialize and check if available
-            connect(connection, &HuaweiFusionSolar::initializationFinished, this, [=](bool success){
+            connect(connection, &HuaweiFusionSolar::initializationFinished, this, [this, connection](bool success){
                 Result result;
-                result.networkDeviceInfo = networkDeviceInfo;
-                result.slaveId = slaveId;
+                result.address = connection->modbusTcpMaster()->hostAddress();
+                result.slaveId = connection->slaveId();
 
                 if (success) {
                     qCDebug(dcHuawei()) << "Huawei init finished successfully:" << connection->model() << connection->serialNumber() << connection->productNumber();
@@ -109,7 +105,7 @@ void HuaweiFusionSolarDiscovery::checkNetworkDevice(const NetworkDeviceInfo &net
                     result.serialNumber = connection->serialNumber();
                 }
 
-                qCInfo(dcHuawei()) << "Discovery: --> Found" << networkDeviceInfo << "slave ID:" << slaveId;
+                qCInfo(dcHuawei()) << "Discovery: --> Found" << result.address.toString() << "slave ID:" << result.slaveId;
                 m_results.append(result);
             });
 
@@ -117,23 +113,22 @@ void HuaweiFusionSolarDiscovery::checkNetworkDevice(const NetworkDeviceInfo &net
         });
 
         // If we get any error...skip this host...
-        connect(connection->modbusTcpMaster(), &ModbusTcpMaster::connectionErrorOccurred, this, [=](QModbusDevice::Error error){
+        connect(connection->modbusTcpMaster(), &ModbusTcpMaster::connectionErrorOccurred, this, [this, connection](QModbusDevice::Error error){
             if (error != QModbusDevice::NoError) {
-                qCDebug(dcHuawei()) << "Discovery: Connection error on" << networkDeviceInfo.address().toString() << "Continue...";;
+                qCDebug(dcHuawei()) << "Discovery: Connection error on" << connection->modbusTcpMaster()->hostAddress().toString() << "Continue...";;
                 cleanupConnection(connection);
             }
         });
 
         // If check reachability failed...skip this host...
-        connect(connection, &HuaweiFusionSolar::checkReachabilityFailed, this, [=](){
-            qCDebug(dcHuawei()) << "Discovery: Check reachability failed on" << networkDeviceInfo.address().toString() << "Continue...";;
+        connect(connection, &HuaweiFusionSolar::checkReachabilityFailed, this, [this, connection](){
+            qCDebug(dcHuawei()) << "Discovery: Check reachability failed on" << connection->modbusTcpMaster()->hostAddress().toString() << "Continue...";;
             cleanupConnection(connection);
         });
-
     }
 
-    m_pendingConnectionAttempts[networkDeviceInfo.address()] = connectionQueue;
-    testNextConnection(networkDeviceInfo.address());
+    m_pendingConnectionAttempts[address] = connectionQueue;
+    testNextConnection(address);
 }
 
 void HuaweiFusionSolarDiscovery::cleanupConnection(HuaweiFusionSolar *connection)
@@ -151,11 +146,15 @@ void HuaweiFusionSolarDiscovery::finishDiscovery()
 {
     qint64 durationMilliSeconds = QDateTime::currentMSecsSinceEpoch() - m_startDateTime.toMSecsSinceEpoch();
 
+    // Fill in finished network device information
+    for (int i = 0; i < m_results.length(); i++)
+        m_results[i].networkDeviceInfo = m_networkDeviceInfos.get(m_results.value(i).address);
+
     // Cleanup any leftovers...we don't care any more
     foreach (HuaweiFusionSolar *connection, m_connections)
         cleanupConnection(connection);
 
-    qCInfo(dcHuawei()) << "Discovery: Finished the discovery process. Found" << m_results.count()
+    qCInfo(dcHuawei()) << "Discovery: Finished the discovery process. Found" << m_results.length()
                        << "inverters in" << QTime::fromMSecsSinceStartOfDay(durationMilliSeconds).toString("mm:ss.zzz");
 
     emit discoveryFinished();

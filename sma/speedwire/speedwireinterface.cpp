@@ -1,30 +1,24 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *
-* Copyright 2013 - 2022, nymea GmbH
-* Contact: contact@nymea.io
+* Copyright (C) 2013 - 2024, nymea GmbH
+* Copyright (C) 2024 - 2025, chargebyte austria GmbH
 *
-* This file is part of nymea.
-* This project including source code and documentation is protected by
-* copyright law, and remains the property of nymea GmbH. All rights, including
-* reproduction, publication, editing and translation, are reserved. The use of
-* this project is subject to the terms of a license agreement to be concluded
-* with nymea GmbH in accordance with the terms of use of nymea GmbH, available
-* under https://nymea.io/license
+* This file is part of nymea-plugins-modbus.
 *
-* GNU Lesser General Public License Usage
-* Alternatively, this project may be redistributed and/or modified under the
-* terms of the GNU Lesser General Public License as published by the Free
-* Software Foundation; version 3. This project is distributed in the hope that
-* it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-* Lesser General Public License for more details.
+* nymea-plugins-modbus is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
 *
-* You should have received a copy of the GNU Lesser General Public License
-* along with this project. If not, see <https://www.gnu.org/licenses/>.
+* nymea-plugins-modbus is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
 *
-* For any further details and any questions please contact us under
-* contact@nymea.io or see our FAQ/Licensing Information on
-* https://nymea.io/license/faq
+* You should have received a copy of the GNU General Public License
+* along with nymea-plugins-modbus. If not, see <https://www.gnu.org/licenses/>.
 *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -57,7 +51,11 @@ SpeedwireInterface::SpeedwireInterface(quint32 sourceSerialNumber, QObject *pare
         qCDebug(dcSma()) << "SpeedwireInterface: Unicast socket state changed" << socketState;
     });
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    connect(m_unicast, &QUdpSocket::errorOccurred, this, [=](QAbstractSocket::SocketError error){
+#else
     connect(m_unicast, static_cast<void (QUdpSocket::*)( QAbstractSocket::SocketError )>(&QAbstractSocket::error), this, [=](QAbstractSocket::SocketError error){
+#endif
         qCWarning(dcSma()) << "SpeedwireInterface: Unicast socket error occurred" << error << m_unicast->errorString();
     });
 
@@ -72,6 +70,10 @@ SpeedwireInterface::SpeedwireInterface(quint32 sourceSerialNumber, QObject *pare
             datagram.resize(m_multicast->pendingDatagramSize());
             m_multicast->readDatagram(datagram.data(), datagram.size(), &senderAddress, &senderPort);
 
+            // Filter our own requests on the multicast
+            if (isOwnInterface(senderAddress))
+                return;
+
             qCDebug(dcSma()).noquote() << "SpeedwireInterface: Multicast socket received data from" << QString("%1:%2").arg(senderAddress.toString()).arg(senderPort);
             //qCDebug(dcSma()) << "SpeedwireInterface: " << datagram.toHex();
             emit dataReceived(senderAddress, senderPort, datagram, true);
@@ -81,7 +83,11 @@ SpeedwireInterface::SpeedwireInterface(quint32 sourceSerialNumber, QObject *pare
     connect(m_multicast, &QUdpSocket::stateChanged, this, [=](QAbstractSocket::SocketState socketState){
         qCDebug(dcSma()) << "SpeedwireInterface: Multicast socket state changed" << socketState;
     });
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    connect(m_multicast, &QUdpSocket::errorOccurred, this, [=](QAbstractSocket::SocketError error){
+#else
     connect(m_multicast, static_cast<void (QUdpSocket::*)( QAbstractSocket::SocketError )>(&QAbstractSocket::error), this, [=](QAbstractSocket::SocketError error){
+#endif
         qCWarning(dcSma()) << "SpeedwireInterface: Multicast socket error occurred" << error << m_multicast->errorString();
     });
 
@@ -111,15 +117,53 @@ bool SpeedwireInterface::available() const
     return m_available;
 }
 
+bool SpeedwireInterface::isOwnInterface(const QHostAddress &hostAddress)
+{
+    foreach (const QNetworkInterface &networkInterface, QNetworkInterface::allInterfaces()) {
+        if (networkInterface.flags().testFlag(QNetworkInterface::IsLoopBack))
+            continue;
+
+        if (!networkInterface.flags().testFlag(QNetworkInterface::IsUp))
+            continue;
+
+        if (!networkInterface.flags().testFlag(QNetworkInterface::IsRunning))
+            continue;
+
+        foreach (const QNetworkAddressEntry &entry, networkInterface.addressEntries()) {
+
+            // Only IPv4
+            if (entry.ip().protocol() != QAbstractSocket::IPv4Protocol)
+                continue;
+
+            if (entry.ip() == hostAddress) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 void SpeedwireInterface::reconfigureMulticastGroup()
 {
     qCDebug(dcSma()) << "Reconfigure multicast interfaces";
     if (m_multicast->joinMulticastGroup(Speedwire::multicastAddress())) {
         qCDebug(dcSma()) << "SpeedwireInterface: Joined successfully multicast group" << Speedwire::multicastAddress().toString();
+        m_multicastWarningPrintCount = 0;
     } else {
-        qCWarning(dcSma()) << "SpeedwireInterface: Failed to join multicast group" << Speedwire::multicastAddress().toString() << m_multicast->errorString() << "Retrying in 5 seconds...";
         // FIXME: It would probably be better to monitor the network interfaces and re-join if necessary
+        uint mod = m_multicastWarningPrintCount % 120;
+
+        if (m_multicastWarningPrintCount < 12) {
+            qCWarning(dcSma()) << "SpeedwireInterface: Failed to join multicast group" << Speedwire::multicastAddress().toString() << m_multicast->errorString() << "Retrying in 5 seconds...";
+        }
+
+        if (m_multicastWarningPrintCount >= 12 && mod == 0) {
+            qCWarning(dcSma()) << "SpeedwireInterface: Failed to join multicast group" << Speedwire::multicastAddress().toString() << m_multicast->errorString() << "Retrying in 10 minutes...";
+        }
+
         QTimer::singleShot(5000, this, &SpeedwireInterface::reconfigureMulticastGroup);
+        m_multicastWarningPrintCount++;
     }
 
     //    foreach (const QNetworkInterface &interface, QNetworkInterface::allInterfaces()) {

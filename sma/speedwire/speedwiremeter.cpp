@@ -1,30 +1,24 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *
-* Copyright 2013 - 2021, nymea GmbH
-* Contact: contact@nymea.io
+* Copyright (C) 2013 - 2024, nymea GmbH
+* Copyright (C) 2024 - 2025, chargebyte austria GmbH
 *
-* This file is part of nymea.
-* This project including source code and documentation is protected by
-* copyright law, and remains the property of nymea GmbH. All rights, including
-* reproduction, publication, editing and translation, are reserved. The use of
-* this project is subject to the terms of a license agreement to be concluded
-* with nymea GmbH in accordance with the terms of use of nymea GmbH, available
-* under https://nymea.io/license
+* This file is part of nymea-plugins-modbus.
 *
-* GNU Lesser General Public License Usage
-* Alternatively, this project may be redistributed and/or modified under the
-* terms of the GNU Lesser General Public License as published by the Free
-* Software Foundation; version 3. This project is distributed in the hope that
-* it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-* Lesser General Public License for more details.
+* nymea-plugins-modbus is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
 *
-* You should have received a copy of the GNU Lesser General Public License
-* along with this project. If not, see <https://www.gnu.org/licenses/>.
+* nymea-plugins-modbus is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
 *
-* For any further details and any questions please contact us under
-* contact@nymea.io or see our FAQ/Licensing Information on
-* https://nymea.io/license/faq
+* You should have received a copy of the GNU General Public License
+* along with nymea-plugins-modbus. If not, see <https://www.gnu.org/licenses/>.
 *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -152,7 +146,7 @@ void SpeedwireMeter::evaluateReachable()
     // Note: the meter sends every second the data on the multicast
     // If the meter has not sent data within the last 5 seconds it seems not to be reachable
     bool reachable = false;
-    if (QDateTime::currentDateTime().toMSecsSinceEpoch() - m_lastSeenTimestamp < 5000) {
+    if (QDateTime::currentMSecsSinceEpoch() - m_lastSeenTimestamp < 5000) {
         reachable = true;
     }
 
@@ -200,7 +194,7 @@ void SpeedwireMeter::processData(const QHostAddress &senderAddress, quint16 send
     qCDebug(dcSma()).noquote() << "Meter: Measurements received from" << QString("%1:%2").arg(senderAddress.toString()).arg(senderPort) <<  "Serial number:" << serialNumber << "Model ID:" << modelId;
 
     // Make sure the rate is at max 1Hz, some meters send much more data, which creates an uneccessary load
-    if (QDateTime::currentDateTime().toMSecsSinceEpoch() - m_lastSeenTimestamp < 1000)
+    if (QDateTime::currentMSecsSinceEpoch() - m_lastSeenTimestamp < 1000)
         return;
 
     // Parse the packet data
@@ -319,7 +313,7 @@ void SpeedwireMeter::processData(const QHostAddress &senderAddress, quint16 send
     }
 
     // Save the current timestamp for reachable evaluation
-    m_lastSeenTimestamp = QDateTime::currentDateTime().toMSecsSinceEpoch();
+    m_lastSeenTimestamp = QDateTime::currentMSecsSinceEpoch();
     evaluateReachable();
 
     emit valuesUpdated();

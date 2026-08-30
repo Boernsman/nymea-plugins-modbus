@@ -1,30 +1,24 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *
-* Copyright 2013 - 2022, nymea GmbH
-* Contact: contact@nymea.io
+* Copyright (C) 2013 - 2024, nymea GmbH
+* Copyright (C) 2024 - 2025, chargebyte austria GmbH
 *
-* This file is part of nymea.
-* This project including source code and documentation is protected by
-* copyright law, and remains the property of nymea GmbH. All rights, including
-* reproduction, publication, editing and translation, are reserved. The use of
-* this project is subject to the terms of a license agreement to be concluded
-* with nymea GmbH in accordance with the terms of use of nymea GmbH, available
-* under https://nymea.io/license
+* This file is part of nymea-plugins-modbus.
 *
-* GNU Lesser General Public License Usage
-* Alternatively, this project may be redistributed and/or modified under the
-* terms of the GNU Lesser General Public License as published by the Free
-* Software Foundation; version 3. This project is distributed in the hope that
-* it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-* Lesser General Public License for more details.
+* nymea-plugins-modbus is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
 *
-* You should have received a copy of the GNU Lesser General Public License
-* along with this project. If not, see <https://www.gnu.org/licenses/>.
+* nymea-plugins-modbus is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
 *
-* For any further details and any questions please contact us under
-* contact@nymea.io or see our FAQ/Licensing Information on
-* https://nymea.io/license/faq
+* You should have received a copy of the GNU General Public License
+* along with nymea-plugins-modbus. If not, see <https://www.gnu.org/licenses/>.
 *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -58,21 +52,25 @@ void IntegrationPluginVestel::discoverThings(ThingDiscoveryInfo *info)
                 ThingDescriptor descriptor(evc04ThingClassId, name, description);
                 qCDebug(dcVestel()) << "Discovered:" << descriptor.title() << descriptor.description();
 
+                ParamList params;
+                params << Param(evc04ThingMacAddressParamTypeId, result.networkDeviceInfo.thingParamValueMacAddress());
+                params << Param(evc04ThingHostNameParamTypeId, result.networkDeviceInfo.thingParamValueHostName());
+                params << Param(evc04ThingAddressParamTypeId, result.networkDeviceInfo.thingParamValueAddress());
+                descriptor.setParams(params);
+
                 // Check if we already have set up this device
-                Things existingThings = myThings().filterByParam(evc04ThingMacAddressParamTypeId, result.networkDeviceInfo.macAddress());
-                if (existingThings.count() == 1) {
-                    qCDebug(dcVestel()) << "This wallbox already exists in the system:" << result.networkDeviceInfo;
-                    descriptor.setThingId(existingThings.first()->id());
+                Thing *existingThing = myThings().findByParams(params);
+                if (existingThing) {
+                    qCDebug(dcVestel()) << "This thing already exists in the system:" << existingThing << existingThing->params();
+                    descriptor.setThingId(existingThing->id());
                 }
 
-                ParamList params;
-                params << Param(evc04ThingMacAddressParamTypeId, result.networkDeviceInfo.macAddress());
-                descriptor.setParams(params);
                 info->addThingDescriptor(descriptor);
             }
 
             info->finish(Thing::ThingErrorNoError);
         });
+
         discovery->startDiscovery();
     }
 }
@@ -80,7 +78,7 @@ void IntegrationPluginVestel::discoverThings(ThingDiscoveryInfo *info)
 void IntegrationPluginVestel::setupThing(ThingSetupInfo *info)
 {
     Thing *thing = info->thing();
-    qCDebug(dcVestel()) << "Setup" << thing << thing->params();
+    qCDebug(dcVestel()) << "Setting up" << thing << thing->params();
 
     if (thing->thingClassId() == evc04ThingClassId) {
 
@@ -93,36 +91,45 @@ void IntegrationPluginVestel::setupThing(ThingSetupInfo *info)
             }
         }
 
-        MacAddress macAddress = MacAddress(thing->paramValue(evc04ThingMacAddressParamTypeId).toString());
-        if (!macAddress.isValid()) {
-            qCWarning(dcVestel()) << "The configured mac address is not valid" << thing->params();
-            info->finish(Thing::ThingErrorInvalidParameter, QT_TR_NOOP("The MAC address is not known. Please reconfigure the thing."));
+        NetworkDeviceMonitor *monitor = hardwareManager()->networkDeviceDiscovery()->registerMonitor(thing);
+        if (!monitor) {
+            qCWarning(dcVestel()) << "Unable to register monitor with the given params" << thing->params();
+            info->finish(Thing::ThingErrorInvalidParameter, QT_TR_NOOP("Unable to set up the connection with this configuration, please reconfigure the connection."));
             return;
         }
 
-        NetworkDeviceMonitor *monitor = hardwareManager()->networkDeviceDiscovery()->registerMonitor(macAddress);
         m_monitors.insert(thing, monitor);
 
-        connect(info, &ThingSetupInfo::aborted, monitor, [=](){
+        connect(info, &ThingSetupInfo::aborted, monitor, [this, thing](){
             if (m_monitors.contains(thing)) {
                 qCDebug(dcVestel()) << "Unregistering monitor because setup has been aborted.";
                 hardwareManager()->networkDeviceDiscovery()->unregisterMonitor(m_monitors.take(thing));
             }
+
+            if (m_evc04Connections.contains(thing)) {
+                qCDebug(dcVestel()) << "Clean up connection because setup has been aborted.";
+                m_evc04Connections.take(thing)->deleteLater();
+            }
         });
 
-        if (monitor->reachable()) {
-            setupEVC04Connection(info);
+        // If this is the initial setup, wait for the monitor to be reachable and make sure
+        // we have an IP address, otherwise let the monitor do his work
+        if (info->isInitialSetup()) {
+            // Continue with setup only if we know that the network device is reachable
+            if (monitor->reachable()) {
+                setupEVC04Connection(info);
+            } else {
+                qCDebug(dcVestel()) << "Waiting for the network monitor to get reachable before continuing to set up the connection" << thing->name() << "...";
+                connect(monitor, &NetworkDeviceMonitor::reachableChanged, info, [this, thing, info, monitor](bool reachable){
+                    if (reachable) {
+                        qCDebug(dcVestel()) << "The monitor for thing setup" << thing->name() << "is now reachable. Continuing setup on" << monitor->networkDeviceInfo().address().toString();
+                        setupEVC04Connection(info);
+                    }
+                });
+            }
         } else {
-            qCDebug(dcVestel()) << "Waiting for the network monitor to get reachable before continuing to set up the connection" << thing->name() << "...";
-            connect(monitor, &NetworkDeviceMonitor::reachableChanged, info, [=](bool reachable){
-                if (reachable) {
-                    qCDebug(dcVestel()) << "The monitor for thing setup" << thing->name() << "is now reachable. Continuing setup on" << monitor->networkDeviceInfo().address().toString();
-                    setupEVC04Connection(info);
-                }
-            });
+            setupEVC04Connection(info);
         }
-
-        return;
     }
 }
 
@@ -155,12 +162,15 @@ void IntegrationPluginVestel::executeAction(ThingActionInfo *info)
             // If the car is *not* connected, writing a 0 to the charging current register will cause it to go to 6 A instead of 0
             // Because of this, we we're not connected, we'll do nothing, but once it get's connected, we'll sync the state over (see below in cableStateChanged)
             if (!power && evc04Connection->cableState() < EVC04ModbusTcpConnection::CableStateCableConnectedVehicleConnected) {
+                qCDebug(dcVestel()) << "Set state to" << false << "but do nothing since the car is not connected";
                 info->thing()->setStateValue(evc04PowerStateTypeId, false);
                 info->finish(Thing::ThingErrorNoError);
                 return;
             }
 
-            QModbusReply *reply = evc04Connection->setChargingCurrent(power ? info->thing()->stateValue(evc04MaxChargingCurrentStateTypeId).toUInt() : 0);
+            uint chargingCurrent = (power ? info->thing()->stateValue(evc04MaxChargingCurrentStateTypeId).toUInt() : 0);
+            qCDebug(dcVestel()) << "Write max charging current" << chargingCurrent;
+            QModbusReply *reply = evc04Connection->setChargingCurrent(chargingCurrent);
             connect(reply, &QModbusReply::finished, info, [info, reply, power](){
                 if (reply->error() == QModbusDevice::NoError) {
                     info->thing()->setStateValue(evc04PowerStateTypeId, power);
@@ -171,17 +181,29 @@ void IntegrationPluginVestel::executeAction(ThingActionInfo *info)
                 }
             });
         }
+
         if (info->action().actionTypeId() == evc04MaxChargingCurrentActionTypeId) {
-            int maxChargingCurrent = info->action().paramValue(evc04MaxChargingCurrentActionMaxChargingCurrentParamTypeId).toInt();
-            QModbusReply *reply = evc04Connection->setChargingCurrent(maxChargingCurrent);
-            connect(reply, &QModbusReply::finished, info, [info, reply, maxChargingCurrent](){
-                if (reply->error() == QModbusDevice::NoError) {
-                    info->thing()->setStateValue(evc04MaxChargingCurrentStateTypeId, maxChargingCurrent);
-                    info->finish(Thing::ThingErrorNoError);
-                } else {
-                    info->finish(Thing::ThingErrorHardwareFailure);
-                }
-            });
+
+            // Note: only write the register if power is true, otherwise we would start charging. The state represents the desired current,
+            // once the power is true, the current will be written to the corresponding current.
+
+            quint16 maxChargingCurrent = static_cast<quint16>(qRound(info->action().paramValue(evc04MaxChargingCurrentActionMaxChargingCurrentParamTypeId).toDouble()));
+
+            if (info->thing()->stateValue(evc04PowerStateTypeId).toBool()) {
+                qCDebug(dcVestel()) << "Write max charging current" << maxChargingCurrent;
+                QModbusReply *reply = evc04Connection->setChargingCurrent(maxChargingCurrent);
+                connect(reply, &QModbusReply::finished, info, [info, reply, maxChargingCurrent](){
+                    if (reply->error() == QModbusDevice::NoError) {
+                        info->thing()->setStateValue(evc04MaxChargingCurrentStateTypeId, maxChargingCurrent);
+                        info->finish(Thing::ThingErrorNoError);
+                    } else {
+                        info->finish(Thing::ThingErrorHardwareFailure);
+                    }
+                });
+            } else {
+                qCDebug(dcVestel()) << "Set state to" << maxChargingCurrent << "but do nothing since the power is false";
+                info->thing()->setStateValue(evc04MaxChargingCurrentStateTypeId, maxChargingCurrent);
+            }
         }
     }
 }
@@ -295,7 +317,7 @@ void IntegrationPluginVestel::setupEVC04Connection(ThingSetupInfo *info)
     });
 
     connect(evc04Connection, &EVC04ModbusTcpConnection::chargepointStateChanged, thing, [thing](EVC04ModbusTcpConnection::ChargePointState chargePointState) {
-        qCDebug(dcVestel()) << "Chargepoint state changed" << chargePointState;
+        qCDebug(dcVestel()) << "Chargepoint state changed" << thing->name() << chargePointState;
         //        switch (chargePointState) {
         //        case EVC04ModbusTcpConnection::ChargePointStateAvailable:
         //        case EVC04ModbusTcpConnection::ChargePointStatePreparing:
@@ -382,6 +404,9 @@ void IntegrationPluginVestel::setupEVC04Connection(ThingSetupInfo *info)
             if (thing->stateValue(evc04PowerStateTypeId).toBool() == false) {
                 qCInfo(dcVestel()) << "Car plugged in. Syncing cached power off state to wallbox";
                 evc04Connection->setChargingCurrent(0);
+            } else {
+                qCInfo(dcVestel()) << "Car plugged in. Syncing cached current valie to wallbox";
+                evc04Connection->setChargingCurrent(static_cast<quint16>(thing->stateValue(evc04MaxChargingCurrentStateTypeId).toUInt()));
             }
 
             break;

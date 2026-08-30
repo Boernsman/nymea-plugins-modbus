@@ -1,32 +1,26 @@
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *
-* Copyright 2013 - 2021, nymea GmbH
-* Contact: contact@nymea.io
+* Copyright (C) 2013 - 2024, nymea GmbH
+* Copyright (C) 2024 - 2025, chargebyte austria GmbH
 *
-* This fileDescriptor is part of nymea.
-* This project including source code and documentation is protected by
-* copyright law, and remains the property of nymea GmbH. All rights, including
-* reproduction, publication, editing and translation, are reserved. The use of
-* this project is subject to the terms of a license agreement to be concluded
-* with nymea GmbH in accordance with the terms of use of nymea GmbH, available
-* under https://nymea.io/license
+* This file is part of libnymea-sunspec.
 *
-* GNU Lesser General Public License Usage
-* Alternatively, this project may be redistributed and/or modified under the
-* terms of the GNU Lesser General Public License as published by the Free
-* Software Foundation; version 3. This project is distributed in the hope that
-* it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-* Lesser General Public License for more details.
+* libnymea-sunspec is free software: you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public License
+* as published by the Free Software Foundation, either version 3
+* of the License, or (at your option) any later version.
+*
+* libnymea-sunspec is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU Lesser General Public License for more details.
 *
 * You should have received a copy of the GNU Lesser General Public License
-* along with this project. If not, see <https://www.gnu.org/licenses/>.
+* along with libnymea-sunspec. If not, see <https://www.gnu.org/licenses/>.
 *
-* For any further details and any questions please contact us under
-* contact@nymea.io or see our FAQ/Licensing Information on
-* https://nymea.io/license/faq
-*
-* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "sunspecconnection.h"
 #include "sunspecmodel.h"
@@ -313,7 +307,7 @@ void SunSpecConnection::processDiscoveryResult()
                 qCDebug(dcSunSpec()) << "Sorted model list:";
                 SunSpecCommonModel *currentCommonModel = nullptr;
                 SunSpecModel::CommonModelInfo commonModelInfo;
-                for (int i = 0; i < m_models.count(); i++) {
+                for (int i = 0; i < m_models.length(); i++) {
                     SunSpecModel *model = m_models.at(i);
                     qCDebug(dcSunSpec()) << "-->" << model;
                     if (model->modelId() == SunSpecModelFactory::ModelIdCommon) {
@@ -467,7 +461,7 @@ void SunSpecConnection::scanModelsOnBaseRegister(quint16 offset)
         } else {
             qCWarning(dcSunSpec()) << "Error occurred while reading model header from" << this << "using offset" << offset << m_modbusTcpClient->errorString();
             if (!m_modelDiscoveryResult.isEmpty()) {
-                qCWarning(dcSunSpec()) << "Error occurred but already discovered" << m_modelDiscoveryResult.count() << "models. Continue with the discovered models, but the discovery may be incomplete due to header reading errors.";
+                qCWarning(dcSunSpec()) << "Error occurred but already discovered" << m_modelDiscoveryResult.length() << "models. Continue with the discovered models, but the discovery may be incomplete due to header reading errors.";
                 qCDebug(dcSunSpec()) << "Scan for SunSpec models on" << this << m_baseRegister << "finished successfully";
                 processDiscoveryResult();
             } else {

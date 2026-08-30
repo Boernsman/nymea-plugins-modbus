@@ -1,30 +1,24 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *
-* Copyright 2013 - 2023, nymea GmbH
-* Contact: contact@nymea.io
+* Copyright (C) 2013 - 2024, nymea GmbH
+* Copyright (C) 2024 - 2025, chargebyte austria GmbH
 *
-* This file is part of nymea.
-* This project including source code and documentation is protected by
-* copyright law, and remains the property of nymea GmbH. All rights, including
-* reproduction, publication, editing and translation, are reserved. The use of
-* this project is subject to the terms of a license agreement to be concluded
-* with nymea GmbH in accordance with the terms of use of nymea GmbH, available
-* under https://nymea.io/license
+* This file is part of nymea-plugins-modbus.
 *
-* GNU Lesser General Public License Usage
-* Alternatively, this project may be redistributed and/or modified under the
-* terms of the GNU Lesser General Public License as published by the Free
-* Software Foundation; version 3. This project is distributed in the hope that
-* it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-* Lesser General Public License for more details.
+* nymea-plugins-modbus is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
 *
-* You should have received a copy of the GNU Lesser General Public License
-* along with this project. If not, see <https://www.gnu.org/licenses/>.
+* nymea-plugins-modbus is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
 *
-* For any further details and any questions please contact us under
-* contact@nymea.io or see our FAQ/Licensing Information on
-* https://nymea.io/license/faq
+* You should have received a copy of the GNU General Public License
+* along with nymea-plugins-modbus. If not, see <https://www.gnu.org/licenses/>.
 *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -54,7 +48,7 @@ void IntegrationPluginSchrack::discoverThings(ThingDiscoveryInfo *info)
             return;
         }
 
-        qCInfo(dcSchrack()) << "Discovery results:" << discovery->discoveryResults().count();
+        qCInfo(dcSchrack()) << "Discovery results:" << discovery->discoveryResults().length();
 
         foreach (const CionDiscovery::Result &result, discovery->discoveryResults()) {
             ThingDescriptor descriptor(cionThingClassId, "Schrack CION", QString("Slave ID: %1, Version: %2").arg(result.slaveId).arg(result.firmwareVersion));
@@ -145,7 +139,7 @@ void IntegrationPluginSchrack::setupThing(ThingSetupInfo *info)
         qCDebug(dcSchrack()) << "Charge control enabled changed:" << charging;
         // If this register goes 0->1 it means charging has been started. This could be because of an RFID tag.
         // As we have may set charging current to 0 ourselves, we'll want to activate it again here
-        uint maxSetPoint = thing->stateValue(cionMaxChargingCurrentStateTypeId).toUInt();
+        quint16 maxSetPoint = static_cast<quint16>(qRound(thing->stateValue(cionMaxChargingCurrentStateTypeId).toDouble()));
         if (cionConnection->chargingCurrentSetpoint() != maxSetPoint) {
             cionConnection->setChargingCurrentSetpoint(maxSetPoint);
         }
@@ -299,7 +293,7 @@ void IntegrationPluginSchrack::executeAction(ThingActionInfo *info)
     CionModbusRtuConnection *cionConnection = m_cionConnections.value(info->thing());
     if (info->action().actionTypeId() == cionPowerActionTypeId) {
         bool enabled = info->action().paramValue(cionPowerActionPowerParamTypeId).toBool();
-        int maxChargingCurrent = enabled ? info->thing()->stateValue(cionMaxChargingCurrentStateTypeId).toUInt() : 0;
+        int maxChargingCurrent = enabled ? static_cast<quint16>(qRound(info->thing()->stateValue(cionMaxChargingCurrentStateTypeId).toDouble())) : 0;
         qCDebug(dcSchrack()) << "Setting charging enabled:" << (enabled ? 1 : 0) << "(charging current setpoint:" << maxChargingCurrent << ")";
 
         // Note: If the wallbox has an RFID reader connected, writing register 100 (chargingEnabled) won't work as the RFID
@@ -327,7 +321,7 @@ void IntegrationPluginSchrack::executeAction(ThingActionInfo *info)
 
     } else if (info->action().actionTypeId() == cionMaxChargingCurrentActionTypeId) {
         // If charging is set to enabled, we'll write the value to the wallbox
-        uint maxChargingCurrent = info->action().paramValue(cionMaxChargingCurrentActionMaxChargingCurrentParamTypeId).toUInt();
+        quint16 maxChargingCurrent = static_cast<quint16>(qRound(info->action().paramValue(cionMaxChargingCurrentActionMaxChargingCurrentParamTypeId).toDouble()));
         if (info->thing()->stateValue(cionPowerStateTypeId).toBool()) {
             qCDebug(dcSchrack) << "Charging is enabled. Applying max charging current setpoint of" << maxChargingCurrent << "to wallbox";
             ModbusRtuReply *reply = cionConnection->setChargingCurrentSetpoint(maxChargingCurrent);

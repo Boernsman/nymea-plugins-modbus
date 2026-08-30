@@ -1,20 +1,28 @@
 #!/usr/bin/env python3
 
-# Copyright (C) 2021  nymea GmbH <developer@nymea.io>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
+# Copyright (C) 2013 - 2024, nymea GmbH
+# Copyright (C) 2024 - 2025, chargebyte austria GmbH
 #
-# This program is distributed in the hope that it will be useful,
+# This file is part of nymea-plugins-modbus.
+#
+# nymea-plugins-modbus is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# nymea-plugins-modbus is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# along with nymea-plugins-modbus. If not, see <https://www.gnu.org/licenses/>.
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 import os
 import re
@@ -146,35 +154,29 @@ def writeLine(fileDescriptor, line = ''):
 
 
 def writeLicenseHeader(fileDescriptor):
+    writeLine(fileDescriptor, '// SPDX-License-Identifier: LGPL-3.0-or-later')
+    writeLine(fileDescriptor)
     writeLine(fileDescriptor, '/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *')
     writeLine(fileDescriptor, '*')
-    writeLine(fileDescriptor, '* Copyright 2013 - %s, nymea GmbH' % datetime.datetime.now().year)
-    writeLine(fileDescriptor, '* Contact: contact@nymea.io')
+    writeLine(fileDescriptor, '* Copyright (C) 2013 - 2024, nymea GmbH')
+    writeLine(fileDescriptor, '* Copyright (C) 2024 - %s, chargebyte austria GmbH' % datetime.datetime.now().year)
     writeLine(fileDescriptor, '*')
-    writeLine(fileDescriptor, '* This fileDescriptor is part of nymea.')
-    writeLine(fileDescriptor, '* This project including source code and documentation is protected by')
-    writeLine(fileDescriptor, '* copyright law, and remains the property of nymea GmbH. All rights, including')
-    writeLine(fileDescriptor, '* reproduction, publication, editing and translation, are reserved. The use of')
-    writeLine(fileDescriptor, '* this project is subject to the terms of a license agreement to be concluded')
-    writeLine(fileDescriptor, '* with nymea GmbH in accordance with the terms of use of nymea GmbH, available')
-    writeLine(fileDescriptor, '* under https://nymea.io/license')
+    writeLine(fileDescriptor, '* This file is part of libnymea-sunspec.')
     writeLine(fileDescriptor, '*')
-    writeLine(fileDescriptor, '* GNU Lesser General Public License Usage')
-    writeLine(fileDescriptor, '* Alternatively, this project may be redistributed and/or modified under the')
-    writeLine(fileDescriptor, '* terms of the GNU Lesser General Public License as published by the Free')
-    writeLine(fileDescriptor, '* Software Foundation; version 3. This project is distributed in the hope that')
-    writeLine(fileDescriptor, '* it will be useful, but WITHOUT ANY WARRANTY; without even the implied')
-    writeLine(fileDescriptor, '* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU')
-    writeLine(fileDescriptor, '* Lesser General Public License for more details.')
+    writeLine(fileDescriptor, '* libnymea-sunspec is free software: you can redistribute it and/or')
+    writeLine(fileDescriptor, '* modify it under the terms of the GNU Lesser General Public License')
+    writeLine(fileDescriptor, '* as published by the Free Software Foundation, either version 3')
+    writeLine(fileDescriptor, '* of the License, or (at your option) any later version.')
+    writeLine(fileDescriptor, '*')
+    writeLine(fileDescriptor, '* libnymea-sunspec is distributed in the hope that it will be useful,')
+    writeLine(fileDescriptor, '* but WITHOUT ANY WARRANTY; without even the implied warranty of')
+    writeLine(fileDescriptor, '* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the')
+    writeLine(fileDescriptor, '* GNU Lesser General Public License for more details.')
     writeLine(fileDescriptor, '*')
     writeLine(fileDescriptor, '* You should have received a copy of the GNU Lesser General Public License')
-    writeLine(fileDescriptor, '* along with this project. If not, see <https://www.gnu.org/licenses/>.')
+    writeLine(fileDescriptor, '* along with libnymea-sunspec. If not, see <https://www.gnu.org/licenses/>.')
     writeLine(fileDescriptor, '*')
-    writeLine(fileDescriptor, '* For any further details and any questions please contact us under')
-    writeLine(fileDescriptor, '* contact@nymea.io or see our FAQ/Licensing Information on')
-    writeLine(fileDescriptor, '* https://nymea.io/license/faq')
-    writeLine(fileDescriptor, '*')
-    writeLine(fileDescriptor, '* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */')
+    writeLine(fileDescriptor, '* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */')
     writeLine(fileDescriptor)
 
 
@@ -810,6 +812,37 @@ def writeProcessDataImplementation(fileDescriptor, className, dataPoints, parent
     writeLine(fileDescriptor, '    qCDebug(dcSunSpecModelData()) << this;')
 
 
+def writeSetupRepeatingBlocksImplementation(fileDescriptor, className):
+    print('Write setupRepeatingBlocks() implementation')
+    blockClassName = ("%sRepeatingBlock" % className)
+    writeLine(fileDescriptor, '    if (!m_repeatingBlocks.isEmpty()) {')
+    writeLine(fileDescriptor, '        foreach (SunSpecModelRepeatingBlock *block, m_repeatingBlocks) {')
+    writeLine(fileDescriptor, '            block->deleteLater();')
+    writeLine(fileDescriptor, '        }')
+    writeLine(fileDescriptor, '        m_repeatingBlocks.clear();')
+    writeLine(fileDescriptor, '    }')
+    writeLine(fileDescriptor)
+    writeLine(fileDescriptor, '    const auto headerLength = 2;')
+    writeLine(fileDescriptor, '    const auto repeatingBlocksDataSize = m_blockData.size() - headerLength - m_fixedBlockLength;')
+    writeLine(fileDescriptor, '    if (repeatingBlocksDataSize % m_repeatingBlockLength != 0) {')
+    writeLine(fileDescriptor, '        qCWarning(dcSunSpecModelData()) << "Unexpected repeating block data size:"')
+    writeLine(fileDescriptor, '                                        << repeatingBlocksDataSize')
+    writeLine(fileDescriptor, '                                        << "(repeating block size:"')
+    writeLine(fileDescriptor, '                                        << m_repeatingBlockLength')
+    writeLine(fileDescriptor, '                                        << ", extra bytes:"')
+    writeLine(fileDescriptor, '                                        << repeatingBlocksDataSize % m_repeatingBlockLength')
+    writeLine(fileDescriptor, '                                        << "). Repeating blocks will not be handled!";')
+    writeLine(fileDescriptor, '        return;')
+    writeLine(fileDescriptor, '    }')
+    writeLine(fileDescriptor, '    const auto numberOfBlocks = repeatingBlocksDataSize / m_repeatingBlockLength;')
+    writeLine(fileDescriptor, '    const auto repeatingBlocksOffset = m_fixedBlockLength + headerLength;')
+    writeLine(fileDescriptor, '    for (int i = 0; i < numberOfBlocks; ++i) {')
+    writeLine(fileDescriptor, '        const auto blockStartRegister = static_cast<quint16>(modbusStartRegister() + repeatingBlocksOffset + m_repeatingBlockLength * i);')
+    writeLine(fileDescriptor, '        const auto block = new %s(i, m_repeatingBlockLength, blockStartRegister, this);' % blockClassName)
+    writeLine(fileDescriptor, '        m_repeatingBlocks.append(block);')
+    writeLine(fileDescriptor, '    }')
+
+
 def writePropertyDebugLine(fileDescriptor, className, modelId):
     print('Write class debug properties')
     modelData = models[modelId]
@@ -880,7 +913,7 @@ def writeRepeatingBlockClassDefinition(fileDescriptor, className, modelId):
     addPropertiesMethodDeclaration(fileDescriptor, dataPoints)
 
     writeLine(fileDescriptor)
-    writeLine(fileDescriptor, '    void processBlockData(const QVector<quint16> blockData) override;')
+    writeLine(fileDescriptor, '    void processBlockData() override;')
 
     # Protected members
     writeLine(fileDescriptor)
@@ -925,6 +958,7 @@ def writeRepeatingBlockClassImplementation(fileDescriptor, className, modelId):
     writeLine(fileDescriptor, '%s::%s(quint16 blockIndex, quint16 blockSize, quint16 modbusStartRegister, %s *parent) :' % (blockClassName, blockClassName, className))
     writeLine(fileDescriptor, '    SunSpecModelRepeatingBlock(blockIndex, blockSize, modbusStartRegister, parent)')
     writeLine(fileDescriptor, '{')
+    writeLine(fileDescriptor, '    m_parentModel = parent;')
     writeLine(fileDescriptor, '    m_byteOrder = parent->byteOrder();')
     writeLine(fileDescriptor, '    initDataPoints();')
     writeLine(fileDescriptor, '}')
@@ -964,10 +998,8 @@ def writeRepeatingBlockClassImplementation(fileDescriptor, className, modelId):
     writeLine(fileDescriptor)
 
     # Process data 
-    writeLine(fileDescriptor, 'void %s::processBlockData(const QVector<quint16> blockData)' % blockClassName)
+    writeLine(fileDescriptor, 'void %s::processBlockData()' % blockClassName)
     writeLine(fileDescriptor, '{')
-    writeLine(fileDescriptor, '    m_blockData = blockData;')
-    writeLine(fileDescriptor)
     writeProcessDataImplementation(fileDescriptor, blockClassName, dataPoints, modelData['group']['points'])
     writeLine(fileDescriptor, '}')
     writeLine(fileDescriptor)
@@ -1063,6 +1095,10 @@ def writeHeaderFile(headerFileName, className, modelId):
     # Private members
     writeLine(fileDescriptor)
     writeLine(fileDescriptor, 'private:')
+    if containingRepeatingBlock:
+        writeLine(fileDescriptor)
+        writeLine(fileDescriptor, '    void setupRepeatingBlocks();')
+        writeLine(fileDescriptor)
     addPropertiesDeclaration(fileDescriptor, dataPoints)
     writeLine(fileDescriptor)
 
@@ -1112,6 +1148,9 @@ def writeSourceFile(sourceFileName, className, modelId):
     #writeLine(fileDescriptor, '    if (modelLength != m_modelLengthSunSpec)')
     #writeLine(fileDescriptor, '        qCWarning(dcSunSpecModelData()) << qobject_cast<SunSpecModel *>(this) << "does not have the same length as specified from SunSpec" << m_modelLengthSunSpec;')
     writeLine(fileDescriptor, '    initDataPoints();')
+    if containingRepeatingBlock:
+        writeLine(fileDescriptor)
+        writeLine(fileDescriptor, '    connect(this, &SunSpecModel::initFinished, this, &%s::setupRepeatingBlocks);' % className)
     writeLine(fileDescriptor, '}')
     writeLine(fileDescriptor)
 
@@ -1174,10 +1213,18 @@ def writeSourceFile(sourceFileName, className, modelId):
 
     # Process data 
     writeLine(fileDescriptor, 'void %s::processBlockData()' % className)
-    writeLine(fileDescriptor, '{')  
+    writeLine(fileDescriptor, '{')
     writeProcessDataImplementation(fileDescriptor, className, dataPoints)
     writeLine(fileDescriptor, '}')
     writeLine(fileDescriptor)
+
+    if containingRepeatingBlock:
+        # Setup repeating blocks
+        writeLine(fileDescriptor, 'void %s::setupRepeatingBlocks()' % className)
+        writeLine(fileDescriptor, '{')
+        writeSetupRepeatingBlocksImplementation(fileDescriptor, className)
+        writeLine(fileDescriptor, '}')
+        writeLine(fileDescriptor)
 
     # Debug operator
     writeLine(fileDescriptor, 'QDebug operator<<(QDebug debug, %s *model)' % className)

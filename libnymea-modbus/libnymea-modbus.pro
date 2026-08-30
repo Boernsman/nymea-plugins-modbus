@@ -1,7 +1,20 @@
-QMAKE_CXXFLAGS += -Werror -std=c++11 -z defs
-QMAKE_LFLAGS += -std=c++11 -z defs
-
 QT += network serialbus
+
+greaterThan(QT_MAJOR_VERSION, 5) {
+    message("Building using Qt6 support")
+    CONFIG *= c++17
+    QMAKE_LFLAGS *= -std=c++17
+    QMAKE_CXXFLAGS *= -std=c++17
+} else {
+    message("Building using Qt5 support")
+    CONFIG *= c++11
+    QMAKE_LFLAGS *= -std=c++11
+    QMAKE_CXXFLAGS *= -std=c++11
+    DEFINES += QT_DISABLE_DEPRECATED_UP_TO=0x050F00
+}
+
+QMAKE_CXXFLAGS += -Werror
+unix:!macx: QMAKE_LFLAGS += -Wl,-z,defs
 
 CONFIG += link_pkgconfig
 PKGCONFIG += nymea
@@ -17,11 +30,16 @@ gcc {
 
 HEADERS += \
     modbusdatautils.h \
-    modbustcpmaster.h
+    modbustcpconnection.h \
+    modbustcpmaster.h \
+    queuedmodbusreply.h \
+    modbustlstunnel_p.h
 
 SOURCES += \
     modbusdatautils.cpp \
-    modbustcpmaster.cpp
+    modbustcpmaster.cpp \
+    queuedmodbusreply.cpp \
+    modbustlstunnel.cpp
 
 
 # define install target
@@ -39,10 +57,12 @@ INSTALLS += modbustoolpri modbustool modbustoolmodules
 
 # install header file with relative subdirectory
 for (header, HEADERS) {
-    path = $$[QT_INSTALL_PREFIX]/include/nymea-modbus/$${dirname(header)}
-    eval(headers_$${path}.files += $${header})
-    eval(headers_$${path}.path = $${path})
-    eval(INSTALLS *= headers_$${path})
+    !contains(header, _p.h$) {
+        path = $$[QT_INSTALL_PREFIX]/include/nymea-modbus/$${dirname(header)}
+        eval(headers_$${path}.files += $${header})
+        eval(headers_$${path}.path = $${path})
+        eval(INSTALLS *= headers_$${path})
+    }
 }
 
 # Create pkgconfig file
