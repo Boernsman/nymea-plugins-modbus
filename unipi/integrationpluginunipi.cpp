@@ -413,7 +413,7 @@ void IntegrationPluginUniPi::setupThing(ThingSetupInfo *info)
         qCDebug(dcUniPi()) << "Setting up UniPi 1 thing" << thing->name();
 
         if (m_unipi) {
-            qCWarning(dcUniPi()) << "UniPi 1 already setted up, only one thing allowed";
+            qCWarning(dcUniPi()) << "UniPi 1 already set up, only one thing allowed";
             return info->finish(Thing::ThingErrorSetupFailed, QT_TR_NOOP("There is already a UniPi gateway in the system."));
         }
 
@@ -439,7 +439,7 @@ void IntegrationPluginUniPi::setupThing(ThingSetupInfo *info)
         foreach (Thing *existingThing, myThings().filterByThingClassId(neuronThingClassId)) {
             if (existingThing->id() != thing->id()) {
                 qCWarning(dcUniPi()) << "Only one neuron device is allowed";
-                return info->finish(Thing::ThingErrorSetupFailed, QT_TR_NOOP("Neuron is already setted up."));
+                return info->finish(Thing::ThingErrorSetupFailed, QT_TR_NOOP("Neuron is already set up."));
             }
         }
 
@@ -457,6 +457,7 @@ void IntegrationPluginUniPi::setupThing(ThingSetupInfo *info)
             return info->finish(Thing::ThingErrorSetupFailed, QT_TR_NOOP("Error setting up Neuron Thing."));
         }
 
+        m_neuronThing = thing;
         thing->setStateValue(neuronConnectedStateTypeId, true);
         connect(m_neuron, &Neuron::digitalInputStatusChanged, this, &IntegrationPluginUniPi::onNeuronDigitalInputStatusChanged);
         connect(m_neuron, &Neuron::relayOutputStatusChanged, this, &IntegrationPluginUniPi::onNeuronRelayOutputStatusChanged);
@@ -506,7 +507,7 @@ void IntegrationPluginUniPi::setupThing(ThingSetupInfo *info)
         } else if (modelString == "xS51") {
             type = NeuronExtension::xS51;
         } else {
-            qCDebug(dcUniPi()) << "Unkown Neuron extension type" << modelString;
+            qCDebug(dcUniPi()) << "Unknown Neuron extension type" << modelString;
             return info->finish(Thing::ThingErrorSetupFailed, tr("Neuron extension type not supported"));
         }
         if (!m_neuronExtensionBus.contains(neuronExtensionBusThingId)) {
@@ -582,78 +583,106 @@ void IntegrationPluginUniPi::postSetupThing(Thing *thing)
 
     } else if (thing->thingClassId() == relayOutputThingClassId) {
         Thing *parentThing = myThings().findById(thing->parentId());
+        if (!parentThing) {
+            qCWarning(dcUniPi()) << "Parent thing not found for:" << thing->name();
+            return;
+        }
         QString circuit = thing->paramValue(relayOutputThingCircuitParamTypeId).toString();
         bool value = false;
         if (parentThing->thingClassId() == neuronThingClassId) {
             if (!m_neuron) {
+                qCWarning(dcUniPi()) << "Neuron object not available:" << thing->name();
+                return;
+            }
+            m_neuronChildByCircuit.insert(circuit, thing);
+        } else {
+            NeuronExtension *neuronExtension = m_neuronExtensions.value(thing->parentId());
+            if (!neuronExtension) {
                 qCWarning(dcUniPi()) << "Neuron extension object not available:" << thing->name();
                 return;
             }
-
-        } else {
-            NeuronExtension *neuronExtension = m_neuronExtensions.value(thing->id());
-            if (!neuronExtension) {
-                return;
-            }
             value = neuronExtension->relayOutputValue(circuit);
+            m_extensionChildByCircuit[thing->parentId()].insert(circuit, thing);
         }
         thing->setStateValue(relayOutputPowerStateTypeId, value);
 
     } else if (thing->thingClassId() == digitalOutputThingClassId) {
         Thing *parentThing = myThings().findById(thing->parentId());
+        if (!parentThing) {
+            qCWarning(dcUniPi()) << "Parent thing not found for:" << thing->name();
+            return;
+        }
         QString circuit = thing->paramValue(digitalOutputThingCircuitParamTypeId).toString();
         bool value = false;
         if (parentThing->thingClassId() == neuronThingClassId) {
             if (!m_neuron) {
+                qCWarning(dcUniPi()) << "Neuron object not available:" << thing->name();
                 return;
             }
+            m_neuronChildByCircuit.insert(circuit, thing);
         } else {
-            NeuronExtension *neuronExtension = m_neuronExtensions.value(thing->id());
+            NeuronExtension *neuronExtension = m_neuronExtensions.value(thing->parentId());
             if (!neuronExtension) {
                 qCWarning(dcUniPi()) << "Neuron extension object not available:" << thing->name();
                 return;
             }
             value = neuronExtension->digitalOutputValue(circuit);
+            m_extensionChildByCircuit[thing->parentId()].insert(circuit, thing);
         }
         thing->setStateValue(digitalOutputPowerStateTypeId, value);
 
     } else if (thing->thingClassId() == digitalInputThingClassId) {
         Thing *parentThing = myThings().findById(thing->parentId());
+        if (!parentThing) {
+            qCWarning(dcUniPi()) << "Parent thing not found for:" << thing->name();
+            return;
+        }
         QString circuit = thing->paramValue(digitalInputThingCircuitParamTypeId).toString();
         bool value = false;
         if (parentThing->thingClassId() == neuronThingClassId) {
             if (!m_neuron) {
                 return;
             }
-
+            m_neuronChildByCircuit.insert(circuit, thing);
         } else {
-            NeuronExtension *neuronExtension = m_neuronExtensions.value(thing->id());
+            NeuronExtension *neuronExtension = m_neuronExtensions.value(thing->parentId());
             if (!neuronExtension) {
                 return;
             }
             value = neuronExtension->digitalInputValue(circuit);
+            m_extensionChildByCircuit[thing->parentId()].insert(circuit, thing);
         }
         thing->setStateValue(digitalInputInputStatusStateTypeId, value);
 
     } else if (thing->thingClassId() == analogInputThingClassId) {
         Thing *parentThing = myThings().findById(thing->parentId());
+        if (!parentThing) {
+            qCWarning(dcUniPi()) << "Parent thing not found for:" << thing->name();
+            return;
+        }
         QString circuit = thing->paramValue(analogInputThingCircuitParamTypeId).toString();
         double value = 0.f;
         if (parentThing->thingClassId() == neuronThingClassId) {
             if (!m_neuron) {
                 return;
             }
+            m_neuronChildByCircuit.insert(circuit, thing);
         } else {
-            NeuronExtension *neuronExtension = m_neuronExtensions.value(thing->id());
+            NeuronExtension *neuronExtension = m_neuronExtensions.value(thing->parentId());
             if (!neuronExtension) {
                 return;
             }
             value = neuronExtension->analogInputValue(circuit);
+            m_extensionChildByCircuit[thing->parentId()].insert(circuit, thing);
         }
         thing->setStateValue(analogInputPercentageStateTypeId, value);
 
     } else if (thing->thingClassId() == analogOutputThingClassId) {
         Thing *parentThing = myThings().findById(thing->parentId());
+        if (!parentThing) {
+            qCWarning(dcUniPi()) << "Parent thing not found for:" << thing->name();
+            return;
+        }
         QString circuit = thing->paramValue(analogOutputThingCircuitParamTypeId).toString();
         double value = 0;
         if (parentThing->thingClassId() == neuronThingClassId) {
@@ -663,12 +692,14 @@ void IntegrationPluginUniPi::postSetupThing(Thing *thing)
             //SysFS is not able to read the analog output value
             //A workaround is to set the value at the beginning to 0
             m_neuron->setAnalogOutput(circuit, value);
+            m_neuronChildByCircuit.insert(circuit, thing);
         } else {
-            NeuronExtension *neuronExtension = m_neuronExtensions.value(thing->id());
+            NeuronExtension *neuronExtension = m_neuronExtensions.value(thing->parentId());
             if (!neuronExtension) {
                 return;
             }
             value = neuronExtension->analogOutputValue(circuit);
+            m_extensionChildByCircuit[thing->parentId()].insert(circuit, thing);
         }
         thing->setStateValue(analogOutputOutputValueStateTypeId, value);
         thing->setStateValue(analogOutputPercentageStateTypeId, value);
@@ -835,19 +866,49 @@ void IntegrationPluginUniPi::executeAction(ThingActionInfo *info)
 void IntegrationPluginUniPi::thingRemoved(Thing *thing)
 {
     qCDebug(dcUniPi()) << "Deleting thing" << thing->name();
-    if(m_neuronExtensions.contains(thing->id())) {
+    const ThingClassId classId = thing->thingClassId();
+
+    // Drop child things from the lookup caches first. The parent-removal
+    // branches below also clear whole caches, so the per-child removes are
+    // only effective when individual child things are removed.
+    const auto dropChildCache = [&](const ParamTypeId &circuitParamTypeId) {
+        const QString circuit = thing->paramValue(circuitParamTypeId).toString();
+        m_neuronChildByCircuit.remove(circuit);
+        auto it = m_extensionChildByCircuit.find(thing->parentId());
+        if (it != m_extensionChildByCircuit.end())
+            it->remove(circuit);
+    };
+
+    if (classId == relayOutputThingClassId) {
+        dropChildCache(relayOutputThingCircuitParamTypeId);
+    } else if (classId == digitalOutputThingClassId) {
+        dropChildCache(digitalOutputThingCircuitParamTypeId);
+    } else if (classId == digitalInputThingClassId) {
+        dropChildCache(digitalInputThingCircuitParamTypeId);
+    } else if (classId == analogInputThingClassId) {
+        dropChildCache(analogInputThingCircuitParamTypeId);
+    } else if (classId == analogOutputThingClassId) {
+        dropChildCache(analogOutputThingCircuitParamTypeId);
+    }
+
+    if (m_neuronExtensions.contains(thing->id())) {
+        m_extensionChildByCircuit.remove(thing->id());
         m_neuronExtensions.take(thing->id())->deleteLater();
     } else if (m_neuronExtensionBus.contains(thing->id())) {
         m_neuronExtensionBus.take(thing->id())->deleteLater();
-    } else if (thing->thingClassId() == neuronThingClassId) {
-        m_neuron->requestInterruption();
-        if (!m_neuron->wait(3000)) {
-            qCWarning(dcUniPi()) << "neuron wait for finish timeout";
+    } else if (classId == neuronThingClassId) {
+        m_neuronThing = nullptr;
+        m_neuronChildByCircuit.clear();
+        if (m_neuron) {
+            m_neuron->requestInterruption();
+            if (!m_neuron->wait(3000)) {
+                qCWarning(dcUniPi()) << "neuron wait for finish timeout";
+            }
+            m_neuron->deleteLater();
+            m_neuron = nullptr;
         }
-        m_neuron->deleteLater();
-        m_neuron = nullptr;
-    } else if ((thing->thingClassId() == uniPi1ThingClassId) || (thing->thingClassId() == uniPi1LiteThingClassId)) {
-        if(m_unipi) {
+    } else if ((classId == uniPi1ThingClassId) || (classId == uniPi1LiteThingClassId)) {
+        if (m_unipi) {
             m_unipi->deleteLater();
             m_unipi = nullptr;
         }
@@ -857,176 +918,85 @@ void IntegrationPluginUniPi::thingRemoved(Thing *thing)
 
 void IntegrationPluginUniPi::onNeuronRelayOutputStatusChanged(const QString &circuit, bool value)
 {
-    Thing *neuronThing = myThings().filterByThingClassId(neuronThingClassId).first();
-    if (!neuronThing) {
-        qCWarning(dcUniPi()) << "Could not find any Thing associated to Neuron object";
-        return;
-    }
-
-    foreach(Thing *thing, myThings().filterByParentId(neuronThing->id())) {
-        if (thing->thingClassId() == relayOutputThingClassId) {
-            if (thing->paramValue(relayOutputThingCircuitParamTypeId).toString() == circuit) {
-
-                thing->setStateValue(relayOutputPowerStateTypeId, value);
-                return;
-            }
-        }
-    }
+    Thing *thing = m_neuronChildByCircuit.value(circuit);
+    if (thing)
+        thing->setStateValue(relayOutputPowerStateTypeId, value);
 }
 
 
 void IntegrationPluginUniPi::onNeuronDigitalInputStatusChanged(const QString &circuit, bool value)
 {
-    Thing *neuronThing = myThings().filterByThingClassId(neuronThingClassId).first();
-    if (!neuronThing) {
-        qCWarning(dcUniPi()) << "Could not find any Thing associated to Neuron obejct";
-        return;
-    }
-
-    foreach(Thing *thing, myThings().filterByParentId(neuronThing->id())) {
-        if (thing->thingClassId() == digitalInputThingClassId) {
-            if (thing->paramValue(digitalInputThingCircuitParamTypeId).toString() == circuit) {
-
-                thing->setStateValue(digitalInputInputStatusStateTypeId, value);
-                return;
-            }
-        }
-    }
+    Thing *thing = m_neuronChildByCircuit.value(circuit);
+    if (thing)
+        thing->setStateValue(digitalInputInputStatusStateTypeId, value);
 }
 
 void IntegrationPluginUniPi::onNeuronDigitalOutputStatusChanged(const QString &circuit, bool value)
 {
-    Thing *neuronThing = myThings().filterByThingClassId(neuronThingClassId).first();
-    if (!neuronThing) {
-        qCWarning(dcUniPi()) << "Could not find any Thing associated to Neuron obejct";
-        return;
-    }
-
-    foreach(Thing *thing, myThings().filterByParentId(neuronThing->id())) {
-        if (thing->thingClassId() == digitalOutputThingClassId) {
-            if (thing->paramValue(digitalOutputThingCircuitParamTypeId).toString() == circuit) {
-
-                thing->setStateValue(digitalOutputPowerStateTypeId, value);
-                return;
-            }
-        }
-    }
+    Thing *thing = m_neuronChildByCircuit.value(circuit);
+    if (thing)
+        thing->setStateValue(digitalOutputPowerStateTypeId, value);
 }
 
 void IntegrationPluginUniPi::onNeuronAnalogInputStatusChanged(const QString &circuit, double value)
 {
-    Thing *neuronThing = myThings().filterByThingClassId(neuronThingClassId).first();
-    if (!neuronThing) {
-        qCWarning(dcUniPi()) << "Could not find any Thing associated to Neuron obejct";
-        return;
-    }
-
-    foreach(Thing *thing, myThings().filterByParentId(neuronThing->id())) {
-        if (thing->thingClassId() == analogInputThingClassId) {
-            if (thing->paramValue(analogInputThingCircuitParamTypeId).toString() == circuit) {
-
-                thing->setStateValue(analogInputInputValueStateTypeId, value);
-                thing->setStateValue(analogInputPercentageStateTypeId, value*10);
-                return;
-            }
-        }
+    Thing *thing = m_neuronChildByCircuit.value(circuit);
+    if (thing) {
+        thing->setStateValue(analogInputInputValueStateTypeId, value);
+        thing->setStateValue(analogInputPercentageStateTypeId, value * 10);
     }
 }
 
 void IntegrationPluginUniPi::onNeuronAnalogOutputStatusChanged(const QString &circuit, double value)
 {
-    Thing *neuronThing = myThings().filterByThingClassId(neuronThingClassId).first();
-    if (!neuronThing) {
-        qCWarning(dcUniPi()) << "Could not find any Thing associated to Neuron obejct";
-        return;
-    }
-
-    foreach(Thing *thing, myThings().filterByParentId(neuronThing->id())) {
-        if (thing->thingClassId() == analogOutputThingClassId) {
-            if (thing->paramValue(analogOutputThingCircuitParamTypeId).toString() == circuit) {
-
-                thing->setStateValue(analogOutputOutputValueStateTypeId, value);
-                thing->setStateValue(analogOutputPercentageStateTypeId, value*10);
-                return;
-            }
-        }
+    Thing *thing = m_neuronChildByCircuit.value(circuit);
+    if (thing) {
+        thing->setStateValue(analogOutputOutputValueStateTypeId, value);
+        thing->setStateValue(analogOutputPercentageStateTypeId, value * 10);
     }
 }
 
 void IntegrationPluginUniPi::onNeuronExtensionDigitalInputStatusChanged(const QString &circuit, bool value)
 {
     auto neuronExtension = static_cast<NeuronExtension *>(sender());
-
-    foreach(Thing *thing, myThings().filterByParentId(m_neuronExtensions.key(neuronExtension))) {
-        if (thing->thingClassId() == digitalInputThingClassId) {
-            if (thing->paramValue(digitalInputThingCircuitParamTypeId).toString() == circuit) {
-
-                thing->setStateValue(digitalInputInputStatusStateTypeId, value);
-                return;
-            }
-        }
-    }
+    Thing *thing = m_extensionChildByCircuit.value(m_neuronExtensions.key(neuronExtension)).value(circuit);
+    if (thing)
+        thing->setStateValue(digitalInputInputStatusStateTypeId, value);
 }
 
 void IntegrationPluginUniPi::onNeuronExtensionDigitalOutputStatusChanged(const QString &circuit, bool value)
 {
     auto neuronExtension = static_cast<NeuronExtension *>(sender());
-
-    foreach(Thing *thing, myThings().filterByParentId(m_neuronExtensions.key(neuronExtension))) {
-        if (thing->thingClassId() == digitalOutputThingClassId) {
-            if (thing->paramValue(digitalOutputThingCircuitParamTypeId).toString() == circuit) {
-
-                thing->setStateValue(digitalOutputPowerStateTypeId, value);
-                return;
-            }
-        }
-    }
+    Thing *thing = m_extensionChildByCircuit.value(m_neuronExtensions.key(neuronExtension)).value(circuit);
+    if (thing)
+        thing->setStateValue(digitalOutputPowerStateTypeId, value);
 }
 
 void IntegrationPluginUniPi::onNeuronExtensionRelayOutputStatusChanged(const QString &circuit, bool value)
 {
     auto neuronExtension = static_cast<NeuronExtension *>(sender());
-
-    foreach(Thing *thing, myThings().filterByParentId(m_neuronExtensions.key(neuronExtension))) {
-        if (thing->thingClassId() == relayOutputThingClassId) {
-            if (thing->paramValue(relayOutputThingCircuitParamTypeId).toString() == circuit) {
-
-                thing->setStateValue(relayOutputPowerStateTypeId, value);
-                return;
-            }
-        }
-    }
+    Thing *thing = m_extensionChildByCircuit.value(m_neuronExtensions.key(neuronExtension)).value(circuit);
+    if (thing)
+        thing->setStateValue(relayOutputPowerStateTypeId, value);
 }
 
 void IntegrationPluginUniPi::onNeuronExtensionAnalogInputStatusChanged(const QString &circuit, double value)
 {
     auto neuronExtension = static_cast<NeuronExtension *>(sender());
-
-    foreach(Thing *thing, myThings().filterByParentId(m_neuronExtensions.key(neuronExtension))) {
-        if (thing->thingClassId() == analogInputThingClassId) {
-            if (thing->paramValue(analogInputThingCircuitParamTypeId).toString() == circuit) {
-
-                thing->setStateValue(analogInputInputValueStateTypeId, value);
-                thing->setStateValue(analogInputPercentageStateTypeId, value*10);
-                return;
-            }
-        }
+    Thing *thing = m_extensionChildByCircuit.value(m_neuronExtensions.key(neuronExtension)).value(circuit);
+    if (thing) {
+        thing->setStateValue(analogInputInputValueStateTypeId, value);
+        thing->setStateValue(analogInputPercentageStateTypeId, value * 10);
     }
 }
 
 void IntegrationPluginUniPi::onNeuronExtensionAnalogOutputStatusChanged(const QString &circuit, double value)
 {
     auto neuronExtension = static_cast<NeuronExtension *>(sender());
-
-    foreach(Thing *thing, myThings().filterByParentId(m_neuronExtensions.key(neuronExtension))) {
-        if (thing->thingClassId() == analogOutputThingClassId) {
-            if (thing->paramValue(analogOutputThingCircuitParamTypeId).toString() == circuit) {
-
-                thing->setStateValue(analogOutputOutputValueStateTypeId, value);
-                thing->setStateValue(analogOutputPercentageStateTypeId, value*10);
-                return;
-            }
-        }
+    Thing *thing = m_extensionChildByCircuit.value(m_neuronExtensions.key(neuronExtension)).value(circuit);
+    if (thing) {
+        thing->setStateValue(analogOutputOutputValueStateTypeId, value);
+        thing->setStateValue(analogOutputPercentageStateTypeId, value * 10);
     }
 }
 
@@ -1035,7 +1005,7 @@ void IntegrationPluginUniPi::onNeuronExtensionConnectionStateChanged(bool state)
     auto neuron = static_cast<NeuronExtension *>(sender());
     Thing *thing = myThings().findById(m_neuronExtensions.key(neuron));
     if (!thing) {
-        qCWarning(dcUniPi()) << "Could not find any Thing associated to NeuronExtension obejct";
+        qCWarning(dcUniPi()) << "Could not find any Thing associated to NeuronExtension object";
         return;
     }
     qCDebug(dcUniPi()) << "Neuron extension connection state changed" << thing->name() << state;

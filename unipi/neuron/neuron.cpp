@@ -31,18 +31,19 @@
 #include "neuron.h"
 #include "extern-plugininfo.h"
 
-#include <QFile>
+#include <QByteArray>
 #include <QDir>
-#include <QTextStream>
-#include <QStandardPaths>
-#include <QDirIterator>
 #include <QElapsedTimer>
+
+#include <errno.h>
+#include <fcntl.h>
+#include <string.h>
+#include <unistd.h>
+#include <utility>
 
 Neuron::Neuron(QObject *parent) : QThread{parent}
 {
     qCDebug(dcUniPi()) << "Neuron: Creating Neuron connection";
-    m_pollingTimer = new QTimer(this);
-    m_outputPollingTimer = new QTimer(this);
 }
 
 Neuron::~Neuron()
@@ -64,57 +65,46 @@ bool Neuron::init()
         return false;
     }
 
-    foreach (auto circuit, m_relayOutputs.keys()) {
-        // In case of re-init, cleaning up relay outputs
-        m_relayOutputs.take(circuit)->deleteLater();
-    }
-    qCDebug(dcUniPi()) << "Neuron: Discover all relay outputs";
+    const auto cleanup = [](auto &hash) {
+        for (auto circuit : hash.keys())
+            hash.take(circuit)->deleteLater();
+    };
 
-    foreach(auto circuit, sysFsDir.entryList({"RO*"}, QDir::NoFilter, QDir::SortFlag::Name)) {
-        NeuronDigitalOutput *relay = new NeuronDigitalOutput(circuit, NeuronDigitalOutput::OutputTypeRelay, this);
+    cleanup(m_relayOutputs);
+    qCDebug(dcUniPi()) << "Neuron: Discover all relay outputs";
+    foreach (auto circuit, sysFsDir.entryList({"RO*"}, QDir::NoFilter, QDir::SortFlag::Name)) {
+        NeuronDigitalOutput *relay = new NeuronDigitalOutput(circuit, this);
         connect(relay, &NeuronDigitalOutput::valueChanged, this, &Neuron::relayOutputStatusChanged);
         m_relayOutputs.insert(circuit, relay);
     }
 
-    foreach(auto circuit, m_digitalOutputs.keys()) {
-        // Cleaning up digital outputs
-        m_digitalOutputs.take(circuit)->deleteLater();
-    }
+    cleanup(m_digitalOutputs);
     qCDebug(dcUniPi()) << "Neuron: Discover all digital outputs";
-    foreach(auto circuit, sysFsDir.entryList({"DO*"}, QDir::NoFilter, QDir::SortFlag::Name)) {
-        NeuronDigitalOutput *output = new NeuronDigitalOutput(circuit, NeuronDigitalOutput::OutputTypeDigital, this);
+    foreach (auto circuit, sysFsDir.entryList({"DO*"}, QDir::NoFilter, QDir::SortFlag::Name)) {
+        NeuronDigitalOutput *output = new NeuronDigitalOutput(circuit, this);
         connect(output, &NeuronDigitalOutput::valueChanged, this, &Neuron::digitalOutputStatusChanged);
         m_digitalOutputs.insert(circuit, output);
     }
 
-    foreach(auto circuit, m_digitalInputs.keys()) {
-        // Cleaning up digital inputs
-        m_digitalInputs.take(circuit)->deleteLater();
-    }
+    cleanup(m_digitalInputs);
     qCDebug(dcUniPi()) << "Neuron: Discover all digital inputs";
-    foreach(auto circuit, sysFsDir.entryList({"DI*"}, QDir::NoFilter, QDir::SortFlag::Name)) {
+    foreach (auto circuit, sysFsDir.entryList({"DI*"}, QDir::NoFilter, QDir::SortFlag::Name)) {
         NeuronDigitalInput *input = new NeuronDigitalInput(circuit, this);
         connect(input, &NeuronDigitalInput::valueChanged, this, &Neuron::digitalInputStatusChanged);
         m_digitalInputs.insert(circuit, input);
     }
 
-    foreach (auto circuit, m_analogInputs.keys()) {
-        // Cleaning up analog inputs
-        m_analogInputs.take(circuit)->deleteLater();
-    }
+    cleanup(m_analogInputs);
     qCDebug(dcUniPi()) << "Neuron: Discover all analog inputs";
-    foreach(auto circuit, sysFsDir.entryList({"AI*"}, QDir::NoFilter, QDir::SortFlag::Name)) {
+    foreach (auto circuit, sysFsDir.entryList({"AI*"}, QDir::NoFilter, QDir::SortFlag::Name)) {
         NeuronAnalogInput *input = new NeuronAnalogInput(circuit, this);
         connect(input, &NeuronAnalogInput::valueChanged, this, &Neuron::analogInputStatusChanged);
         m_analogInputs.insert(circuit, input);
     }
 
-    foreach (auto circuit, m_analogOutputs.keys()) {
-        // Cleaning up analog outputs
-        m_analogOutputs.take(circuit)->deleteLater();
-    }
+    cleanup(m_analogOutputs);
     qCDebug(dcUniPi()) << "Neuron: Discover all analog outputs";
-    foreach(auto circuit, sysFsDir.entryList({"AO*"}, QDir::NoFilter, QDir::SortFlag::Name)) {
+    foreach (auto circuit, sysFsDir.entryList({"AO*"}, QDir::NoFilter, QDir::SortFlag::Name)) {
         NeuronAnalogOutput *output = new NeuronAnalogOutput(circuit, this);
         connect(output, &NeuronAnalogOutput::valueChanged, this, &Neuron::analogOutputStatusChanged);
         m_analogOutputs.insert(circuit, output);
@@ -123,40 +113,46 @@ bool Neuron::init()
 }
 
 void Neuron::run()
-{  
-    QElapsedTimer timer;
-    timer.start();
-    int m_pollingCounter = 0;
-    while (1) {
-        m_pollingCounter++;
+{
+    QElapsedTimer cycleTimer;
+    QElapsedTimer statsTimer;
+    statsTimer.start();
+    int cycleCounter = 0;
+    int analogDividerCounter = 0;
 
-        foreach (auto output, m_relayOutputs) {
+    while (!isInterruptionRequested()) {
+        cycleTimer.start();
+
+        for (NeuronDigitalOutput *output : std::as_const(m_relayOutputs))
             output->getValue();
-        }
-        foreach (auto input, m_digitalInputs) {
+        for (NeuronDigitalInput *input : std::as_const(m_digitalInputs))
             input->getValue();
-        }
-
-        foreach (auto output, m_digitalOutputs) {
+        for (NeuronDigitalOutput *output : std::as_const(m_digitalOutputs))
             output->getValue();
+
+        // Analog inputs change slowly compared to the digital polling rate,
+        // so sample them once every c_analogPollDivider cycles.
+        if (analogDividerCounter == 0) {
+            for (NeuronAnalogInput *input : std::as_const(m_analogInputs))
+                input->getValue();
+        }
+        analogDividerCounter = (analogDividerCounter + 1) % c_analogPollDivider;
+
+        cycleCounter++;
+        if (cycleCounter >= 100) {
+            qCDebug(dcUniPi()) << "Neuron polling cycle interval"
+                               << statsTimer.elapsed() / cycleCounter << "milliseconds";
+            statsTimer.restart();
+            cycleCounter = 0;
         }
 
-        foreach (auto input, m_analogInputs) {
-            input->getValue(); //Dont mind the value
-        }
-
-        if (isInterruptionRequested()) {
-            qCDebug(dcUniPi()) << "Interrupt requested";
-            return;
-        }
-        msleep(50);
-
-        if (m_pollingCounter > 100) {
-            qCDebug(dcUniPi()) << "Neuron polling cycle interval" << timer.elapsed()/100 << "milliseconds";
-            timer.restart();
-            m_pollingCounter = 0;
-        }
+        // Monotonic cycle deadline: sleep only the remainder of this cycle,
+        // so a slow iteration does not stretch the next one.
+        const qint64 elapsed = cycleTimer.elapsed();
+        if (elapsed < c_cycleIntervalMs)
+            msleep(c_cycleIntervalMs - elapsed);
     }
+    qCDebug(dcUniPi()) << "Neuron: Polling thread stopped";
 }
 
 QList<QString> Neuron::relayOutputs()
@@ -188,7 +184,7 @@ bool Neuron::setRelayOutput(const QString &circuit, bool value)
 {
     NeuronDigitalOutput *relay = m_relayOutputs.value(circuit);
     if (!relay) {
-        qCDebug(dcUniPi()) << "Neuron: Relay" << circuit << "not available";
+        qCWarning(dcUniPi()) << "Neuron: Relay" << circuit << "not available";
         return false;
     }
     relay->setValue(value);
@@ -199,7 +195,7 @@ bool Neuron::setDigitalOutput(const QString &circuit, bool value)
 {
     NeuronDigitalOutput *output = m_digitalOutputs.value(circuit);
     if (!output) {
-        qCDebug(dcUniPi()) << "Neuron: Digital output" << circuit << "not available";
+        qCWarning(dcUniPi()) << "Neuron: Digital output" << circuit << "not available";
         return false;
     }
     output->setValue(value);
@@ -208,11 +204,12 @@ bool Neuron::setDigitalOutput(const QString &circuit, bool value)
 
 bool Neuron::setAnalogOutput(const QString &circuit, double value)
 {
-    if (!m_analogOutputs.contains(circuit)) {
-        qCWarning(dcUniPi()) << "Neuron: Analog output circuit not found" << circuit;
+    NeuronAnalogOutput *output = m_analogOutputs.value(circuit);
+    if (!output) {
+        qCWarning(dcUniPi()) << "Neuron: Analog output" << circuit << "not available";
         return false;
     }
-    m_analogOutputs.value(circuit)->setValue(value);
+    output->setValue(value);
     return true;
 }
 
@@ -220,37 +217,55 @@ NeuronIO::NeuronIO(QObject *parent) : QObject(parent)
 {
 }
 
-bool NeuronIO::isAvailable()
+NeuronIO::~NeuronIO()
 {
-    return m_valueFile.exists();
+    if (m_fd >= 0) {
+        ::close(m_fd);
+        m_fd = -1;
+    }
+}
+
+bool NeuronIO::isAvailable() const
+{
+    return m_fd >= 0;
 }
 
 QString NeuronIO::directory() const
 {
-    return m_valueFile.fileName();
+    return m_filePath;
+}
+
+bool NeuronIO::openPath(const QString &path, int flags)
+{
+    m_filePath = path;
+    m_fd = ::open(path.toLocal8Bit().constData(), flags | O_CLOEXEC);
+    if (m_fd < 0) {
+        qCWarning(dcUniPi()) << "NeuronIO: Could not open" << path << ":" << strerror(errno);
+        return false;
+    }
+    return true;
 }
 
 NeuronDigitalInput::NeuronDigitalInput(const QString &circuit, QObject *parent) : NeuronIO{parent}
 {
     m_circuit = circuit;
-    QString fileName = m_unipiSysFsDir;
-    fileName.append(circuit);
-    fileName.append("/value");
-    qCDebug(dcUniPi()) << "NeuronDigitalInput: File name" << fileName;
-    m_valueFile.setFileName(fileName);
-
-    if (!m_valueFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qCWarning(dcUniPi()) << "NeuronDigitalInput: Could not open value file:" << m_valueFile.errorString();
-        return;
-    }
+    openPath(m_unipiSysFsDir + circuit + "/value", O_RDONLY);
+    qCDebug(dcUniPi()) << "NeuronDigitalInput: File name" << m_filePath;
 }
 
 bool NeuronDigitalInput::getValue()
 {
-    char value;
-    m_valueFile.read(&value, 1);
-    m_valueFile.seek(0);
-    bool bValue = (value == '1');
+    if (m_fd < 0)
+        return m_currentValue;
+
+    char value = 0;
+    const ssize_t n = ::pread(m_fd, &value, 1, 0);
+    if (n != 1) {
+        qCWarning(dcUniPi()) << "NeuronDigitalInput: Read failed for" << m_circuit << ":" << strerror(errno);
+        return m_currentValue;
+    }
+
+    const bool bValue = (value == '1');
     if (m_currentValue != bValue) {
         m_currentValue = bValue;
         emit valueChanged(m_circuit, bValue);
@@ -258,41 +273,39 @@ bool NeuronDigitalInput::getValue()
     return bValue;
 }
 
-NeuronDigitalOutput::NeuronDigitalOutput(const QString &circuit, OutputType outputType, QObject *parent) : NeuronIO{parent}
+NeuronDigitalOutput::NeuronDigitalOutput(const QString &circuit, QObject *parent) : NeuronIO{parent}
 {
     m_circuit = circuit;
-    QString fileName = m_unipiSysFsDir;
-    switch (outputType) {
-    case OutputTypeRelay:
-        fileName.append(circuit);
-        break;
-    case OutputTypeDigital:
-        fileName.append(circuit);
-        break;
-    }
-    fileName.append("/value");
-    qCDebug(dcUniPi()) << "NeuronDigitalOutput: File name" << fileName;
-    m_valueFile.setFileName(fileName);
-
-    if (!m_valueFile.open(QIODevice::ReadWrite | QIODevice::Text)) {
-        qCWarning(dcUniPi()) << "NeuronDigitalOutput: Could not open value file:" << m_valueFile.errorString();
-        return;
-    }
+    openPath(m_unipiSysFsDir + circuit + "/value", O_RDWR);
+    qCDebug(dcUniPi()) << "NeuronDigitalOutput: File name" << m_filePath;
 }
 
 void NeuronDigitalOutput::setValue(bool value)
 {
-    qCDebug(dcUniPi()) << "NeuronDigitalOutput: Set value" << value << "to" << directory();
-    QTextStream out(&m_valueFile);
-    out << (value ? "1" : "0");
+    if (m_fd < 0) {
+        qCWarning(dcUniPi()) << "NeuronDigitalOutput: Not initialized, cannot set value for" << m_circuit;
+        return;
+    }
+    qCDebug(dcUniPi()) << "NeuronDigitalOutput: Set value" << value << "to" << m_filePath;
+    const char payload = value ? '1' : '0';
+    const ssize_t n = ::pwrite(m_fd, &payload, 1, 0);
+    if (n != 1)
+        qCWarning(dcUniPi()) << "NeuronDigitalOutput: Write failed for" << m_circuit << ":" << strerror(errno);
 }
 
 bool NeuronDigitalOutput::getValue()
 {
-    char value;
-    m_valueFile.read(&value, 1);
-    m_valueFile.seek(0);
-    bool bValue = (value == '1');
+    if (m_fd < 0)
+        return m_currentValue;
+
+    char value = 0;
+    const ssize_t n = ::pread(m_fd, &value, 1, 0);
+    if (n != 1) {
+        qCWarning(dcUniPi()) << "NeuronDigitalOutput: Read failed for" << m_circuit << ":" << strerror(errno);
+        return m_currentValue;
+    }
+
+    const bool bValue = (value == '1');
     if (m_currentValue != bValue) {
         m_currentValue = bValue;
         emit valueChanged(m_circuit, bValue);
@@ -303,25 +316,24 @@ bool NeuronDigitalOutput::getValue()
 NeuronAnalogOutput::NeuronAnalogOutput(const QString &circuit, QObject *parent) : NeuronIO(parent)
 {
     m_circuit = circuit;
-    QString fileName = m_unipiSysFsDir;
-    fileName.append(circuit);
-    fileName.append("/out_voltage_raw");
-
-    qCDebug(dcUniPi()) << "NeuronAnalogOutput: File name" << fileName;
-    m_valueFile.setFileName(fileName);
-
-    if (!m_valueFile.open(QIODevice::ReadWrite | QIODevice::Text)) {
-        qCWarning(dcUniPi()) << "NeuronAnalogOutput: Could not open value file:" << m_valueFile.errorString();
-        return;
-    }
+    openPath(m_unipiSysFsDir + circuit + "/out_voltage_raw", O_WRONLY);
+    qCDebug(dcUniPi()) << "NeuronAnalogOutput: File name" << m_filePath;
 }
 
 void NeuronAnalogOutput::setValue(double value)
 {
-    qCDebug(dcUniPi()) << "NeuronAnalogOutput: Set value" << value << "to" << directory();
-    m_valueFile.seek(0);
-    QTextStream out(&m_valueFile);
-    out << value*1000;
+    if (m_fd < 0) {
+        qCWarning(dcUniPi()) << "NeuronAnalogOutput: Not initialized, cannot set value for" << m_circuit;
+        return;
+    }
+    qCDebug(dcUniPi()) << "NeuronAnalogOutput: Set value" << value << "to" << m_filePath;
+    const QByteArray payload = QByteArray::number(value * 1000);
+    const ssize_t n = ::pwrite(m_fd, payload.constData(), payload.size(), 0);
+    if (n != payload.size()) {
+        qCWarning(dcUniPi()) << "NeuronAnalogOutput: Write failed for" << m_circuit << ":" << strerror(errno);
+        return;
+    }
+
     if (m_currentValue != value) {
         m_currentValue = value;
         emit valueChanged(m_circuit, value);
@@ -331,37 +343,32 @@ void NeuronAnalogOutput::setValue(double value)
 NeuronAnalogInput::NeuronAnalogInput(const QString &circuit, QObject *parent) : NeuronIO(parent)
 {
     m_circuit = circuit;
-    QString fileName = m_unipiSysFsDir;
-    fileName.append(circuit);
-    fileName.append("/in_voltage_input");
-
-    qCDebug(dcUniPi()) << "NeuronAnalogInput: File name" << fileName;
-    m_valueFile.setFileName(fileName);
-
-    if (!m_valueFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qCWarning(dcUniPi()) << "NeuronAnalogInput: Could not open value file:" << m_valueFile.errorString();
-        return;
-    }
+    openPath(m_unipiSysFsDir + circuit + "/in_voltage_input", O_RDONLY);
+    qCDebug(dcUniPi()) << "NeuronAnalogInput: File name" << m_filePath;
 }
 
 double NeuronAnalogInput::getValue()
 {
-    if (!m_valueFile.isReadable()) {
-        qCWarning(dcUniPi()) << "NeuronAnalogInput: File is not readable" << m_valueFile;
-        return 0;
+    if (m_fd < 0)
+        return m_currentValue;
+
+    char buf[32];
+    const ssize_t n = ::pread(m_fd, buf, sizeof(buf) - 1, 0);
+    if (n < 0) {
+        qCWarning(dcUniPi()) << "NeuronAnalogInput: Read failed for" << m_circuit << ":" << strerror(errno);
+        return m_currentValue;
     }
-    QByteArray array = m_valueFile.readAll();
-    m_valueFile.seek(0);
 
     bool ok;
-    double voltage = QString::fromLocal8Bit(array).trimmed().toDouble(&ok)/1000.00;
+    double voltage = QByteArray(buf, static_cast<int>(n)).trimmed().toDouble(&ok) / 1000.0;
     if (!ok) {
-        qCWarning(dcUniPi()) << "NeuronAnalogInput: Could not parse analog input value";
-        return 0;
+        qCWarning(dcUniPi()) << "NeuronAnalogInput: Could not parse value for" << m_circuit
+                             << ":" << QByteArray(buf, static_cast<int>(n));
+        return m_currentValue;
     }
-    voltage = (voltage<0) ? 0 : voltage;
+    voltage = qMax(voltage, 0.0);
 
-    if (m_currentValue != voltage) {
+    if (!qFuzzyCompare(m_currentValue, voltage)) {
         m_currentValue = voltage;
         emit valueChanged(m_circuit, voltage);
     }

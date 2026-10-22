@@ -32,29 +32,32 @@
 #define NEURON_H
 
 #include <QThread>
-#include <QMutex>
-
 #include <QObject>
 #include <QHash>
-#include <QTimer>
-#include <QUuid>
-#include <QFile>
-#include <QSocketNotifier>
 
+// Base class for a single unipi sysfs I/O endpoint. Each instance owns a raw
+// file descriptor for its /value (or similar) node. All I/O goes through
+// pread(2)/pwrite(2) at offset 0, which are atomic with respect to the file
+// position; there is no shared seek offset between concurrent readers and
+// writers, so no mutex is needed to make the polling thread safe against
+// writes from the main thread.
 class NeuronIO : public QObject
 {
     Q_OBJECT
 
 public:
     explicit NeuronIO(QObject *parent = nullptr);
+    ~NeuronIO() override;
 
-    bool isAvailable();
+    bool isAvailable() const;
     QString directory() const;
 
 protected:
+    bool openPath(const QString &path, int flags);
+
     QString m_circuit;
-    QFile m_valueFile;
-    QSocketNotifier *m_notifier = nullptr;
+    QString m_filePath;
+    int m_fd = -1;
     const QString m_unipiSysFsDir = "/run/unipi-plc/by-sys/";
 };
 
@@ -62,13 +65,7 @@ class NeuronDigitalOutput : public NeuronIO
 {
     Q_OBJECT
 public:
-
-    enum OutputType {
-        OutputTypeDigital,
-        OutputTypeRelay
-    };
-    Q_ENUM(OutputType)
-    explicit NeuronDigitalOutput(const QString &circuit, OutputType outputType = OutputTypeDigital, QObject *parent = nullptr);
+    explicit NeuronDigitalOutput(const QString &circuit, QObject *parent = nullptr);
 
     void setValue(bool value);
     bool getValue();
@@ -89,7 +86,7 @@ public:
     bool getValue();
 
 private:
-   bool m_currentValue = false;
+    bool m_currentValue = false;
 
 signals:
     void valueChanged(const QString &circuit, bool value);
@@ -104,7 +101,7 @@ public:
     double getValue();
 
 private:
-    double m_currentValue = 0.00;
+    double m_currentValue = 0.0;
 
 signals:
     void valueChanged(const QString &circuit, double value);
@@ -119,7 +116,7 @@ public:
     void setValue(double value);
 
 private:
-    double m_currentValue = 0.00;
+    double m_currentValue = 0.0;
 
 signals:
     void valueChanged(const QString &circuit, double value);
@@ -131,10 +128,9 @@ class Neuron : public QThread
 public:
 
     explicit Neuron(QObject *parent = nullptr);
-    ~Neuron();
+    ~Neuron() override;
 
     bool init();
-    void startPolling(uint milliseconds = 200);
 
     QList<QString> digitalInputs();
     QList<QString> relayOutputs();
@@ -150,12 +146,13 @@ protected:
     void run() override;
 
 private:
-    QMutex m_valueMutex;
-    QMutex m_stopMutex;
-
-    QTimer *m_pollingTimer = nullptr;
-    QTimer *m_outputPollingTimer = nullptr;
     const QString m_unipiSysFsDir = "/run/unipi-plc/by-sys/";
+
+    // Base cycle for digital I/O polling, in milliseconds.
+    static constexpr int c_cycleIntervalMs = 50;
+    // Poll analog inputs every N cycles. 10 × 50 ms = 500 ms is plenty for
+    // 0-10 V inputs that physically can't change that fast.
+    static constexpr int c_analogPollDivider = 10;
 
     QHash<QString, NeuronDigitalOutput *> m_relayOutputs;
     QHash<QString, NeuronDigitalOutput *> m_digitalOutputs;

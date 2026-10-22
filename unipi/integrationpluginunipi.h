@@ -72,6 +72,13 @@ private:
     QHash<ThingClassId, QString> m_neuronMigration;
     QHash<ThingClassId, QString> m_neuronExtensionMigration;
 
+    // Fast lookup caches used by the status-change slots to avoid a
+    // myThings() filter + linear circuit comparison on every I/O event.
+    // Populated in postSetupThing() and torn down in thingRemoved().
+    Thing *m_neuronThing = nullptr;
+    QHash<QString /*circuit*/, Thing *> m_neuronChildByCircuit;
+    QHash<ThingId /*extensionId*/, QHash<QString /*circuit*/, Thing *>> m_extensionChildByCircuit;
+
 private slots:
     void onNeuronRelayOutputStatusChanged(const QString &circuit, bool value);
     void onNeuronDigitalInputStatusChanged(const QString &circuit, bool value);
