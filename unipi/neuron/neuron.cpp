@@ -39,7 +39,6 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
-#include <utility>
 
 Neuron::Neuron(QObject *parent) : QThread{parent}
 {
@@ -65,12 +64,8 @@ bool Neuron::init()
         return false;
     }
 
-    const auto cleanup = [](auto &hash) {
-        for (auto circuit : hash.keys())
-            hash.take(circuit)->deleteLater();
-    };
-
-    cleanup(m_relayOutputs);
+    foreach (auto circuit, m_relayOutputs.keys())
+        m_relayOutputs.take(circuit)->deleteLater();
     qCDebug(dcUniPi()) << "Neuron: Discover all relay outputs";
     foreach (auto circuit, sysFsDir.entryList({"RO*"}, QDir::NoFilter, QDir::SortFlag::Name)) {
         NeuronDigitalOutput *relay = new NeuronDigitalOutput(circuit, this);
@@ -78,7 +73,8 @@ bool Neuron::init()
         m_relayOutputs.insert(circuit, relay);
     }
 
-    cleanup(m_digitalOutputs);
+    foreach (auto circuit, m_digitalOutputs.keys())
+        m_digitalOutputs.take(circuit)->deleteLater();
     qCDebug(dcUniPi()) << "Neuron: Discover all digital outputs";
     foreach (auto circuit, sysFsDir.entryList({"DO*"}, QDir::NoFilter, QDir::SortFlag::Name)) {
         NeuronDigitalOutput *output = new NeuronDigitalOutput(circuit, this);
@@ -86,7 +82,8 @@ bool Neuron::init()
         m_digitalOutputs.insert(circuit, output);
     }
 
-    cleanup(m_digitalInputs);
+    foreach (auto circuit, m_digitalInputs.keys())
+        m_digitalInputs.take(circuit)->deleteLater();
     qCDebug(dcUniPi()) << "Neuron: Discover all digital inputs";
     foreach (auto circuit, sysFsDir.entryList({"DI*"}, QDir::NoFilter, QDir::SortFlag::Name)) {
         NeuronDigitalInput *input = new NeuronDigitalInput(circuit, this);
@@ -94,7 +91,8 @@ bool Neuron::init()
         m_digitalInputs.insert(circuit, input);
     }
 
-    cleanup(m_analogInputs);
+    foreach (auto circuit, m_analogInputs.keys())
+        m_analogInputs.take(circuit)->deleteLater();
     qCDebug(dcUniPi()) << "Neuron: Discover all analog inputs";
     foreach (auto circuit, sysFsDir.entryList({"AI*"}, QDir::NoFilter, QDir::SortFlag::Name)) {
         NeuronAnalogInput *input = new NeuronAnalogInput(circuit, this);
@@ -102,7 +100,8 @@ bool Neuron::init()
         m_analogInputs.insert(circuit, input);
     }
 
-    cleanup(m_analogOutputs);
+    foreach (auto circuit, m_analogOutputs.keys())
+        m_analogOutputs.take(circuit)->deleteLater();
     qCDebug(dcUniPi()) << "Neuron: Discover all analog outputs";
     foreach (auto circuit, sysFsDir.entryList({"AO*"}, QDir::NoFilter, QDir::SortFlag::Name)) {
         NeuronAnalogOutput *output = new NeuronAnalogOutput(circuit, this);
@@ -123,17 +122,17 @@ void Neuron::run()
     while (!isInterruptionRequested()) {
         cycleTimer.start();
 
-        for (NeuronDigitalOutput *output : std::as_const(m_relayOutputs))
+        for (NeuronDigitalOutput *output : qAsConst(m_relayOutputs))
             output->getValue();
-        for (NeuronDigitalInput *input : std::as_const(m_digitalInputs))
+        for (NeuronDigitalInput *input : qAsConst(m_digitalInputs))
             input->getValue();
-        for (NeuronDigitalOutput *output : std::as_const(m_digitalOutputs))
+        for (NeuronDigitalOutput *output : qAsConst(m_digitalOutputs))
             output->getValue();
 
         // Analog inputs change slowly compared to the digital polling rate,
         // so sample them once every c_analogPollDivider cycles.
         if (analogDividerCounter == 0) {
-            for (NeuronAnalogInput *input : std::as_const(m_analogInputs))
+            for (NeuronAnalogInput *input : qAsConst(m_analogInputs))
                 input->getValue();
         }
         analogDividerCounter = (analogDividerCounter + 1) % c_analogPollDivider;
