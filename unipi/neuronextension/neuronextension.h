@@ -141,6 +141,10 @@ private:
     QHash<int, RegisterDescriptor> m_modbusAnalogOutputRegisters;
     QHash<QString, int> m_modbusAnalogOutputConfigurationRegisters;
     QHash<QString, int> m_modbusAnalogInputConfigurationRegisters;
+    QHash<int, QString> m_modbusDigitalInputCounterRegisters; // address of low word -> DI circuit
+
+    int m_registerPollStart = -1;
+    int m_registerPollLength = 0;
 
     int m_slaveAddress = 0;
     uint m_responseTimeoutTime = 2000;
@@ -152,6 +156,8 @@ private:
     QHash<QString, uint16_t> m_previousDigitalOutputValue;
     QHash<QString, uint16_t> m_previousRelayOutputValue;
     QHash<QString, uint32_t> m_previousAnalogInputValue;
+    QHash<QString, quint32> m_previousCounterValue;
+    QHash<QString, bool> m_counterBaseline; // true once first counter sample is stored
 
     bool loadModbusMap();
     bool circuitValueChanged(const QString &circuit, quint32 value);
@@ -159,6 +165,7 @@ private:
     void getCoils();
     void getRegisters();
     void sendWriteRequest(const NeuronExtensionRequest &request);
+    void synthesizeDigitalInputPress(const QString &circuit);
 
 signals:
     void connectionStateChanged(bool state);

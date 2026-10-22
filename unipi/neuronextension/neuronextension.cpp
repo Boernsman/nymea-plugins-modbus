@@ -44,8 +44,10 @@ NeuronExtension::NeuronExtension(ExtensionTypes extensionType, NeuronExtensionBu
     qCDebug(dcUniPi()) << "NeuronExtension: Creating extension" << extensionType;
     connect(m_neuronExtensionBus, &NeuronExtensionBus::connectedChanged, this, [this] (bool connected) {
         if (connected) {
+            // Re-baseline the DI counters so increments accumulated while the
+            // bus was down don't fire a burst of synthetic presses.
+            m_counterBaseline.clear();
             getCoils();
-            getRegisters();
         }
         emit connectionStateChanged(connected);
     });
@@ -258,12 +260,41 @@ bool NeuronExtension::loadModbusMap()
                 } else if (list[5].contains("Analog Output Value", Qt::CaseSensitivity::CaseInsensitive)) {
                     m_modbusAnalogOutputRegisters.insert(modbusAddress, registerDescriptorFromStringList(list));
                     qDebug(dcUniPi()) << "NeuronExtension: Found analog output register" << modbusAddress;
+                } else if (list[5].contains("Counter of Digital Input", Qt::CaseSensitivity::CaseInsensitive)) {
+                    QString circuit = "DI" + list[5].split(" ").last();
+                    m_modbusDigitalInputCounterRegisters.insert(modbusAddress, circuit);
+                    qDebug(dcUniPi()) << "NeuronExtension: Found DI counter register" << modbusAddress << "for" << circuit;
                 }
             }
         }
         csvFile->close();
         csvFile->deleteLater();
     }
+
+    // Compute a single contiguous register-read range that covers both the
+    // analog registers and the digital-input edge counters. Reading in one
+    // range keeps the per-cycle bus turnaround down even when the window
+    // contains a few unused holes (e.g. the gap between address 13 and 15 on
+    // the xS50/xS51).
+    int rangeMin = -1;
+    int rangeMax = -1;
+    auto track = [&](int addr, int count) {
+        if (count <= 0) count = 1;
+        if (rangeMin < 0 || addr < rangeMin) rangeMin = addr;
+        if (addr + count - 1 > rangeMax) rangeMax = addr + count - 1;
+    };
+    foreach (int addr, m_modbusAnalogInputRegisters.keys())
+        track(addr, m_modbusAnalogInputRegisters.value(addr).count);
+    foreach (int addr, m_modbusDigitalInputCounterRegisters.keys())
+        track(addr, 2);
+    if (rangeMin >= 0) {
+        m_registerPollStart = rangeMin;
+        m_registerPollLength = rangeMax - rangeMin + 1;
+    } else {
+        m_registerPollStart = -1;
+        m_registerPollLength = 0;
+    }
+    qCDebug(dcUniPi()) << "NeuronExtension: Register poll range start" << m_registerPollStart << "length" << m_registerPollLength;
     return true;
 }
 
@@ -419,23 +450,12 @@ void NeuronExtension::getCoils()
 
 void NeuronExtension::getRegisters()
 {
-    uint8_t start, length;
+    if (m_extensionType == Unknown)
+        return;
+    if (m_registerPollStart < 0 || m_registerPollLength <= 0)
+        return;
 
-    switch (m_extensionType) {
-    case xS10:
-    case xS30:
-    case xS40:
-    case xS11:
-        return;
-    case xS50:
-    case xS51:
-        start = 2;
-        length = 12;
-        break;
-    case Unknown:
-        return;
-    }
-    NeuronExtensionRequest request(NeuronExtensionRegisterType::RegisterTypeRegisters, m_slaveAddress, start, length);
+    NeuronExtensionRequest request(NeuronExtensionRegisterType::RegisterTypeRegisters, m_slaveAddress, m_registerPollStart, m_registerPollLength);
     auto *reply = m_neuronExtensionBus->sendRequest(request);
     if (reply->isFinished()) {
         onReplyFinished(reply);
@@ -446,6 +466,17 @@ void NeuronExtension::getRegisters()
             onReplyFinished(reply);
         });
     }
+}
+
+void NeuronExtension::synthesizeDigitalInputPress(const QString &circuit)
+{
+    // The hardware counter latched an edge that we did not observe in the coil
+    // state (press shorter than the poll cycle). Reproduce a press pulse so
+    // state-change based automations still fire.
+    emit digitalInputStatusChanged(circuit, true);
+    QTimer::singleShot(1, this, [this, circuit] {
+        emit digitalInputStatusChanged(circuit, false);
+    });
 }
 
 void NeuronExtension::sendWriteRequest(const NeuronExtensionRequest &request)
@@ -540,8 +571,37 @@ void NeuronExtension::onReplyFinished(NeuronExtensionReply *reply)
                     emit analogInputStatusChanged(circuit, value);
                 }
 
+            } else if (m_modbusDigitalInputCounterRegisters.contains(modbusAddress)) {
+                circuit = m_modbusDigitalInputCounterRegisters.value(modbusAddress);
+                if (i + 1 >= data.length()) {
+                    qCWarning(dcUniPi()) << "NeuronExtension: Received DI counter, but value count is too short";
+                    break;
+                }
+                // DWord layout matches the analog Real/DWord: high word first.
+                quint32 value = (static_cast<quint32>(data.value(i)) << 16) | data.value(i + 1);
+                i++;
+                if (!m_counterBaseline.value(circuit, false)) {
+                    // First sample after startup or reconnect — don't fire for
+                    // whatever counter the hardware already held.
+                    m_previousCounterValue.insert(circuit, value);
+                    m_counterBaseline.insert(circuit, true);
+                } else if (value != m_previousCounterValue.value(circuit)) {
+                    quint32 previous = m_previousCounterValue.value(circuit);
+                    m_previousCounterValue.insert(circuit, value);
+                    // Reset / decrement wraparound — treat as a single edge
+                    // rather than millions of synthetic presses.
+                    quint32 delta = (value > previous) ? (value - previous) : 1;
+                    // Only synthesize an edge if the coil state did not already
+                    // observe the press (level still low). If the coil read
+                    // caught the press we have already emitted the real edge.
+                    if (m_previousDigitalInputValue.value(circuit, 0) == 0) {
+                        for (quint32 k = 0; k < delta && k < 4; ++k)
+                            synthesizeDigitalInputPress(circuit);
+                    }
+                }
             } else {
-                qCWarning(dcUniPi()) << "NeuronExtension: Received unrecognised input register" << modbusAddress;
+                // Register inside the poll range but not mapped — ignore
+                // silently (e.g. the gap at address 14 on xS50/xS51).
             }
             break;
         }
@@ -549,13 +609,18 @@ void NeuronExtension::onReplyFinished(NeuronExtensionReply *reply)
     }
 
     if (reply->registerType() == RegisterTypeCoils) {
-        QTimer::singleShot(180, this, [this] {
+        // Chain: coils -> registers (counters + analog) -> wait -> coils.
+        if (m_registerPollStart >= 0 && m_registerPollLength > 0) {
+            getRegisters();
+        } else {
+            QTimer::singleShot(50, this, [this] {
+                getCoils();
+            });
+        }
+    } else {
+        QTimer::singleShot(50, this, [this] {
             getCoils();
         });
-    } else {
-        /*QTimer::singleShot(180, this, [this] {
-            getRegisters();
-        });*/
     }
     m_watchdog->start(); //restart watchdog timer;
 
