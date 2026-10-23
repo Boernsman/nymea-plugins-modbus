@@ -942,6 +942,9 @@ void IntegrationPluginUniPi::onNeuronAnalogInputStatusChanged(const QString &cir
 {
     Thing *thing = m_neuronChildByCircuit.value(circuit);
     if (thing) {
+        double currentValue = thing->stateValue(analogInputInputValueStateTypeId).toDouble();
+        if (qAbs(currentValue - value) < 0.1)
+            return;
         thing->setStateValue(analogInputInputValueStateTypeId, value);
         thing->setStateValue(analogInputPercentageStateTypeId, value * 10);
     }
@@ -985,6 +988,9 @@ void IntegrationPluginUniPi::onNeuronExtensionAnalogInputStatusChanged(const QSt
     auto neuronExtension = static_cast<NeuronExtension *>(sender());
     Thing *thing = m_extensionChildByCircuit.value(m_neuronExtensions.key(neuronExtension)).value(circuit);
     if (thing) {
+        double currentValue = thing->stateValue(analogInputInputValueStateTypeId).toDouble();
+        if (qAbs(currentValue - value) < 0.1)
+            return;
         thing->setStateValue(analogInputInputValueStateTypeId, value);
         thing->setStateValue(analogInputPercentageStateTypeId, value * 10);
     }
@@ -1037,6 +1043,9 @@ void IntegrationPluginUniPi::onUniPiAnalogInputStatusChanged(const QString &circ
 {
     foreach(Thing *thing, myThings().filterByThingClassId(analogInputThingClassId)) {
         if (thing->paramValue(analogInputThingCircuitParamTypeId).toString() == circuit) {
+            double currentValue = thing->stateValue(analogInputInputValueStateTypeId).toDouble();
+            if (qAbs(currentValue - value) < 0.1)
+                return;
             thing->setStateValue(analogInputInputValueStateTypeId, value);
             thing->setStateValue(analogInputPercentageStateTypeId, value*10);
             return;
