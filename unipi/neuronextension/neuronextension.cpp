@@ -42,18 +42,9 @@ NeuronExtension::NeuronExtension(ExtensionTypes extensionType, NeuronExtensionBu
     m_neuronExtensionBus(neuronExtensionBus)
 {
     qCDebug(dcUniPi()) << "NeuronExtension: Creating extension" << extensionType;
-    connect(m_neuronExtensionBus, &NeuronExtensionBus::connectedChanged, this, [this] (bool connected) {
-        if (connected) {
-            // Re-baseline the DI counters so increments accumulated while the
-            // bus was down don't fire a burst of synthetic presses.
-            m_counterBaseline.clear();
-            // Defer: the bus emits connectedChanged from inside a synchronous
-            // read/write, so calling sendRequest directly here would recurse
-            // back into the bus and grow the stack on every flap.
-            QTimer::singleShot(0, this, [this] { getCoils(); });
-        }
-        emit connectionStateChanged(connected);
-    });
+    // Per-slave reachability is tracked in onReplyFinished off this extension's
+    // own reply outcomes. The shared bus can't distinguish slaves, so there is
+    // no bus-level connected signal to subscribe to.
 
     switch (extensionType) {
     case xS10: {
@@ -185,9 +176,9 @@ bool NeuronExtension::loadModbusMap()
             csvFile->deleteLater();
             return false;
         }
-        QTextStream *textStream = new QTextStream(csvFile);
-        while (!textStream->atEnd()) {
-            QString line = textStream->readLine();
+        QTextStream textStream(csvFile);
+        while (!textStream.atEnd()) {
+            QString line = textStream.readLine();
             QStringList list = line.split(',');
             if (list.length() <= 4) {
                 qCWarning(dcUniPi()) << "NeuronExtension: currupted CSV file:" << csvFile->fileName();
@@ -244,9 +235,9 @@ bool NeuronExtension::loadModbusMap()
             csvFile->deleteLater();
             return false;
         }
-        QTextStream *textStream = new QTextStream(csvFile);
-        while (!textStream->atEnd()) {
-            QString line = textStream->readLine();
+        QTextStream textStream(csvFile);
+        while (!textStream.atEnd()) {
+            QString line = textStream.readLine();
             QStringList list = line.split(',');
             if (list.length() <= 5) {
                 qCWarning(dcUniPi()) << "NeuronExtension: Currupted CSV file:" << csvFile->fileName();
@@ -418,6 +409,10 @@ void NeuronExtension::getDeviceInformation()
     qCDebug(dcUniPi()) << "NeuronExtension: Get device information";
     NeuronExtensionRequest request(NeuronExtensionRegisterType::RegisterTypeRegisters, m_slaveAddress, 1000, 7, false);
     auto *reply = m_neuronExtensionBus->sendRequest(request);
+    if (!reply) {
+        qCWarning(dcUniPi()) << "NeuronExtension: Device information request returned no reply";
+        return;
+    }
     if (reply->isFinished()) {
         onDeviceInformationReplyFinished(reply);
         reply->deleteLater();
@@ -457,6 +452,10 @@ void NeuronExtension::getCoils()
     }
     NeuronExtensionRequest request(NeuronExtensionRegisterType::RegisterTypeCoils, m_slaveAddress, 0, length);
     auto *reply = m_neuronExtensionBus->sendRequest(request);
+    if (!reply) {
+        qCWarning(dcUniPi()) << "NeuronExtension: getCoils request returned no reply";
+        return;
+    }
     if (reply->isFinished()) {
         onReplyFinished(reply);
         reply->deleteLater();
@@ -477,6 +476,10 @@ void NeuronExtension::getRegisters()
 
     NeuronExtensionRequest request(NeuronExtensionRegisterType::RegisterTypeRegisters, m_slaveAddress, m_registerPollStart, m_registerPollLength);
     auto *reply = m_neuronExtensionBus->sendRequest(request);
+    if (!reply) {
+        qCWarning(dcUniPi()) << "NeuronExtension: getRegisters request returned no reply";
+        return;
+    }
     if (reply->isFinished()) {
         onReplyFinished(reply);
         reply->deleteLater();
@@ -527,6 +530,20 @@ void NeuronExtension::onReplyFinished(NeuronExtensionReply *reply)
 {
     if (reply->slaveAddress() != m_slaveAddress) {
         return;
+    }
+
+    // Track per-slave reachability off our own reply outcomes. The underlying
+    // bus is shared across slaves and cannot distinguish them; a sibling slave
+    // being down must not flip our connection state.
+    const bool replyOk = (reply->error() == NeuronExtensionReply::ErrorNoError);
+    if (replyOk != m_slaveConnected) {
+        m_slaveConnected = replyOk;
+        if (replyOk) {
+            // Re-baseline the DI counters so increments accumulated while the
+            // slave was unreachable don't fire a burst of synthetic presses.
+            m_counterBaseline.clear();
+        }
+        emit connectionStateChanged(replyOk);
     }
 
     QVector<uint16_t> data = reply->result();

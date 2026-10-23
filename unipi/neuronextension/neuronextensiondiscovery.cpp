@@ -31,7 +31,10 @@
 #include "neuronextensiondiscovery.h"
 #include "extern-plugininfo.h"
 
-NeuronExtensionDiscovery::NeuronExtensionDiscovery(NeuronExtensionBus *neuronExtensionBus, int startAddress, int endAddress) :
+#include <QTimer>
+
+NeuronExtensionDiscovery::NeuronExtensionDiscovery(NeuronExtensionBus *neuronExtensionBus, int startAddress, int endAddress, QObject *parent) :
+    QObject(parent),
     m_neuronExtensionBus(neuronExtensionBus),
     m_startAddress(startAddress),
     m_endAddress(endAddress)
@@ -65,6 +68,12 @@ void NeuronExtensionDiscovery::getNext(int address)
     qCDebug(dcUniPi()) << "NeuronExtensionDiscovery: get next" << address;
     NeuronExtensionRequest request(NeuronExtensionRegisterType::RegisterTypeRegisters, address, 1000, 7, false);
     auto *reply = m_neuronExtensionBus->sendRequest(request);
+    if (!reply) {
+        qCWarning(dcUniPi()) << "NeuronExtensionDiscovery: Discovery probe returned no reply";
+        m_discoveryOngoing = false;
+        emit finished(m_discoveredExtensions);
+        return;
+    }
     if (reply->isFinished()) {
         processResponse(reply);
         reply->deleteLater();
@@ -125,10 +134,18 @@ void NeuronExtensionDiscovery::processResponse(NeuronExtensionReply *reply)
     }
     if (reply->slaveAddress() >= m_endAddress) {
         m_discoveryOngoing = false;
-        qCWarning(dcUniPi()) << "NeuronExtensionDiscovery: Discovery finished, found" << m_discoveredExtensions.count() << "devices";
+        qCDebug(dcUniPi()) << "NeuronExtensionDiscovery: Discovery finished, found" << m_discoveredExtensions.count() << "devices";
         emit finished(m_discoveredExtensions);
     } else {
-        if (m_discoveryOngoing)
-            getNext(m_sweepingAddress);
+        if (m_discoveryOngoing) {
+            // Defer the next probe to the event loop. The bus runs synchronously,
+            // so a direct recursive call here would stack-grow across the full
+            // sweep window and block the thread for the whole sweep duration.
+            const int next = m_sweepingAddress;
+            QTimer::singleShot(0, this, [this, next] {
+                if (m_discoveryOngoing)
+                    getNext(next);
+            });
+        }
     }
 }

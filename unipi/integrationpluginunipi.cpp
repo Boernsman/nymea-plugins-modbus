@@ -34,6 +34,7 @@
 #include "hardwaremanager.h"
 
 #include <QJsonDocument>
+#include <QSharedPointer>
 #include <QTimer>
 #include <QSerialPort>
 
@@ -349,12 +350,38 @@ void IntegrationPluginUniPi::discoverThings(ThingDiscoveryInfo *info)
         return info->finish(Thing::ThingErrorNoError);
     } else if (thingClassId == neuronExtensionThingClassId) {
 
-        for (NeuronExtensionBus *neuronExtensionBus: m_neuronExtensionBus.values()) {
+        const auto buses = m_neuronExtensionBus.values();
+        if (buses.isEmpty()) {
+            return info->finish(Thing::ThingErrorNoError);
+        }
+
+        // Shared coordinator across per-bus discoveries. We finish info as soon
+        // as every bus's sweep has emitted finished(), with the 9 s deadline as
+        // a hard upper bound. The flag ensures finish() runs at most once and
+        // deviceFound lambdas firing after the finish quietly skip adding to a
+        // closed info.
+        auto remaining = QSharedPointer<int>::create(buses.count());
+        auto finishedFlag = QSharedPointer<bool>::create(false);
+        auto finishOnce = [info, finishedFlag] (const char *reason) {
+            if (*finishedFlag)
+                return;
+            *finishedFlag = true;
+            qCDebug(dcUniPi()) << "Neuron extension discovery:" << reason;
+            info->finish(Thing::ThingErrorNoError);
+        };
+
+        for (NeuronExtensionBus *neuronExtensionBus: buses) {
 
             auto extensionDiscovery = new NeuronExtensionDiscovery(neuronExtensionBus);
             connect(info, &ThingDiscoveryInfo::destroyed, extensionDiscovery, &NeuronExtensionDiscovery::deleteLater);
-            connect(extensionDiscovery, &NeuronExtensionDiscovery::finished, extensionDiscovery, &NeuronExtensionDiscovery::deleteLater);
-            connect(extensionDiscovery, &NeuronExtensionDiscovery::deviceFound, info, [info, neuronExtensionBus, this] (int address, NeuronExtension::ExtensionTypes model) {
+            connect(extensionDiscovery, &NeuronExtensionDiscovery::finished, info, [extensionDiscovery, remaining, finishOnce] {
+                extensionDiscovery->deleteLater();
+                if (--(*remaining) <= 0)
+                    finishOnce("all buses complete");
+            });
+            connect(extensionDiscovery, &NeuronExtensionDiscovery::deviceFound, info, [info, neuronExtensionBus, finishedFlag, this] (int address, NeuronExtension::ExtensionTypes model) {
+                if (*finishedFlag)
+                    return; // deadline fired, info is closed
 
                 QString modelString = NeuronExtension::stringFromType(model);
                 qCDebug(dcUniPi()) << "Neuron extension discovered" << model << "address" << address;
@@ -381,9 +408,8 @@ void IntegrationPluginUniPi::discoverThings(ThingDiscoveryInfo *info)
             });
             extensionDiscovery->startDiscovery();
         }
-        QTimer::singleShot(9000, info, [info] {
-            qCDebug(dcUniPi()) << "Discovery finished";
-            info->finish(Thing::ThingErrorNoError);
+        QTimer::singleShot(9000, info, [finishOnce] {
+            finishOnce("deadline reached");
         });
         return;
     } else {

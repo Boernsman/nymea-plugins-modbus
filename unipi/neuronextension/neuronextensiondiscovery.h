@@ -39,7 +39,7 @@ class NeuronExtensionDiscovery : public QObject
 {
     Q_OBJECT
 public:
-    NeuronExtensionDiscovery(NeuronExtensionBus *neuronExtensionBus, int startAddress = 1, int endAddress = 7);
+    NeuronExtensionDiscovery(NeuronExtensionBus *neuronExtensionBus, int startAddress = 1, int endAddress = 7, QObject *parent = nullptr);
 
     bool startDiscovery();
     void stopDiscovery();

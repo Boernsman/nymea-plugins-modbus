@@ -34,7 +34,6 @@
 #include "modbus/modbus.h"
 
 #include <QObject>
-#include <QUuid>
 #include <QTimer>
 #include <QVector>
 
@@ -52,7 +51,6 @@ public:
     bool init();
 
     bool connected();
-    QUuid busId();
     QString serialPort() const;
 
     NeuronExtensionReply *sendRequest(const NeuronExtensionRequest &request);
@@ -62,17 +60,12 @@ private:
     modbus_t *m_modbus = nullptr;
     bool m_connected = false;
 
-    void setConnected(bool connected);
-
     QVector<uint8_t> readCoils(int slaveAddress, int startAddres, int count);
     QVector<uint16_t> readRegisters(int slaveAddress, int startAddres, int count);
 
     bool writeCoils(int slaveAddress, int startAddres, const QVector<uint16_t> &data);
     bool writeRegisters(int slaveAddress, int startAddres, const QVector<uint16_t> &data);
 
-signals:
-    void connectedChanged(bool connected);
-    void requestExecuted();
 };
 
 

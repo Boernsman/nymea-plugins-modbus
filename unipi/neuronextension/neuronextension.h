@@ -36,8 +36,6 @@
 #include <QObject>
 #include <QHash>
 #include <QTimer>
-#include <QUuid>
-#include <QElapsedTimer>
 
 class OutputRegisters;
 
@@ -81,7 +79,6 @@ public:
     };
 
     bool init();
-    void startPolling(uint milliseconds = 200);
     int slaveAddress();
     void setSlaveAddress(int slaveAddress);
 
@@ -111,9 +108,7 @@ public:
 
 private:
     ExtensionTypes m_extensionType = ExtensionTypes::xS10;
-    QElapsedTimer m_elapsedTimer;
-    int m_readRequestCounter = 0; //Needed to calculate the average read request response time
-    int m_averageTime = 0;
+    bool m_slaveConnected = true; // Thing state after setup is "connected"; first failed reply flips to false
 
     enum RWPermission {
         RWPermissionNone,
@@ -169,8 +164,6 @@ private:
 
 signals:
     void connectionStateChanged(bool state);
-    void requestExecuted(const QUuid &requestId, bool success);
-    void requestError(const QUuid &requestId, const QString &error);
 
     void deviceInformationReceived(NeuronExtension::DeviceInformation info);
 

@@ -87,14 +87,6 @@ bool NeuronExtensionBus::connected()
     return m_connected;
 }
 
-void NeuronExtensionBus::setConnected(bool connected)
-{
-    if (m_connected == connected)
-        return;
-    m_connected = connected;
-    emit connectedChanged(m_connected);
-}
-
 QString NeuronExtensionBus::serialPort() const
 {
     return m_serialPort;
@@ -165,9 +157,7 @@ QVector<uint8_t> NeuronExtensionBus::readCoils(int slaveAddress, int startAddres
         QVector<uint8_t> values(count);
         if (modbus_read_bits(m_modbus, startAddres, values.length(), values.data()) == -1) {
             qCDebug(dcUniPi()) << "NeuronExtensionBus: Could not read coils" << modbus_strerror(errno);
-            setConnected(false);
         } else {
-            setConnected(true);
             return values;
         }
     }
@@ -192,9 +182,7 @@ QVector<uint16_t> NeuronExtensionBus::readRegisters(int slaveAddress, int startA
         QVector<uint16_t> values(count);
         if (modbus_read_registers(m_modbus, startAddres, values.length(), values.data()) == -1) {
             qCDebug(dcUniPi()) << "NeuronExtensionBus: Could not read registers" << modbus_strerror(errno);
-            setConnected(false);
         } else {
-            setConnected(true);
             return values;
         }
     }
@@ -222,17 +210,14 @@ bool NeuronExtensionBus::writeCoils(int slaveAddress, int startAddress, const QV
     if (data.length() == 1) {
         if (modbus_write_bit(m_modbus, startAddress, writeData.first()) == -1){
             qCWarning(dcUniPi()) << "Could not write single coil" << modbus_strerror(errno);
-            setConnected(false);
             return false;
         }
     } else {
         if (modbus_write_bits(m_modbus, startAddress,  data.length(), writeData.data()) == -1) {
             qCWarning(dcUniPi()) << "Could not write coil" << modbus_strerror(errno);
-            setConnected(false);
             return false;
         }
     }
-    setConnected(true);
     return true;
 }
 
@@ -249,16 +234,13 @@ bool NeuronExtensionBus::writeRegisters(int slaveAddress, int startAddress, cons
     if (data.length() == 1) {
         if (modbus_write_register(m_modbus, startAddress, data.first()) == -1){
             qCWarning(dcUniPi()) << "Could not write single coil" << modbus_strerror(errno);
-            setConnected(false);
             return false;
         }
     } else {
         if (modbus_write_registers(m_modbus, startAddress,  data.length(), data.data()) == -1) {
             qCWarning(dcUniPi()) << "Could not write coil" << modbus_strerror(errno);
-            setConnected(false);
             return false;
         }
     }
-    setConnected(true);
     return true;
 }
