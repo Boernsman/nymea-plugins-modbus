@@ -98,7 +98,10 @@ NeuronExtension::NeuronExtension(ExtensionTypes extensionType, NeuronExtensionBu
 NeuronExtension::~NeuronExtension()
 {
     qCDebug(dcUniPi()) << "NeuronExtension: Deleting extension" << m_extensionType;
-    m_watchdog->stop();
+    // m_watchdog is only created once the switch over extensionType completes
+    // past the Unknown early-return in the constructor.
+    if (m_watchdog)
+        m_watchdog->stop();
 }
 
 bool NeuronExtension::init()
@@ -368,14 +371,28 @@ NeuronExtension::RegisterDescriptor NeuronExtension::registerDescriptorFromStrin
     return descriptor;
 }
 
-void NeuronExtension::setRelayOutput(const QString &circuit, bool value)
+bool NeuronExtension::setRelayOutput(const QString &circuit, bool value)
 {
-    m_modbusRelayOutputRegisters->setValue(circuit, value?1:0);
+    if (!m_modbusRelayOutputRegisters->containsCircuit(circuit)) {
+        qCWarning(dcUniPi()) << "NeuronExtension: Relay" << circuit << "not available";
+        return false;
+    }
+    // Update the local cache first so the group write carries the new value
+    // and the next poll's delta check does not race a stale cache against the
+    // hardware. The write is issued immediately instead of deferring to the
+    // next poll cycle, so user commands reach the slave without a cycle lag.
+    m_modbusRelayOutputRegisters->setValue(circuit, value ? 1 : 0);
+    return sendWriteRequest(m_modbusRelayOutputRegisters->createWriteRequest(m_slaveAddress));
 }
 
-void NeuronExtension::setDigitalOutput(const QString &circuit, bool value)
+bool NeuronExtension::setDigitalOutput(const QString &circuit, bool value)
 {
-    m_modbusDigitalOutputRegisters->setValue(circuit, value?1:0);
+    if (!m_modbusDigitalOutputRegisters->containsCircuit(circuit)) {
+        qCWarning(dcUniPi()) << "NeuronExtension: Digital output" << circuit << "not available";
+        return false;
+    }
+    m_modbusDigitalOutputRegisters->setValue(circuit, value ? 1 : 0);
+    return sendWriteRequest(m_modbusDigitalOutputRegisters->createWriteRequest(m_slaveAddress));
 }
 
 void NeuronExtension::setAnalogOutput(const QString &circuit, double value)
@@ -479,20 +496,28 @@ void NeuronExtension::synthesizeDigitalInputPress(const QString &circuit)
     });
 }
 
-void NeuronExtension::sendWriteRequest(const NeuronExtensionRequest &request)
+bool NeuronExtension::sendWriteRequest(const NeuronExtensionRequest &request)
 {
     auto *reply = m_neuronExtensionBus->sendRequest(request);
+    if (!reply) {
+        qCWarning(dcUniPi()) << "NeuronExtension: Write request to slave" << request.slaveAddress() << "returned no reply";
+        return false;
+    }
+    const bool success = reply->isFinished() && reply->error() == NeuronExtensionReply::ErrorNoError;
+    if (!success) {
+        qCWarning(dcUniPi()) << "NeuronExtension: Write request to slave" << request.slaveAddress()
+                             << "startAddress" << request.startAddress()
+                             << "length" << request.values().length()
+                             << "failed";
+    }
     if (reply->isFinished()) {
         reply->deleteLater();
     } else {
+        // Defensive: the current bus implementation finishes replies
+        // synchronously, so this branch is effectively unreachable today.
         connect(reply, &NeuronExtensionReply::finished, reply, &NeuronExtensionReply::deleteLater);
-        connect(reply, &NeuronExtensionReply::finished, this, [reply] {
-            if (reply->error() != NeuronExtensionReply::ErrorNoError) {
-                qCDebug(dcUniPi()) << "Could not send write request";
-            }
-            //TODO send again and add error counter
-        });
     }
+    return success;
 }
 
 void NeuronExtension::onReplyFinished(NeuronExtensionReply *reply)

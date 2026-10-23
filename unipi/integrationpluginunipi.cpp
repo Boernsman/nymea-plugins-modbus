@@ -733,7 +733,9 @@ void IntegrationPluginUniPi::executeAction(ThingActionInfo *info)
                 if (!neuronExtension) {
                     return info->finish(Thing::ThingErrorHardwareFailure);
                 }
-                neuronExtension->setRelayOutput(relayOutputNumber, stateValue);
+                if (!neuronExtension->setRelayOutput(relayOutputNumber, stateValue)) {
+                    return info->finish(Thing::ThingErrorHardwareFailure);
+                }
                 return info->finish(Thing::ThingErrorNoError);
             }
         } else {
@@ -772,7 +774,9 @@ void IntegrationPluginUniPi::executeAction(ThingActionInfo *info)
                 if (!neuronExtension) {
                     return info->finish(Thing::ThingErrorHardwareFailure);
                 }
-                neuronExtension->setDigitalOutput(digitalOutputNumber, stateValue);
+                if (!neuronExtension->setDigitalOutput(digitalOutputNumber, stateValue)) {
+                    return info->finish(Thing::ThingErrorHardwareFailure);
+                }
                 return info->finish(Thing::ThingErrorNoError);
             }
         } else {
@@ -895,7 +899,20 @@ void IntegrationPluginUniPi::thingRemoved(Thing *thing)
         m_extensionChildByCircuit.remove(thing->id());
         m_neuronExtensions.take(thing->id())->deleteLater();
     } else if (m_neuronExtensionBus.contains(thing->id())) {
-        m_neuronExtensionBus.take(thing->id())->deleteLater();
+        // Tear down any extensions still bound to this bus first — their
+        // m_neuronExtensionBus pointer would otherwise dangle, and the watchdog
+        // or in-flight poll would call sendRequest() on the freed modbus_t*.
+        const ThingId busId = thing->id();
+        foreach (Thing *extensionThing, myThings().filterByThingClassId(neuronExtensionThingClassId)) {
+            const ThingId extensionBusId = ThingId(extensionThing->paramValue(neuronExtensionThingNeuronExtensionBusUuidParamTypeId).toUuid());
+            if (extensionBusId != busId)
+                continue;
+            if (m_neuronExtensions.contains(extensionThing->id())) {
+                m_extensionChildByCircuit.remove(extensionThing->id());
+                m_neuronExtensions.take(extensionThing->id())->deleteLater();
+            }
+        }
+        m_neuronExtensionBus.take(busId)->deleteLater();
     } else if (classId == neuronThingClassId) {
         m_neuronThing = nullptr;
         m_neuronChildByCircuit.clear();

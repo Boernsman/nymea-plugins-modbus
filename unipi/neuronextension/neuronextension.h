@@ -91,8 +91,8 @@ public:
     QList<QString> analogInputs();
     QList<QString> analogOutputs();
 
-    void setRelayOutput(const QString &circuit, bool value);
-    void setDigitalOutput(const QString &circuit, bool value);
+    bool setRelayOutput(const QString &circuit, bool value);
+    bool setDigitalOutput(const QString &circuit, bool value);
     void setAnalogOutput(const QString &circuit, double value);
 
     bool relayOutputValue(const QString &circuit);
@@ -164,7 +164,7 @@ private:
 
     void getCoils();
     void getRegisters();
-    void sendWriteRequest(const NeuronExtensionRequest &request);
+    bool sendWriteRequest(const NeuronExtensionRequest &request);
     void synthesizeDigitalInputPress(const QString &circuit);
 
 signals:
