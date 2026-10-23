@@ -169,7 +169,7 @@ bool NeuronExtension::loadModbusMap()
 
     foreach (QString relativeFilePath, fileCoilList) {
         QString absoluteFilePath = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation).last() + "/nymea/modbus" + relativeFilePath;
-        qDebug(dcUniPi()) << "NeuronExtension: Open CSV File:" << absoluteFilePath;
+        qCDebug(dcUniPi()) << "NeuronExtension: Open CSV File:" << absoluteFilePath;
         QFile *csvFile = new QFile(absoluteFilePath);
         if (!csvFile->open(QIODevice::ReadOnly | QIODevice::Text)) {
             qCWarning(dcUniPi()) << csvFile->errorString() << absoluteFilePath;
@@ -189,13 +189,13 @@ bool NeuronExtension::loadModbusMap()
                 QString circuit = list[3].split(" ").last();
                 if (list[3].contains("Digital Input", Qt::CaseSensitivity::CaseInsensitive)) {
                     m_modbusDigitalInputRegisters.insert("DI"+circuit, list[0].toInt());
-                    qDebug(dcUniPi()) << "NeuronExtension: Found input register" << circuit << list[0].toInt();
+                    qCDebug(dcUniPi()) << "NeuronExtension: Found input register" << circuit << list[0].toInt();
                 } else if (list[3].contains("Digital Output", Qt::CaseSensitivity::CaseInsensitive)) {
                     m_modbusDigitalOutputRegisters->insert("DO"+circuit, list[0].toInt());
-                    qDebug(dcUniPi()) << "NeuronExtension: Found output register" << circuit << list[0].toInt();
+                    qCDebug(dcUniPi()) << "NeuronExtension: Found output register" << circuit << list[0].toInt();
                 } else if (list[3].contains("Relay Output", Qt::CaseSensitivity::CaseInsensitive)) {
                     m_modbusRelayOutputRegisters->insert("RO"+circuit, list[0].toInt());
-                    qDebug(dcUniPi()) << "NeuronExtension: Found relay register" << circuit << list[0].toInt();
+                    qCDebug(dcUniPi()) << "NeuronExtension: Found relay register" << circuit << list[0].toInt();
                 }
             }
         }
@@ -228,7 +228,7 @@ bool NeuronExtension::loadModbusMap()
 
     foreach (QString relativeFilePath, fileRegisterList) {
         QString absoluteFilePath = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation).last() + "/nymea/modbus" + relativeFilePath;
-        qDebug(dcUniPi()) << "NeuronExtension: Open CSV File:" << absoluteFilePath;
+        qCDebug(dcUniPi()) << "NeuronExtension: Open CSV File:" << absoluteFilePath;
         QFile *csvFile = new QFile(absoluteFilePath);
         if (!csvFile->open(QIODevice::ReadOnly | QIODevice::Text)) {
             qCWarning(dcUniPi()) << csvFile->errorString() << absoluteFilePath;
@@ -253,14 +253,14 @@ bool NeuronExtension::loadModbusMap()
                 int modbusAddress = list[0].toInt();
                 if (list[5].contains("Analog Input Value", Qt::CaseSensitivity::CaseInsensitive)) {
                     m_modbusAnalogInputRegisters.insert(modbusAddress, registerDescriptorFromStringList(list));
-                    qDebug(dcUniPi()) << "NeuronExtension: Found analog input register" << modbusAddress;
+                    qCDebug(dcUniPi()) << "NeuronExtension: Found analog input register" << modbusAddress;
                 } else if (list[5].contains("Analog Output Value", Qt::CaseSensitivity::CaseInsensitive)) {
                     m_modbusAnalogOutputRegisters.insert(modbusAddress, registerDescriptorFromStringList(list));
-                    qDebug(dcUniPi()) << "NeuronExtension: Found analog output register" << modbusAddress;
+                    qCDebug(dcUniPi()) << "NeuronExtension: Found analog output register" << modbusAddress;
                 } else if (list[5].contains("Counter of Digital Input", Qt::CaseSensitivity::CaseInsensitive)) {
                     QString circuit = "DI" + list[5].split(" ").last();
                     m_modbusDigitalInputCounterRegisters.insert(modbusAddress, circuit);
-                    qDebug(dcUniPi()) << "NeuronExtension: Found DI counter register" << modbusAddress << "for" << circuit;
+                    qCDebug(dcUniPi()) << "NeuronExtension: Found DI counter register" << modbusAddress << "for" << circuit;
                 }
             }
         }
@@ -391,17 +391,17 @@ bool NeuronExtension::setDigitalOutput(const QString &circuit, bool value)
 
 void NeuronExtension::setAnalogOutput(const QString &circuit, double value)
 {
-    qDebug(dcUniPi()) << "NeuronExtension: Set analog output" << circuit << value;
+    qCDebug(dcUniPi()) << "NeuronExtension: Set analog output" << circuit << value;
 }
 
 void NeuronExtension::setAnalogOutputConfiguration(const QString &circuit, AnalogIOConfiguration value)
 {
-    qDebug(dcUniPi()) << "NeuronExtension: Set analog output configuration" << circuit << value;
+    qCDebug(dcUniPi()) << "NeuronExtension: Set analog output configuration" << circuit << value;
 }
 
 void NeuronExtension::setAnalogInputConfiguration(const QString &circuit, AnalogIOConfiguration value)
 {
-    qDebug(dcUniPi()) << "NeuronExtension: Set analog input configuration" << circuit << value;
+    qCDebug(dcUniPi()) << "NeuronExtension: Set analog input configuration" << circuit << value;
 }
 
 void NeuronExtension::getDeviceInformation()
@@ -589,7 +589,9 @@ void NeuronExtension::onReplyFinished(NeuronExtensionReply *reply)
                     emit relayOutputStatusChanged(circuit, (data.value(i) != 0));
                 }
             } else {
-                qCWarning(dcUniPi()) << "NeuronExtension: Received unrecognised coil register" << modbusAddress;
+                // Coils inside the hardcoded read window but not in the CSV
+                // mapping (e.g. the hardcoded 24-coil read for xS10 covers a
+                // few unmapped tail addresses). Not actionable; stay quiet.
             }
             break;
         }

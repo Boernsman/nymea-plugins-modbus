@@ -65,7 +65,6 @@ void NeuronExtensionDiscovery::stopDiscovery()
 
 void NeuronExtensionDiscovery::getNext(int address)
 {
-    qCDebug(dcUniPi()) << "NeuronExtensionDiscovery: get next" << address;
     NeuronExtensionRequest request(NeuronExtensionRegisterType::RegisterTypeRegisters, address, 1000, 7, false);
     auto *reply = m_neuronExtensionBus->sendRequest(request);
     if (!reply) {
@@ -87,8 +86,6 @@ void NeuronExtensionDiscovery::getNext(int address)
 
 void NeuronExtensionDiscovery::processResponse(NeuronExtensionReply *reply)
 {
-     qCDebug(dcUniPi()) << "NeuronExtensionDiscovery: process response";
-
     if (reply->slaveAddress() == m_sweepingAddress) {
         m_sweepingAddress = reply->slaveAddress()+1;
     } else if (reply->slaveAddress() < m_sweepingAddress){
@@ -100,35 +97,34 @@ void NeuronExtensionDiscovery::processResponse(NeuronExtensionReply *reply)
     if (reply->error() == NeuronExtensionReply::Error::ErrorNoError) {
         QVector<quint16> result = reply->result();
         if (result.length() == 7) {
-            qCDebug(dcUniPi()) << "NeuronExtensionDiscovery: Found Extension";
-            qCDebug(dcUniPi()) << "     - Serial port" << m_neuronExtensionBus->serialPort();
-            qCDebug(dcUniPi()) << "     - Slave Address" << reply->slaveAddress();
-            qCDebug(dcUniPi()) << "     - Hardware Id" << result[4];
-            qCDebug(dcUniPi()) << "     - Serial number" << (static_cast<quint32>(result[6])<<16 | result[5]);
+            const int hwId = result[4];
+            const quint32 serial = (static_cast<quint32>(result[6]) << 16) | result[5];
 
             NeuronExtension::ExtensionTypes model = NeuronExtension::ExtensionTypes::Unknown;
-            if (result[4] == 1) {
+            if (hwId == 1) {
                 model = NeuronExtension::ExtensionTypes::xS10;
-            } else if (result[4] == 784) {
+            } else if (hwId == 784) {
                 model = NeuronExtension::ExtensionTypes::xS30;
-            } else if (result[4] == 528) {
+            } else if (hwId == 528) {
                 model = NeuronExtension::ExtensionTypes::xS40;
-            } else if (result[4] == 5) {
+            } else if (hwId == 5) {
                 model = NeuronExtension::ExtensionTypes::xS50;
-            } else if (result[4] == 272) {
+            } else if (hwId == 272) {
                 model = NeuronExtension::ExtensionTypes::xS11;
-            } else if (result[4] == 273) {
+            } else if (hwId == 273) {
                 model = NeuronExtension::ExtensionTypes::xS51;
-            } else {
-                qCWarning(dcUniPi()) << "NeuronExtensionDiscovery: Neuron extension model unknown";
             }
 
             if (model != NeuronExtension::ExtensionTypes::Unknown) {
-                qCDebug(dcUniPi()) << "     - Model" << model;
+                qCDebug(dcUniPi()) << "NeuronExtensionDiscovery: Found" << NeuronExtension::stringFromType(model)
+                                   << "at slave" << reply->slaveAddress()
+                                   << "on" << m_neuronExtensionBus->serialPort()
+                                   << "(serial" << serial << ")";
                 m_discoveredExtensions.insert(reply->slaveAddress(), model);
                 emit deviceFound(reply->slaveAddress(), model);
             } else {
-                qCWarning(dcUniPi()) << "NeuronExtensionDiscovery: Skipping unknown Neuron extension model";
+                qCWarning(dcUniPi()) << "NeuronExtensionDiscovery: Unknown Neuron extension model, hwId"
+                                     << hwId << "at slave" << reply->slaveAddress();
             }
         }
     }

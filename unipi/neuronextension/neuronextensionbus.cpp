@@ -167,7 +167,6 @@ QVector<uint8_t> NeuronExtensionBus::readCoils(int slaveAddress, int startAddres
 
 QVector<uint16_t> NeuronExtensionBus::readRegisters(int slaveAddress, int startAddres, int count)
 {
-    qCDebug(dcUniPi()) << "NeuronExtensionBus: read registers, slave address:" << slaveAddress << "start address" << startAddres << "count" << count;
     if (!m_modbus) {
         return QVector<uint16_t>();
     }
@@ -192,7 +191,6 @@ QVector<uint16_t> NeuronExtensionBus::readRegisters(int slaveAddress, int startA
 
 bool NeuronExtensionBus::writeCoils(int slaveAddress, int startAddress, const QVector<uint16_t> &data)
 {
-    qCDebug(dcUniPi()) << "NeuronExtensionBus: Write coils" << slaveAddress << startAddress << data.length();
     if (!m_modbus) {
         return false;
     }
@@ -209,12 +207,12 @@ bool NeuronExtensionBus::writeCoils(int slaveAddress, int startAddress, const QV
 
     if (data.length() == 1) {
         if (modbus_write_bit(m_modbus, startAddress, writeData.first()) == -1){
-            qCWarning(dcUniPi()) << "Could not write single coil" << modbus_strerror(errno);
+            qCDebug(dcUniPi()) << "NeuronExtensionBus: Could not write coil to slave" << slaveAddress << modbus_strerror(errno);
             return false;
         }
     } else {
         if (modbus_write_bits(m_modbus, startAddress,  data.length(), writeData.data()) == -1) {
-            qCWarning(dcUniPi()) << "Could not write coil" << modbus_strerror(errno);
+            qCDebug(dcUniPi()) << "NeuronExtensionBus: Could not write coils to slave" << slaveAddress << modbus_strerror(errno);
             return false;
         }
     }
@@ -223,7 +221,6 @@ bool NeuronExtensionBus::writeCoils(int slaveAddress, int startAddress, const QV
 
 bool NeuronExtensionBus::writeRegisters(int slaveAddress, int startAddress, const QVector<uint16_t> &data)
 {
-    qCDebug(dcUniPi()) << "NeuronExtensionBus: Write registers" << slaveAddress << startAddress << data.length();
     if (!m_modbus) {
         return false;
     }
@@ -233,12 +230,12 @@ bool NeuronExtensionBus::writeRegisters(int slaveAddress, int startAddress, cons
 
     if (data.length() == 1) {
         if (modbus_write_register(m_modbus, startAddress, data.first()) == -1){
-            qCWarning(dcUniPi()) << "Could not write single coil" << modbus_strerror(errno);
+            qCDebug(dcUniPi()) << "NeuronExtensionBus: Could not write register to slave" << slaveAddress << modbus_strerror(errno);
             return false;
         }
     } else {
         if (modbus_write_registers(m_modbus, startAddress,  data.length(), data.data()) == -1) {
-            qCWarning(dcUniPi()) << "Could not write coil" << modbus_strerror(errno);
+            qCDebug(dcUniPi()) << "NeuronExtensionBus: Could not write registers to slave" << slaveAddress << modbus_strerror(errno);
             return false;
         }
     }
