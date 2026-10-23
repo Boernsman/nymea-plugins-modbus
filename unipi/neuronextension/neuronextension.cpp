@@ -47,7 +47,10 @@ NeuronExtension::NeuronExtension(ExtensionTypes extensionType, NeuronExtensionBu
             // Re-baseline the DI counters so increments accumulated while the
             // bus was down don't fire a burst of synthetic presses.
             m_counterBaseline.clear();
-            getCoils();
+            // Defer: the bus emits connectedChanged from inside a synchronous
+            // read/write, so calling sendRequest directly here would recurse
+            // back into the bus and grow the stack on every flap.
+            QTimer::singleShot(0, this, [this] { getCoils(); });
         }
         emit connectionStateChanged(connected);
     });

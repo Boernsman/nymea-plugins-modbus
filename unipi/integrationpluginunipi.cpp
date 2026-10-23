@@ -531,12 +531,28 @@ void IntegrationPluginUniPi::setupThing(ThingSetupInfo *info)
         connect(neuronExtension, &NeuronExtension::analogOutputStatusChanged, this, &IntegrationPluginUniPi::onNeuronExtensionAnalogOutputStatusChanged);
 
         connect(info, &ThingSetupInfo::aborted, neuronExtension, &NeuronExtension::deleteLater);
-        connect(neuronExtension, &NeuronExtension::deviceInformationReceived, info, [info, neuronExtension, this] {
+
+        // Bound the setup wait: the extension emits deviceInformationReceived
+        // only on a well-formed reply. An unreachable slave or malformed reply
+        // would otherwise leave setup stuck in setupInProgress forever.
+        auto *setupTimeout = new QTimer(info);
+        setupTimeout->setSingleShot(true);
+        setupTimeout->setInterval(3000);
+        connect(setupTimeout, &QTimer::timeout, info, [info, neuronExtension] {
+            qCWarning(dcUniPi()) << "Neuron extension" << info->thing()->name() << "did not respond to device information request";
+            neuronExtension->deleteLater();
+            info->finish(Thing::ThingErrorHardwareFailure, QT_TR_NOOP("Neuron extension did not respond."));
+        });
+        connect(neuronExtension, &NeuronExtension::deviceInformationReceived, info, [info, neuronExtension, setupTimeout, this] {
+            if (!setupTimeout->isActive())
+                return; // timeout already finished the setup
+            setupTimeout->stop();
             qCDebug(dcUniPi()) << "Neuron extension device information received";
             m_neuronExtensions.insert(info->thing()->id(), neuronExtension);
             info->thing()->setStateValue(neuronExtensionConnectedStateTypeId, true);
             return info->finish(Thing::ThingErrorNoError);
         });
+        setupTimeout->start();
         neuronExtension->getDeviceInformation();
         return;
 

@@ -60,6 +60,9 @@ public:
 private:
     QString m_serialPort;
     modbus_t *m_modbus = nullptr;
+    bool m_connected = false;
+
+    void setConnected(bool connected);
 
     QVector<uint8_t> readCoils(int slaveAddress, int startAddres, int count);
     QVector<uint16_t> readRegisters(int slaveAddress, int startAddres, int count);

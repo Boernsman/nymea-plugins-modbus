@@ -40,18 +40,24 @@ NeuronExtensionBus::NeuronExtensionBus(const QString &port, int baudrate, char p
 
     m_modbus = modbus_new_rtu(port.toLocal8Bit(), baudrate, parity, 8, 1);
     if (m_modbus == nullptr) {
-        qDebug() << "Could not create modbus rtu";
+        qCWarning(dcUniPi()) << "NeuronExtensionBus: Could not create modbus rtu context for" << port;
     }
 }
 
 NeuronExtensionBus::~NeuronExtensionBus()
 {
-    modbus_close(m_modbus);
-    modbus_free(m_modbus);
+    if (m_modbus) {
+        modbus_close(m_modbus);
+        modbus_free(m_modbus);
+    }
 }
 
 bool NeuronExtensionBus::init()
 {
+    if (!m_modbus) {
+        qCWarning(dcUniPi()) << "NeuronExtensionBus: Cannot initialize, modbus rtu context is null";
+        return false;
+    }
     if (modbus_set_response_timeout(m_modbus, 0, 100000) == -1) {
         qCDebug(dcUniPi()) << "NeuronExtensionBus: Could not set response timeout" << modbus_strerror(errno);
         return false;
@@ -69,12 +75,24 @@ bool NeuronExtensionBus::init()
     modbus_get_response_timeout(m_modbus, &sec, &usec);
     qCDebug(dcUniPi()) << "NeuronExtensionBus: Timeout" << sec*1000 + usec/1000 << "ms";
 
+    // The underlying port is open; actual slave reachability is reflected
+    // by subsequent I/O. Mark connected without emitting — listeners can't
+    // have attached before init() returns.
+    m_connected = true;
     return true;
 }
 
 bool NeuronExtensionBus::connected()
 {
-    return (modbus_connect(m_modbus) == 0);
+    return m_connected;
+}
+
+void NeuronExtensionBus::setConnected(bool connected)
+{
+    if (m_connected == connected)
+        return;
+    m_connected = connected;
+    emit connectedChanged(m_connected);
 }
 
 QString NeuronExtensionBus::serialPort() const
@@ -133,6 +151,9 @@ NeuronExtensionReply *NeuronExtensionBus::sendRequest(const NeuronExtensionReque
 
 QVector<uint8_t> NeuronExtensionBus::readCoils(int slaveAddress, int startAddres, int count)
 {
+    if (!m_modbus) {
+        return QVector<uint8_t>();
+    }
     if(modbus_set_slave(m_modbus, slaveAddress) == -1) {
         qCWarning(dcUniPi()) << "NeuronExtensionBus: Could not set slave" << slaveAddress;
         return QVector<uint8_t>();
@@ -144,7 +165,9 @@ QVector<uint8_t> NeuronExtensionBus::readCoils(int slaveAddress, int startAddres
         QVector<uint8_t> values(count);
         if (modbus_read_bits(m_modbus, startAddres, values.length(), values.data()) == -1) {
             qCDebug(dcUniPi()) << "NeuronExtensionBus: Could not read coils" << modbus_strerror(errno);
+            setConnected(false);
         } else {
+            setConnected(true);
             return values;
         }
     }
@@ -155,6 +178,9 @@ QVector<uint8_t> NeuronExtensionBus::readCoils(int slaveAddress, int startAddres
 QVector<uint16_t> NeuronExtensionBus::readRegisters(int slaveAddress, int startAddres, int count)
 {
     qCDebug(dcUniPi()) << "NeuronExtensionBus: read registers, slave address:" << slaveAddress << "start address" << startAddres << "count" << count;
+    if (!m_modbus) {
+        return QVector<uint16_t>();
+    }
     if(modbus_set_slave(m_modbus, slaveAddress) == -1) {
         qCWarning(dcUniPi()) << "NeuronExtensionBus: Could not set slave" << slaveAddress;
         return QVector<uint16_t>();
@@ -166,7 +192,9 @@ QVector<uint16_t> NeuronExtensionBus::readRegisters(int slaveAddress, int startA
         QVector<uint16_t> values(count);
         if (modbus_read_registers(m_modbus, startAddres, values.length(), values.data()) == -1) {
             qCDebug(dcUniPi()) << "NeuronExtensionBus: Could not read registers" << modbus_strerror(errno);
+            setConnected(false);
         } else {
+            setConnected(true);
             return values;
         }
     }
@@ -177,6 +205,9 @@ QVector<uint16_t> NeuronExtensionBus::readRegisters(int slaveAddress, int startA
 bool NeuronExtensionBus::writeCoils(int slaveAddress, int startAddress, const QVector<uint16_t> &data)
 {
     qCDebug(dcUniPi()) << "NeuronExtensionBus: Write coils" << slaveAddress << startAddress << data.length();
+    if (!m_modbus) {
+        return false;
+    }
     if (data.isEmpty() || data.length() > 125) {
         return false;
     }
@@ -191,20 +222,26 @@ bool NeuronExtensionBus::writeCoils(int slaveAddress, int startAddress, const QV
     if (data.length() == 1) {
         if (modbus_write_bit(m_modbus, startAddress, writeData.first()) == -1){
             qCWarning(dcUniPi()) << "Could not write single coil" << modbus_strerror(errno);
+            setConnected(false);
             return false;
         }
     } else {
         if (modbus_write_bits(m_modbus, startAddress,  data.length(), writeData.data()) == -1) {
             qCWarning(dcUniPi()) << "Could not write coil" << modbus_strerror(errno);
+            setConnected(false);
             return false;
         }
     }
+    setConnected(true);
     return true;
 }
 
 bool NeuronExtensionBus::writeRegisters(int slaveAddress, int startAddress, const QVector<uint16_t> &data)
 {
     qCDebug(dcUniPi()) << "NeuronExtensionBus: Write registers" << slaveAddress << startAddress << data.length();
+    if (!m_modbus) {
+        return false;
+    }
     if (modbus_set_slave(m_modbus, slaveAddress) == -1) {
         return false;
     }
@@ -212,13 +249,16 @@ bool NeuronExtensionBus::writeRegisters(int slaveAddress, int startAddress, cons
     if (data.length() == 1) {
         if (modbus_write_register(m_modbus, startAddress, data.first()) == -1){
             qCWarning(dcUniPi()) << "Could not write single coil" << modbus_strerror(errno);
+            setConnected(false);
             return false;
         }
     } else {
         if (modbus_write_registers(m_modbus, startAddress,  data.length(), data.data()) == -1) {
             qCWarning(dcUniPi()) << "Could not write coil" << modbus_strerror(errno);
+            setConnected(false);
             return false;
         }
     }
+    setConnected(true);
     return true;
 }
