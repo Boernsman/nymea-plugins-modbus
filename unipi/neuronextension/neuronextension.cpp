@@ -371,12 +371,11 @@ bool NeuronExtension::setRelayOutput(const QString &circuit, bool value)
         qCWarning(dcUniPi()) << "NeuronExtension: Relay" << circuit << "not available";
         return false;
     }
-    // Update the local cache first so the group write carries the new value
-    // and the next poll's delta check does not race a stale cache against the
-    // hardware. The write is issued immediately instead of deferring to the
-    // next poll cycle, so user commands reach the slave without a cycle lag.
-    m_modbusRelayOutputRegisters->setValue(circuit, value ? 1 : 0);
-    return sendWriteRequest(m_modbusRelayOutputRegisters->createWriteRequest(m_slaveAddress));
+    const int addr = m_modbusRelayOutputRegisters->address(circuit);
+    // Update the cache so the periodic delta check sees cache == hardware
+    // after the single-coil write completes.
+    m_modbusRelayOutputRegisters->setValue(addr, value ? 1 : 0);
+    return writeSingleCoil(addr, value);
 }
 
 bool NeuronExtension::setDigitalOutput(const QString &circuit, bool value)
@@ -385,8 +384,23 @@ bool NeuronExtension::setDigitalOutput(const QString &circuit, bool value)
         qCWarning(dcUniPi()) << "NeuronExtension: Digital output" << circuit << "not available";
         return false;
     }
-    m_modbusDigitalOutputRegisters->setValue(circuit, value ? 1 : 0);
-    return sendWriteRequest(m_modbusDigitalOutputRegisters->createWriteRequest(m_slaveAddress));
+    const int addr = m_modbusDigitalOutputRegisters->address(circuit);
+    m_modbusDigitalOutputRegisters->setValue(addr, value ? 1 : 0);
+    return writeSingleCoil(addr, value);
+}
+
+bool NeuronExtension::writeSingleCoil(int address, bool value)
+{
+    // Single-coil write (Modbus function 0x05) rather than a full group write
+    // (0x0F): smaller RTU packet is less exposed to bus noise and each click
+    // doesn't amplify to a rewrite of every relay/DO on the extension. The
+    // poll-cycle delta check in onReplyFinished still issues a group write if
+    // any coil drifts away from the cache.
+    NeuronExtensionRequest request(NeuronExtensionRegisterType::RegisterTypeCoils, m_slaveAddress, address, 1, true);
+    QVector<quint16> payload;
+    payload.append(value ? 1 : 0);
+    request.setValues(payload);
+    return sendWriteRequest(request);
 }
 
 void NeuronExtension::setAnalogOutput(const QString &circuit, double value)
@@ -504,26 +518,31 @@ void NeuronExtension::synthesizeDigitalInputPress(const QString &circuit)
 
 bool NeuronExtension::sendWriteRequest(const NeuronExtensionRequest &request)
 {
-    auto *reply = m_neuronExtensionBus->sendRequest(request);
-    if (!reply) {
-        qCWarning(dcUniPi()) << "NeuronExtension: Write request to slave" << request.slaveAddress() << "returned no reply";
-        return false;
-    }
-    const bool success = reply->isFinished() && reply->error() == NeuronExtensionReply::ErrorNoError;
-    if (!success) {
-        qCWarning(dcUniPi()) << "NeuronExtension: Write request to slave" << request.slaveAddress()
-                             << "startAddress" << request.startAddress()
-                             << "length" << request.values().length()
-                             << "failed";
-    }
-    if (reply->isFinished()) {
+    // Retry transient failures (CRC errors, response timeouts) a few times
+    // before surfacing a failure to the caller. Modbus RTU on noisy lines
+    // drops packets occasionally; a single-attempt policy makes rapid user
+    // commands look like they were "lost".
+    const int maxAttempts = 3;
+    for (int attempt = 1; attempt <= maxAttempts; ++attempt) {
+        auto *reply = m_neuronExtensionBus->sendRequest(request);
+        if (!reply) {
+            qCWarning(dcUniPi()) << "NeuronExtension: Write request to slave" << request.slaveAddress() << "returned no reply";
+            return false;
+        }
+        const bool success = reply->isFinished() && reply->error() == NeuronExtensionReply::ErrorNoError;
         reply->deleteLater();
-    } else {
-        // Defensive: the current bus implementation finishes replies
-        // synchronously, so this branch is effectively unreachable today.
-        connect(reply, &NeuronExtensionReply::finished, reply, &NeuronExtensionReply::deleteLater);
+        if (success)
+            return true;
+        if (attempt < maxAttempts) {
+            qCDebug(dcUniPi()) << "NeuronExtension: Write to slave" << request.slaveAddress()
+                               << "startAddress" << request.startAddress()
+                               << "failed, retrying (" << attempt + 1 << "/" << maxAttempts << ")";
+        }
     }
-    return success;
+    qCWarning(dcUniPi()) << "NeuronExtension: Write to slave" << request.slaveAddress()
+                         << "startAddress" << request.startAddress()
+                         << "failed after" << maxAttempts << "attempts";
+    return false;
 }
 
 void NeuronExtension::onReplyFinished(NeuronExtensionReply *reply)

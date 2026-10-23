@@ -159,6 +159,7 @@ private:
 
     void getCoils();
     void getRegisters();
+    bool writeSingleCoil(int address, bool value);
     bool sendWriteRequest(const NeuronExtensionRequest &request);
     void synthesizeDigitalInputPress(const QString &circuit);
 
