@@ -205,16 +205,13 @@ bool NeuronExtensionBus::writeCoils(int slaveAddress, int startAddress, const QV
         writeData.append(static_cast<uint8_t>(value & 0xff));
     }
 
-    if (data.length() == 1) {
-        if (modbus_write_bit(m_modbus, startAddress, writeData.first()) == -1){
-            qCDebug(dcUniPi()) << "NeuronExtensionBus: Could not write coil to slave" << slaveAddress << modbus_strerror(errno);
-            return false;
-        }
-    } else {
-        if (modbus_write_bits(m_modbus, startAddress,  data.length(), writeData.data()) == -1) {
-            qCDebug(dcUniPi()) << "NeuronExtensionBus: Could not write coils to slave" << slaveAddress << modbus_strerror(errno);
-            return false;
-        }
+    // Always use Modbus function 0x0F (Write Multiple Coils), even for a
+    // single coil. The UniPi Neuron extension firmware acknowledges 0x05
+    // (Write Single Coil) at the protocol layer but doesn't actually drive
+    // the relay — so libmodbus returns success and the hardware stays idle.
+    if (modbus_write_bits(m_modbus, startAddress, data.length(), writeData.data()) == -1) {
+        qCDebug(dcUniPi()) << "NeuronExtensionBus: Could not write coils to slave" << slaveAddress << modbus_strerror(errno);
+        return false;
     }
     return true;
 }
